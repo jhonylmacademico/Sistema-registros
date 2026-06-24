@@ -22,6 +22,12 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Limpiar basura de intentos anteriores
+        run: |
+          rm -rf node_modules
+          rm -rf android
+          rm -rf dist
+
       - name: Instalar dependencias
         run: npm install --legacy-peer-deps
 
