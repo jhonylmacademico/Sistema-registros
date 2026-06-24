@@ -1,0 +1,8 @@
+{
+  "appId": "com.sistema.registros",
+  "appName": "Sistema de Registros",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
