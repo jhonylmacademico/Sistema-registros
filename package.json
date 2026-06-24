@@ -1,5 +1,5 @@
 {
-  "name": "sistema-registros",
+  "name": "sistema-activos-fijos",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
@@ -9,14 +9,8 @@
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.26.0",
     "@capacitor/core": "^6.1.0",
-    "@capacitor/app": "^6.0.0",
-    "@capacitor/filesystem": "^6.0.0",
-    "@capacitor/share": "^6.0.0",
-    "@capacitor/toast": "^6.0.0",
-    "lucide-react": "^0.400.0",
-    "clsx": "^2.1.1"
+    "lucide-react": "^0.400.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.0",
