@@ -46,7 +46,7 @@ export default function App() {
   const [customPass, setCustomPass] = useState('admin123');
   const [vista, setVista] = useState('hub');
   const [centroActual, setCentroActual] = useState(null);
-  const [categoriaVista, setCategoriaVista] = useState('computo'); // 'computo' o 'red'
+  const [categoriaVista, setCategoriaVista] = useState('computo');
   const [oficinaFiltro, setOficinaFiltro] = useState(null);
   const [pisoFiltro, setPisoFiltro] = useState('Todos');
   const [estadoFiltro, setEstadoFiltro] = useState(null);
@@ -78,10 +78,13 @@ export default function App() {
   const getValor = (a, key) => { if (key === 'enAlmacen') return a.enAlmacen ? 'SI' : 'NO'; return a[key] || '-'; };
   const handleCheck = (key) => { setCamposSeleccionados(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]); };
 
-  // NUEVA FUNCIÓN: Volver Atrás Inteligente
   const handleVolver = () => {
     if (vista === 'formulario') {
-      setVista(editando && editando.enAlmacen ? 'almacen' : 'lista');
+      if ((editando && editando.enAlmacen) || !centroActual) {
+        setVista('almacen');
+      } else {
+        setVista('lista');
+      }
     } else if (vista === 'lista' || vista === 'reporte' || vista === 'oficinas') {
       setVista('dashboard');
       setEstadoFiltro(null); setOficinaFiltro(null); setPisoFiltro('Todos'); setBusqueda('');
@@ -144,7 +147,6 @@ export default function App() {
     );
   }
 
-  // Filtra los datos del centro Y por la categoría seleccionada (Cómputo o Red)
   const datosCentro = centroActual ? activos.filter(a => a.centro === centroActual && !a.enAlmacen && (categoriaVista === 'computo' ? TIPOS_COMPUTO.includes(a.tipo) : TIPOS_RED.includes(a.tipo))) : [];
   const oficinasCentro = oficinas[centroActual] || [];
   
@@ -227,7 +229,7 @@ export default function App() {
                       <h3 className='font-bold text-gray-800'>{a.nombreEquipo || (a.marcaCPU || a.marca) + ' ' + (a.modeloCPU || a.modelo)}</h3>
                       <p className='text-sm text-gray-500'>{a.tipo} {a.subtipoImpresora ? '- '+a.subtipoImpresora : ''}</p>
                     </div>
-                    <span className='text-xs font-bold px-2 py-1 rounded-full bg-gray-100 text-gray-600'>{centros.find(c=>c.id===a.centro)?.nombre || 'N/A'}</span>
+                    {a.centro && <span className='text-xs font-bold px-2 py-1 rounded-full bg-gray-100 text-gray-600'>{centros.find(c=>c.id===a.centro)?.nombre || 'N/A'}</span>}
                   </div>
                   <div className='mt-2 text-sm text-indigo-600 border-t pt-2 font-bold flex justify-end'>
                     <span>Toca para ASIGNAR</span>
@@ -240,7 +242,6 @@ export default function App() {
 
         {centroActual && vista === 'dashboard' && (
           <div className='space-y-4'>
-            {/* SELECTOR DE CATEGORÍA */}
             <div className='flex bg-gray-200 p-1 rounded-xl'>
               <button onClick={() => { setCategoriaVista('computo'); setEstadoFiltro(null); setOficinaFiltro(null); }} className={'flex-1 p-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 ' + (categoriaVista === 'computo' ? 'bg-white text-blue-600 shadow' : 'text-gray-500')}>
                 <Laptop size={18} /> Cómputo ({activos.filter(a => a.centro === centroActual && !a.enAlmacen && TIPOS_COMPUTO.includes(a.tipo)).length})
@@ -480,7 +481,7 @@ function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, se
 }
 
 function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNextNumber, centroActual, oficinas, centros, setMsg }) {
-  const esAlmacen = !centroActual; // Si no hay centro actual, venimos del Almacén
+  const esAlmacen = !centroActual; 
   const [form, setForm] = useState(activo || { id: Date.now().toString(), centro: centroActual, numero: getNextNumber(), tipo: 'Laptop', subtipoImpresora: 'Impresora Normal', nombreEquipo: '', marca: '', modelo: '', codigoActivo: '', numeroSerie: '', procesador: '', generacion: '', ram: '', tipoDisco: 'SSD M.2', capacidadDisco: '', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: '', mac: '', ip: '', estado: 'Activo', enAlmacen: esAlmacen, oficina: '', piso: '', cargo: '', numeroEmpleado: '', personaAsignada: '', nombreResponsable: '', fechaAsignacion: '', marcaCPU: '', modeloCPU: '', codigoActivoCPU: '', numeroSerieCPU: '', marcaMonitor: '', modeloMonitor: '', codigoActivoMonitor: '', conexionImpresora: 'En Red', notas: '' });
 
   const oficinasDestino = oficinas[form.centro] || [];
@@ -500,7 +501,7 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
     const datos = JSON.parse(localStorage.getItem('activos_fijos_v73') || '[]'); 
     if (activo) { guardarDatos(datos.map(a => a.id === activo.id ? form : a)); } 
     else { guardarDatos([...datos, form]); } 
-    handleVolver(); // Usar el volver inteligente
+    handleVolver(); 
   };
   
   const handleEliminar = () => { if (confirm('Eliminar?')) { const datos = JSON.parse(localStorage.getItem('activos_fijos_v73') || '[]'); guardarDatos(datos.filter(a => a.id !== form.id)); handleVolver(); } };
@@ -521,15 +522,14 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
       <form onSubmit={handleSubmit} className='bg-white p-4 rounded-xl shadow-sm space-y-4'>
         <h2 className='font-bold text-lg text-gray-800 border-b pb-2'>{activo ? 'Editar Nro. ' + form.numero : 'Nuevo Registro'}</h2>
         
-        {/* SELECTOR DE MULTICENTRO (Visible si no hay centro actual, ej: desde el Almacén) */}
-        {esAlmacen && (
+        {/* SELECTOR DE MULTICENTRO (Solo visible si venimos del Almacén Y además desactivamos el check de En Almacén) */}
+        {esAlmacen && !form.enAlmacen && (
           <div className='bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400'>
             <label className='block text-xs font-bold text-blue-600 mb-1'>ASIGNAR A MULTICENTRO</label>
-            <select name='centro' value={form.centro||''} onChange={h} required={!form.enAlmacen} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'>
+            <select name='centro' value={form.centro||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'>
               <option value='' disabled>Seleccionar destino...</option>
               {centros.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
             </select>
-            <p className='text-xs text-gray-500 mt-1'>Obligatorio si no está en almacén.</p>
           </div>
         )}
 
