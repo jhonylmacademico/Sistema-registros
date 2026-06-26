@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Monitor, Printer, Network, Laptop, LogOut, Plus, Search, FileText, ShieldCheck, Save, Trash2, ArrowLeft, Download, Key, Building2, Warehouse, Edit3, MapPin } from 'lucide-react';
+import { Monitor, Printer, Network, Laptop, LogOut, Plus, Search, FileText, ShieldCheck, Save, Trash2, ArrowLeft, Download, Key, Building2, Warehouse, Edit3, MapPin, CheckCircle } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { Filesystem, Directory, Share } from '@capacitor/filesystem';
 
 const CENTROS_DEFAULT = [
   { id: 'sucre', nombre: 'Multicentro Sucre' },
@@ -23,6 +24,8 @@ const datosIniciales = [
 
 const OFICINAS_DEFAULT = { sucre: [{ id: 'conta', nombre: 'Contabilidad' }, { id: 'rrhh', nombre: 'Recursos Humanos' }] };
 
+const arrayBufferToBase64 = (buffer) => { let binary = ''; const bytes = new Uint8Array(buffer); for (let i = 0; i < bytes.byteLength; i++) { binary += String.fromCharCode(bytes[i]); } return window.btoa(binary); };
+
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState('');
@@ -39,53 +42,52 @@ export default function App() {
   const [editando, setEditando] = useState(null);
   const [busqueda, setBusqueda] = useState('');
   const [msg, setMsg] = useState('');
+  const [cargando, setCargando] = useState(false);
   const [camposSeleccionados, setCamposSeleccionados] = useState(['numero', 'tipo', 'nombreEquipo', 'procesador', 'ram', 'estado', 'oficina', 'personaAsignada']);
 
   useEffect(() => {
-    const c = localStorage.getItem('mis_centros_v72'); if (c) setCentros(JSON.parse(c)); else { setCentros(CENTROS_DEFAULT); localStorage.setItem('mis_centros_v72', JSON.stringify(CENTROS_DEFAULT)); }
-    const d = localStorage.getItem('activos_fijos_v72'); if (d) setActivos(JSON.parse(d)); else { setActivos(datosIniciales); localStorage.setItem('activos_fijos_v72', JSON.stringify(datosIniciales)); }
-    const o = localStorage.getItem('mis_oficinas_v72'); if (o) setOficinas(JSON.parse(o)); else { setOficinas(OFICINAS_DEFAULT); localStorage.setItem('mis_oficinas_v72', JSON.stringify(OFICINAS_DEFAULT)); }
-    const p = localStorage.getItem('app_pass_v72'); if (p) setCustomPass(p);
+    const c = localStorage.getItem('mis_centros_v73'); if (c) setCentros(JSON.parse(c)); else { setCentros(CENTROS_DEFAULT); localStorage.setItem('mis_centros_v73', JSON.stringify(CENTROS_DEFAULT)); }
+    const d = localStorage.getItem('activos_fijos_v73'); if (d) setActivos(JSON.parse(d)); else { setActivos(datosIniciales); localStorage.setItem('activos_fijos_v73', JSON.stringify(datosIniciales)); }
+    const o = localStorage.getItem('mis_oficinas_v73'); if (o) setOficinas(JSON.parse(o)); else { setOficinas(OFICINAS_DEFAULT); localStorage.setItem('mis_oficinas_v73', JSON.stringify(OFICINAS_DEFAULT)); }
+    const p = localStorage.getItem('app_pass_v73'); if (p) setCustomPass(p);
   }, []);
 
-  const guardarDatos = (n) => { setActivos(n); localStorage.setItem('activos_fijos_v72', JSON.stringify(n)); };
+  const guardarDatos = (n) => { setActivos(n); localStorage.setItem('activos_fijos_v73', JSON.stringify(n)); };
+  const guardarOficinas = (n) => { setOficinas(n); localStorage.setItem('mis_oficinas_v73', JSON.stringify(n)); };
   const handleLogin = (e) => { e.preventDefault(); if (user === 'admin' && pass === customPass) setIsLoggedIn(true); };
-  const getNextNumber = () => { const d = JSON.parse(localStorage.getItem('activos_fijos_v72') || '[]'); return (d.reduce((m, a) => Math.max(m, parseInt(a.numero || '0')), 0) + 1).toString().padStart(4, '0'); };
-  const agregarCentro = () => { const n = prompt('Nombre del nuevo Multicentro:'); if (n && n.trim()) { const nc = [...centros, { id: n.trim().toLowerCase().replace(/\s+/g, '_'), nombre: n.trim() }]; setCentros(nc); localStorage.setItem('mis_centros_v72', JSON.stringify(nc)); } };
+  const getNextNumber = () => { const d = JSON.parse(localStorage.getItem('activos_fijos_v73') || '[]'); return (d.reduce((m, a) => Math.max(m, parseInt(a.numero || '0')), 0) + 1).toString().padStart(4, '0'); };
+  const agregarCentro = () => { const n = prompt('Nombre del nuevo Multicentro:'); if (n && n.trim()) { const nc = [...centros, { id: n.trim().toLowerCase().replace(/\s+/g, '_'), nombre: n.trim() }]; setCentros(nc); localStorage.setItem('mis_centros_v73', JSON.stringify(nc)); } };
   
-  const gestionarOficinas = () => {
-    const listaAct = oficinas[centroActual] || [];
-    const texto = listaAct.length === 0 ? 'No hay oficinas.' : listaAct.map((o, i) => (i+1) + '. ' + o.nombre).join('\n');
-    const accion = prompt('OFICINAS:\n\n' + texto + '\n\nEscribe:\n- NUEVA: [Nombre]\n- EDITAR: [Num] [Nuevo Nombre]\n- BORRAR: [Num]');
-    if (!accion) return;
-    let nuevas = [...listaAct];
-    const accionUpper = accion.toUpperCase();
-    if (accionUpper.startsWith('NUEVA:')) {
-      const nombre = accion.substring(6).trim();
-      if(nombre) { nuevas.push({ id: nombre.toLowerCase().replace(/\s+/g, '_'), nombre }); setOficinas({...oficinas, [centroActual]: nuevas}); localStorage.setItem('mis_oficinas_v72', JSON.stringify({...oficinas, [centroActual]: nuevas})); setMsg('Oficina agregada'); }
-    } else if (accionUpper.startsWith('EDITAR:')) {
-      const partes = accion.substring(7).trim().split(' ');
-      const idx = parseInt(partes[0]) - 1;
-      if (!isNaN(idx) && idx >= 0 && idx < nuevas.length) { nuevas[idx].nombre = partes.slice(1).join(' '); setOficinas({...oficinas, [centroActual]: nuevas}); localStorage.setItem('mis_oficinas_v72', JSON.stringify({...oficinas, [centroActual]: nuevas})); setMsg('Oficina editada'); }
-    } else if (accionUpper.startsWith('BORRAR:')) {
-      const idx = parseInt(accion.substring(7).trim()) - 1;
-      if (!isNaN(idx) && idx >= 0 && idx < nuevas.length) { nuevas.splice(idx, 1); setOficinas({...oficinas, [centroActual]: nuevas}); localStorage.setItem('mis_oficinas_v72', JSON.stringify({...oficinas, [centroActual]: nuevas})); setMsg('Oficina borrada'); }
-    } else { alert('Comando no reconocido.'); }
-    setTimeout(()=>setMsg(''), 2000);
-  };
+  const agregarOficina = () => { const n = prompt('Nombre de la nueva oficina:'); if (n && n.trim()) { const act = oficinas[centroActual] || []; const nuevas = [...act, { id: n.trim().toLowerCase().replace(/\s+/g, '_'), nombre: n.trim() }]; guardarOficinas({...oficinas, [centroActual]: nuevas}); setMsg('Oficina agregada'); setTimeout(()=>setMsg(''), 2000); } };
 
   const limpiarFormulario = () => { setEditando(null); setVista('formulario'); };
   const getValor = (a, key) => { if (key === 'enAlmacen') return a.enAlmacen ? 'SI' : 'NO'; return a[key] || '-'; };
   const handleCheck = (key) => { setCamposSeleccionados(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]); };
+
+  const guardarArchivoNativo = async (blob, nombreArchivo) => {
+    setCargando(true); setMsg('Preparando archivo...');
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result.split(',')[1];
+        await Filesystem.writeFile({ path: nombreArchivo, data: base64, directory: Directory.Cache });
+        const uri = 'file://' + (await Filesystem.getUri({ path: nombreArchivo, directory: Directory.Cache })).uri;
+        await Share.share({ url: uri });
+        setMsg('Abre el menu y elige "Guardar en archivos" o "PDF Viewer"'); setCargando(false);
+      };
+      reader.readAsDataURL(blob);
+    } catch(e) {
+      setMsg('Error al guardar. Intente de nuevo.'); setCargando(false);
+    }
+    setTimeout(()=>setMsg(''), 4000);
+  };
 
   const exportarCSV = () => {
     const datosC = activos.filter(a => a.centro === centroActual);
     const headers = camposSeleccionados.map(k => CAMPOS.find(c=>c.key===k)?.label || k);
     const rows = datosC.map(a => camposSeleccionados.map(k => getValor(a, k)));
     const csv = '\uFEFF' + [headers.join(';'), ...rows.map(r => r.map(c => '\x22' + String(c).replace(/\x22/g, '\x22\x22') + '\x22').join(';'))].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'Reporte.csv';
-    document.body.appendChild(link); link.click(); document.body.removeChild(link); setMsg('Excel listo'); setTimeout(()=>setMsg(''), 3000);
+    guardarArchivoNativo(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), 'Reporte_Activos.csv');
   };
 
   const exportarPDF = () => {
@@ -96,7 +98,9 @@ export default function App() {
     doc.setFontSize(16); doc.text('Reporte de Activos Fijos', 14, 15);
     doc.setFontSize(10); doc.text('Centro: ' + (centros.find(c=>c.id===centroActual)?.nombre || ''), 14, 22);
     doc.autoTable({ startY: 28, head: [headers], body: rows, styles: { fontSize: 8 }, headStyles: { fillColor: [30, 58, 95] } });
-    doc.save('Reporte_Activos.pdf'); setMsg('PDF listo'); setTimeout(()=>setMsg(''), 3000);
+    doc.save('Reporte_Activos.pdf');
+    const pdfBlob = doc.output('blob');
+    guardarArchivoNativo(pdfBlob, 'Reporte_Activos.pdf');
   };
 
   if (!isLoggedIn) {
@@ -130,10 +134,10 @@ export default function App() {
 
   return (
     <div className='min-h-screen bg-gray-100 pb-20'>
-      {msg && <div className='bg-green-500 text-white text-center p-2 font-bold fixed top-0 left-0 right-0 z-50'>{msg}</div>}
+      {msg && <div className='bg-green-500 text-white text-center p-2 font-bold fixed top-0 left-0 right-0 z-50'>{cargando ? 'Generando archivo...' : msg}</div>}
       <div className='bg-blue-700 text-white p-4 shadow-lg flex justify-between items-center sticky top-0 z-10'>
         <div className='flex gap-3 items-center'>
-          {(centroActual || vista === 'lista' || vista === 'reporte' || vista === 'formulario') && <button onClick={() => { setCentroActual(null); setOficinaFiltro(null); setEstadoFiltro(null); setVista('hub'); setBusqueda(''); }} className='bg-blue-800 p-2 rounded-lg'><ArrowLeft size={20} /></button>}
+          {(centroActual || vista !== 'hub' && vista !== 'config') && <button onClick={() => { setCentroActual(null); setOficinaFiltro(null); setEstadoFiltro(null); setVista('hub'); setBusqueda(''); }} className='bg-blue-800 p-2 rounded-lg'><ArrowLeft size={20} /></button>}
           {!centroActual && <button onClick={() => setVista('config')} className='bg-blue-800 p-2 rounded-lg'><Key size={20} /></button>}
           <h1 className='text-lg font-bold'>{centroActual ? centros.find(c => c.id === centroActual)?.nombre : 'Multicentros'}</h1>
         </div>
@@ -165,7 +169,7 @@ export default function App() {
 
             <div className='flex justify-between items-center mt-4 mb-2'>
               <h3 className='font-bold text-gray-700 flex items-center gap-2'><MapPin size={18} /> Oficinas y Areas</h3>
-              <button onClick={gestionarOficinas} className='bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg flex items-center gap-1 text-sm font-bold'><Edit3 size={16} /> Gestionar</button>
+              <button onClick={() => setVista('oficinas')} className='bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg flex items-center gap-1 text-sm font-bold'><Edit3 size={16} /> Gestionar</button>
             </div>
             
             {oficinasCentro.length === 0 ? <p className='text-sm text-gray-500 bg-white p-4 rounded-lg text-center'>No hay oficinas. Toca Gestionar para agregar.</p> : (
@@ -181,6 +185,34 @@ export default function App() {
                 })}
               </div>
             )}
+          </div>
+        )}
+
+        {centroActual && vista === 'oficinas' && (
+          <div>
+            <button onClick={() => setVista('dashboard')} className='flex items-center text-blue-600 font-bold mb-4'><ArrowLeft size={20} /> Volver al Dashboard</button>
+            <div className='bg-white p-4 rounded-xl shadow-sm mb-4'>
+              <div className='flex justify-between items-center mb-4'>
+                <h2 className='font-bold text-lg text-gray-800'>Administrar Oficinas de {centros.find(c=>c.id===centroActual)?.nombre}</h2>
+                <button onClick={agregarOficina} className='bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-1 font-bold text-sm'><Plus size={18} /> Nueva Oficina</button>
+              </div>
+              {oficinasCentro.length === 0 ? <p className='text-gray-500 text-center py-8'>Aun no hay oficinas creadas.</p> : (
+                <div className='space-y-3'>
+                  {oficinasCentro.map((o, index) => (
+                    <div key={o.id} className='flex justify-between items-center bg-gray-50 p-4 rounded-lg border'>
+                      <div>
+                        <p className='font-bold text-gray-800'>{index + 1}. {o.nombre}</p>
+                        <p className='text-xs text-gray-500'>{datosCentro.filter(a => a.oficina === o.nombre).length} equipos asignados</p>
+                      </div>
+                      <div className='flex gap-2'>
+                        <button onClick={() => { const nuevo = prompt('Editar nombre de la oficina:', o.nombre); if (nuevo && nuevo.trim()) { const act = oficinas[centroActual]; act[index].nombre = nuevo.trim(); guardarOficinas({...oficinas, [centroActual]: act}); setMsg('Oficina actualizada'); setTimeout(()=>setMsg(''), 2000); }}} className='bg-blue-100 text-blue-700 px-3 py-2 rounded-lg text-sm font-bold'>Editar</button>
+                        <button onClick={() => { if (confirm('Seguro que quieres eliminar ' + o.nombre + '?')) { const act = oficinas[centroActual]; act.splice(index, 1); guardarOficinas({...oficinas, [centroActual]: act}); setMsg('Oficina eliminada'); setTimeout(()=>setMsg(''), 2000); }}} className='bg-red-100 text-red-700 px-3 py-2 rounded-lg text-sm font-bold'>Borrar</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -250,18 +282,10 @@ export default function App() {
               </div>
             </div>
             <div className='grid grid-cols-2 gap-4'>
-              <button onClick={exportarCSV} className='bg-green-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2'><Download size={20} /> Excel</button>
-              <button onClick={exportarPDF} className='bg-red-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2'><FileText size={20} /> PDF</button>
+              <button onClick={exportarCSV} disabled={cargando} className='bg-green-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2'><Download size={20} /> Excel</button>
+              <button onClick={exportarPDF} disabled={cargando} className='bg-red-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2'><FileText size={20} /> PDF</button>
             </div>
-            {camposSeleccionados.length > 0 && (
-              <div className='bg-white p-4 rounded-xl shadow-sm overflow-x-auto'>
-                <h3 className='text-sm font-bold text-gray-500 mb-2 text-center'>VISTA PREVIA</h3>
-                <table className='w-full text-sm text-left text-gray-500 min-w-[500px]'>
-                  <thead className='text-xs text-gray-700 uppercase bg-gray-50'><tr>{camposSeleccionados.map(k => <th key={k} className='px-2 py-2'>{CAMPOS.find(c=>c.key===k)?.label}</th>)}</tr></thead>
-                  <tbody>{datosCentro.slice(0, 5).map(a => (<tr key={a.id} className='border-b'>{camposSeleccionados.map(k => <td key={k} className='px-2 py-2'>{getValor(a, k)}</td>)}</tr>))}</tbody>
-                </table>
-              </div>
-            )}
+            <p className='text-xs text-gray-500 text-center bg-gray-100 p-2 rounded-lg'>Al tocar el boton, se abrira el menu nativo de tu celular. Elige "Guardar en archivos" o "Abrir con..." para verlo.</p>
           </div>
         )}
 
@@ -282,7 +306,7 @@ export default function App() {
 
 function ConfigVista({ customPass, setCustomPass, setVista, setMsg }) {
   const [nueva, setNueva] = useState('');
-  const h = (e) => { e.preventDefault(); if (nueva.length < 4) { alert('Minimo 4 caracteres'); return; } setCustomPass(nueva); localStorage.setItem('app_pass_v72', nueva); setMsg('Contrasena actualizada'); setTimeout(() => setMsg(''), 3000); setVista('hub'); };
+  const h = (e) => { e.preventDefault(); if (nueva.length < 4) { alert('Minimo 4 caracteres'); return; } setCustomPass(nueva); localStorage.setItem('app_pass_v73', nueva); setMsg('Contrasena actualizada'); setTimeout(() => setMsg(''), 3000); setVista('hub'); };
   return (<div className='bg-white p-6 rounded-xl shadow-sm'><button onClick={() => setVista('hub')} className='flex items-center text-blue-600 font-bold mb-4'><ArrowLeft size={20} /> Volver</button><h2 className='text-xl font-bold text-gray-800 mb-4 flex items-center gap-2'><Key size={24} /> Cambiar Contrasena</h2><form onSubmit={h} className='space-y-4'><input type='password' value={nueva} onChange={e => setNueva(e.target.value)} required className='w-full p-3 border border-gray-300 rounded-lg bg-gray-50' placeholder='Nueva contrasena' /><button type='submit' className='w-full bg-blue-600 text-white p-3 rounded-lg font-bold'>Guardar</button></form></div>);
 }
 
@@ -290,8 +314,8 @@ function FormularioActivo({ activo, guardarDatos, setVista, getNextNumber, centr
   const [form, setForm] = useState(activo || { id: Date.now().toString(), centro: centroActual, numero: getNextNumber(), tipo: 'Laptop', subtipoImpresora: 'Impresora Normal', nombreEquipo: '', marca: '', modelo: '', codigoActivo: '', numeroSerie: '', procesador: '', generacion: '', ram: '', tipoDisco: 'SSD M.2', capacidadDisco: '', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: '', mac: '', ip: '', estado: 'Activo', enAlmacen: false, oficina: oficinasCentro[0]?.nombre || '', piso: '', cargo: '', numeroEmpleado: '', personaAsignada: '', nombreResponsable: '', fechaAsignacion: '', marcaCPU: '', modeloCPU: '', codigoActivoCPU: '', numeroSerieCPU: '', marcaMonitor: '', modeloMonitor: '', codigoActivoMonitor: '', conexionImpresora: 'En Red', notas: '' });
 
   const h = (e) => { const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value; setForm({ ...form, [e.target.name]: val }); };
-  const handleSubmit = (e) => { e.preventDefault(); const datos = JSON.parse(localStorage.getItem('activos_fijos_v72') || '[]'); if (activo) { guardarDatos(datos.map(a => a.id === activo.id ? form : a)); } else { guardarDatos([...datos, form]); } setVista('lista'); };
-  const handleEliminar = () => { if (confirm('Eliminar?')) { const datos = JSON.parse(localStorage.getItem('activos_fijos_v72') || '[]'); guardarDatos(datos.filter(a => a.id !== form.id)); setVista('lista'); } };
+  const handleSubmit = (e) => { e.preventDefault(); const datos = JSON.parse(localStorage.getItem('activos_fijos_v73') || '[]'); if (activo) { guardarDatos(datos.map(a => a.id === activo.id ? form : a)); } else { guardarDatos([...datos, form]); } setVista('lista'); };
+  const handleEliminar = () => { if (confirm('Eliminar?')) { const datos = JSON.parse(localStorage.getItem('activos_fijos_v73') || '[]'); guardarDatos(datos.filter(a => a.id !== form.id)); setVista('lista'); } };
 
   const OficinaSelect = ({ etiqueta, req }) => (
     <div>
