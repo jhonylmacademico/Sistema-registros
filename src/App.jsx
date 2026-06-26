@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Monitor, Printer, Network, Laptop, LogOut, Plus, Search, FileText, ShieldCheck, Save, Trash2, ArrowLeft, Download, Key, Building2, Warehouse, Edit3, MapPin, CheckCircle, Upload } from 'lucide-react';
+import { Monitor, Printer, Network, Laptop, LogOut, Plus, Search, FileText, ShieldCheck, Save, Trash2, ArrowLeft, Download, Key, Building2, Warehouse, Edit3, MapPin, CheckCircle, Upload, ChevronDown } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Filesystem, Directory } from '@capacitor/filesystem';
@@ -11,6 +11,18 @@ const CENTROS_DEFAULT = [
   { id: 'victoria', nombre: 'Multicentro Victoria' },
   { id: 'monteagudo', nombre: 'Multicentro Monteagudo' },
   { id: 'camargo', nombre: 'Multicentro Camargo' }
+];
+
+// Paleta de colores para los botones de Multicentros
+const COLORES_CENTROS = [
+  { borde: 'border-blue-500', fondo: 'bg-blue-50', texto: 'text-blue-800' },
+  { borde: 'border-green-500', fondo: 'bg-green-50', texto: 'text-green-800' },
+  { borde: 'border-amber-500', fondo: 'bg-amber-50', texto: 'text-amber-800' },
+  { borde: 'border-pink-500', fondo: 'bg-pink-50', texto: 'text-pink-800' },
+  { borde: 'border-purple-500', fondo: 'bg-purple-50', texto: 'text-purple-800' },
+  { borde: 'border-red-500', fondo: 'bg-red-50', texto: 'text-red-800' },
+  { borde: 'border-indigo-500', fondo: 'bg-indigo-50', texto: 'text-indigo-800' },
+  { borde: 'border-teal-500', fondo: 'bg-teal-50', texto: 'text-teal-800' }
 ];
 
 const CAMPOS = [
@@ -42,6 +54,7 @@ export default function App() {
   const [busqueda, setBusqueda] = useState('');
   const [msg, setMsg] = useState('');
   const [cargando, setCargando] = useState(false);
+  const [pisoExpandido, setPisoExpandido] = useState(null); // Nuevo estado para el acordeón de pisos
   const [camposSeleccionados, setCamposSeleccionados] = useState(['numero', 'tipo', 'nombreEquipo', 'procesador', 'ram', 'estado', 'oficina', 'personaAsignada']);
 
   useEffect(() => {
@@ -117,7 +130,6 @@ export default function App() {
     );
   }
 
-  // Mostrar solo los activos que NO están en almacén en las listas normales
   const datosCentro = centroActual ? activos.filter(a => a.centro === centroActual && !a.enAlmacen) : [];
   const oficinasCentro = oficinas[centroActual] || [];
   
@@ -131,15 +143,21 @@ export default function App() {
   const pisosDisponibles = oficinaFiltro ? ['Todos', ...new Set(datosCentro.filter(a => a.oficina === oficinaFiltro && a.piso).map(a => a.piso))] : [];
   const activosFiltrados = datosFinales.filter(a => (a.marca||'').toLowerCase().includes(busqueda.toLowerCase()) || (a.nombreEquipo||'').toLowerCase().includes(busqueda.toLowerCase()) || (a.personaAsignada||'').toLowerCase().includes(busqueda.toLowerCase()) || (a.numero||'').includes(busqueda));
   
-  // Para el almacén global
   const activosEnAlmacen = activos.filter(a => a.enAlmacen);
+
+  // Lógica para obtener los pisos únicos del centro actual para el acordeón
+  const pisosCentro = [...new Set(datosCentro.map(a => a.piso ? a.piso : 'Sin Piso'))].sort((a, b) => {
+    if (a === 'Sin Piso') return 1;
+    if (b === 'Sin Piso') return -1;
+    return a.localeCompare(b);
+  });
 
   return (
     <div className='min-h-screen bg-gray-100 pb-20'>
       {msg && <div className='bg-green-500 text-white text-center p-2 font-bold fixed top-0 left-0 right-0 z-50'>{cargando ? 'Generando archivo...' : msg}</div>}
       <div className='bg-blue-700 text-white p-4 shadow-lg flex justify-between items-center sticky top-0 z-10'>
         <div className='flex gap-3 items-center'>
-          {(centroActual || (vista !== 'hub' && vista !== 'config')) && <button onClick={() => { setCentroActual(null); setOficinaFiltro(null); setEstadoFiltro(null); setVista('hub'); setBusqueda(''); }} className='bg-blue-800 p-2 rounded-lg'><ArrowLeft size={20} /></button>}
+          {(centroActual || (vista !== 'hub' && vista !== 'config')) && <button onClick={() => { setCentroActual(null); setOficinaFiltro(null); setEstadoFiltro(null); setVista('hub'); setBusqueda(''); setPisoExpandido(null); }} className='bg-blue-800 p-2 rounded-lg'><ArrowLeft size={20} /></button>}
           {!centroActual && vista === 'hub' && <button onClick={() => setVista('config')} className='bg-blue-800 p-2 rounded-lg'><Key size={20} /></button>}
           <h1 className='text-lg font-bold'>{vista === 'almacen' ? 'Almacén Global' : (centroActual ? centros.find(c => c.id === centroActual)?.nombre : 'Multicentros')}</h1>
         </div>
@@ -166,8 +184,18 @@ export default function App() {
               <div className='flex items-center gap-2 text-gray-600'><Building2 size={20} /><h2 className='text-xl font-bold text-gray-800'>Multicentros</h2></div>
               <button onClick={agregarCentro} className='bg-blue-600 text-white px-3 py-2 rounded-lg flex items-center gap-1 text-sm font-bold'><Plus size={18} /> Agregar</button>
             </div>
+            
             <div className='grid grid-cols-1 gap-4'>
-              {centros.map(c => (<button key={c.id} onClick={() => { setCentroActual(c.id); setVista('dashboard'); }} className='p-6 rounded-xl shadow-sm border-l-4 border-blue-500 bg-blue-50 text-left active:bg-gray-200'><h3 className='text-lg font-bold text-gray-800'>{c.nombre}</h3><p className='text-sm text-gray-500 mt-1'>{activos.filter(a => a.centro === c.id && !a.enAlmacen).length} activos</p></button>))}
+              {/* Centros con colores diferenciados */}
+              {centros.map((c, index) => {
+                const color = COLORES_CENTROS[index % COLORES_CENTROS.length];
+                return (
+                  <button key={c.id} onClick={() => { setCentroActual(c.id); setVista('dashboard'); setPisoExpandido(null); }} className={'p-6 rounded-xl shadow-sm border-l-4 ' + color.borde + ' ' + color.fondo + ' text-left active:bg-gray-200'}>
+                    <h3 className='text-lg font-bold text-gray-800'>{c.nombre}</h3>
+                    <p className='text-sm text-gray-500 mt-1'>{activos.filter(a => a.centro === c.id && !a.enAlmacen).length} activos</p>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
@@ -213,19 +241,43 @@ export default function App() {
             </div>
 
             <div className='flex justify-between items-center mt-4 mb-2'>
-              <h3 className='font-bold text-gray-700 flex items-center gap-2'><MapPin size={18} /> Oficinas y Areas</h3>
+              <h3 className='font-bold text-gray-700 flex items-center gap-2'><MapPin size={18} /> Oficinas por Piso</h3>
               <button onClick={() => setVista('oficinas')} className='bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg flex items-center gap-1 text-sm font-bold'><Edit3 size={16} /> Gestionar</button>
             </div>
             
-            {oficinasCentro.length === 0 ? <p className='text-sm text-gray-500 bg-white p-4 rounded-lg text-center'>No hay oficinas. Toca Gestionar para agregar.</p> : (
-              <div className='grid grid-cols-2 gap-3'>
-                {oficinasCentro.map(o => {
-                  const count = datosCentro.filter(a => a.oficina === o.nombre).length;
+            {/* ACORDEÓN DE OFICINAS POR PISO */}
+            {pisosCentro.length === 0 ? <p className='text-sm text-gray-500 bg-white p-4 rounded-lg text-center'>No hay equipos asignados a pisos aún.</p> : (
+              <div className='space-y-3'>
+                {pisosCentro.map(p => {
+                  const equiposEnPiso = datosCentro.filter(a => (a.piso ? a.piso : 'Sin Piso') === p).length;
+                  // Mostrar oficinas que tienen equipos en este piso
+                  const oficinasEnPiso = oficinasCentro.filter(o => datosCentro.some(a => a.oficina === o.nombre && (a.piso ? a.piso : 'Sin Piso') === p));
+                  
                   return (
-                    <button key={o.id} onClick={() => { setOficinaFiltro(o.nombre); setPisoFiltro('Todos'); setEstadoFiltro(null); setVista('lista'); setBusqueda(''); }} className='bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-left active:bg-gray-50 hover:border-blue-400 transition'>
-                      <h4 className='font-bold text-gray-800 text-sm'>{o.nombre}</h4>
-                      <p className='text-xs text-gray-500 mt-1'>{count} equipos</p>
-                    </button>
+                    <div key={p} className='bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden'>
+                      <button onClick={() => setPisoExpandido(pisoExpandido === p ? null : p)} className='w-full p-4 flex justify-between items-center active:bg-gray-50'>
+                        <span className='font-bold text-gray-800'>Piso {p}</span>
+                        <div className='flex items-center gap-3'>
+                          <span className='text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full font-bold'>{equiposEnPiso} equipos</span>
+                          <ChevronDown size={20} className={'text-gray-400 transition-transform ' + (pisoExpandido === p ? 'rotate-180' : '')} />
+                        </div>
+                      </button>
+                      
+                      {pisoExpandido === p && (
+                        <div className='p-3 pt-0 grid grid-cols-2 gap-3'>
+                          {oficinasEnPiso.length === 0 ? <p className='col-span-2 text-center text-xs text-gray-400 py-2'>No hay oficinas con equipos en este piso.</p> :
+                          oficinasEnPiso.map(o => {
+                            const count = datosCentro.filter(a => a.oficina === o.nombre && (a.piso ? a.piso : 'Sin Piso') === p).length;
+                            return (
+                              <button key={o.id} onClick={() => { setOficinaFiltro(o.nombre); setPisoFiltro(p === 'Sin Piso' ? '' : p); setEstadoFiltro(null); setVista('lista'); setBusqueda(''); }} className='bg-gray-50 p-3 rounded-lg border border-gray-200 text-left active:bg-gray-100 hover:border-blue-400 transition'>
+                                <h4 className='font-bold text-gray-800 text-sm'>{o.nombre}</h4>
+                                <p className='text-xs text-gray-500 mt-1'>{count} equipos</p>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
@@ -267,7 +319,7 @@ export default function App() {
               <div className='bg-blue-50 p-3 rounded-xl mb-4 flex justify-between items-center border border-blue-200'>
                 <div>
                   <p className='text-xs text-blue-600 font-bold'>FILTRANDO POR:</p>
-                  <p className='text-sm font-bold text-gray-800'>{estadoFiltro ? 'Estado: ' + estadoFiltro : 'Oficina: ' + oficinaFiltro} {pisoFiltro !== 'Todos' ? '| Piso: ' + pisoFiltro : ''}</p>
+                  <p className='text-sm font-bold text-gray-800'>{estadoFiltro ? 'Estado: ' + estadoFiltro : 'Oficina: ' + oficinaFiltro} {pisoFiltro && pisoFiltro !== 'Todos' ? '| Piso: ' + pisoFiltro : ''}</p>
                 </div>
                 <button onClick={() => { setEstadoFiltro(null); setOficinaFiltro(null); setPisoFiltro('Todos'); setBusqueda(''); }} className='text-red-500 font-bold text-sm'>LIMPIAR</button>
               </div>
@@ -276,7 +328,7 @@ export default function App() {
             {oficinaFiltro && pisosDisponibles.length > 0 && (
               <div className='flex gap-2 mb-4 overflow-x-auto pb-2'>
                 {pisosDisponibles.map(p => (
-                  <button key={p} onClick={() => setPisoFiltro(p)} className={'px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap ' + (pisoFiltro === p ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border')}>Piso {p}</button>
+                  <button key={p} onClick={() => setPisoFiltro(p)} className={'px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap ' + (pisoFiltro === p ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border')}>{p === 'Todos' ? 'Todos' : 'Piso ' + p}</button>
                 ))}
               </div>
             )}
@@ -333,17 +385,14 @@ export default function App() {
           </div>
         )}
 
-        {/* Se pasó la lista de centros y oficinas al formulario para permitir reasignación */}
         {vista === 'formulario' && <FormularioActivo activo={editando} guardarDatos={guardarDatos} setVista={setVista} getNextNumber={getNextNumber} centroActual={centroActual} oficinas={oficinas} centros={centros} setMsg={setMsg} />}
-        
         {vista === 'config' && <ConfigVista customPass={customPass} setCustomPass={setCustomPass} setVista={setVista} setMsg={setMsg} setActivos={setActivos} setCentros={setCentros} setOficinas={setOficinas} />}
       </div>
 
-      {/* La barra inferior solo aparece si estamos en un multicentro */}
       {centroActual && vista !== 'formulario' && (
         <div className='fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]'>
           <button onClick={() => setVista('dashboard')} className={'flex flex-col items-center text-xs ' + (vista === 'dashboard' ? 'text-blue-600' : 'text-gray-400')}><FileText size={24} /><span>Inicio</span></button>
-          <button onClick={() => {setVista('lista'); setEstadoFiltro(null); setOficinaFiltro(null);}} className={'flex flex-col items-center text-xs ' + (vista === 'lista' ? 'text-blue-600' : 'text-gray-400')}><Search size={24} /><span>Inventario</span></button>
+          <button onClick={() => {setVista('lista'); setEstadoFiltro(null); setOficinaFiltro(null); setPisoFiltro('Todos');}} className={'flex flex-col items-center text-xs ' + (vista === 'lista' ? 'text-blue-600' : 'text-gray-400')}><Search size={24} /><span>Inventario</span></button>
           <button onClick={() => setVista('reporte')} className={'flex flex-col items-center text-xs ' + (vista === 'reporte' ? 'text-blue-600' : 'text-gray-400')}><FileText size={24} /><span>Reportes</span></button>
         </div>
       )}
@@ -434,14 +483,12 @@ function ConfigVista({ customPass, setCustomPass, setVista, setMsg, setActivos, 
 function FormularioActivo({ activo, guardarDatos, setVista, getNextNumber, centroActual, oficinas, centros, setMsg }) {
   const [form, setForm] = useState(activo || { id: Date.now().toString(), centro: centroActual, numero: getNextNumber(), tipo: 'Laptop', subtipoImpresora: 'Impresora Normal', nombreEquipo: '', marca: '', modelo: '', codigoActivo: '', numeroSerie: '', procesador: '', generacion: '', ram: '', tipoDisco: 'SSD M.2', capacidadDisco: '', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: '', mac: '', ip: '', estado: 'Activo', enAlmacen: false, oficina: '', piso: '', cargo: '', numeroEmpleado: '', personaAsignada: '', nombreResponsable: '', fechaAsignacion: '', marcaCPU: '', modeloCPU: '', codigoActivoCPU: '', numeroSerieCPU: '', marcaMonitor: '', modeloMonitor: '', codigoActivoMonitor: '', conexionImpresora: 'En Red', notas: '' });
 
-  // Si estamos en el almacén (centroActual es null) o reasignando, necesitamos las oficinas del centro seleccionado en el formulario
   const oficinasDestino = oficinas[form.centro] || [];
 
   const h = (e) => {
     const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     let newForm = { ...form, [e.target.name]: val };
     
-    // Lógica de limpieza automática al enviar al Almacén
     if (e.target.name === 'enAlmacen' && val === true) {
       newForm = {
         ...newForm,
@@ -464,7 +511,6 @@ function FormularioActivo({ activo, guardarDatos, setVista, getNextNumber, centr
     const datos = JSON.parse(localStorage.getItem('activos_fijos_v73') || '[]'); 
     if (activo) { guardarDatos(datos.map(a => a.id === activo.id ? form : a)); } 
     else { guardarDatos([...datos, form]); } 
-    // Si estábamos en el almacén, volvemos a la vista de almacén, si no, a la lista
     setVista(centroActual ? 'lista' : 'almacen'); 
   };
   
@@ -486,7 +532,6 @@ function FormularioActivo({ activo, guardarDatos, setVista, getNextNumber, centr
       <form onSubmit={handleSubmit} className='bg-white p-4 rounded-xl shadow-sm space-y-4'>
         <h2 className='font-bold text-lg text-gray-800 border-b pb-2'>{activo ? 'Editar Nro. ' + form.numero : 'Nuevo Registro'}</h2>
         
-        {/* SELECTOR DE MULTICENTRO (Visible si no hay centro actual, ej: desde el Almacén) */}
         {!centroActual && (
           <div className='bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400'>
             <label className='block text-xs font-bold text-blue-600 mb-1'>ASIGNAR A MULTICENTRO</label>
@@ -502,9 +547,9 @@ function FormularioActivo({ activo, guardarDatos, setVista, getNextNumber, centr
           <div><label className='block text-xs font-bold text-gray-500 mb-1'>TIPO EQUIPO</label><select name='tipo' value={form.tipo} onChange={h} className='w-full p-3 border border-gray-300 rounded-lg bg-gray-50'><option>Laptop</option><option>Computadora de Escritorio</option><option>Impresora</option><option>Switch</option></select></div>
         </div>
 
-        {form.tipo === 'Laptop' && (<><div className='bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400 space-y-3'><p className='text-xs font-bold text-blue-600'>DATOS LAPTOP</p><div className='grid grid-cols-2 gap-3'><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Nombre Maquina</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca</label><input name='marca' value={form.marca||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF</label><input name='codigoActivo' value={form.codigoActivo||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Numero de Serie</label><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></div></div><CamposSpecs form={form} h={h} /><CamposUbicacion form={form} h={h} oficinasDestino={oficinasDestino} OficinaSelect={OficinaSelect} /></>)}
+        {form.tipo === 'Laptop' && (<><div className='bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400 space-y-3'><p className='text-xs font-bold text-blue-600'>DATOS LAPTOP</p><div className='grid grid-cols-2 gap-3'><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Nombre Maquina</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca</label><input name='marca' value={form.marca||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF</label><input name='codigoActivo' value={form.codigoActivo||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Numero de Serie</label><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></div></div><CamposSpecs form={form} h={h} /><CamposUbicacion form={form} h={h} OficinaSelect={OficinaSelect} /></>)}
 
-        {form.tipo === 'Computadora de Escritorio' && (<><div className='bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400 space-y-3'><p className='text-xs font-bold text-blue-600'>DATOS CPU</p><div className='grid grid-cols-2 gap-3'><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Nombre Equipo</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca CPU</label><input name='marcaCPU' value={form.marcaCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo CPU</label><input name='modeloCPU' value={form.modeloCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF CPU</label><input name='codigoActivoCPU' value={form.codigoActivoCPU||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Serie CPU</label><input name='numeroSerieCPU' value={form.numeroSerieCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></div></div><div className='bg-yellow-50 p-3 rounded-lg border-l-4 border-yellow-400 space-y-3'><p className='text-xs font-bold text-yellow-700'>DATOS MONITOR</p><div className='grid grid-cols-2 gap-3'><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca Monitor</label><input name='marcaMonitor' value={form.marcaMonitor||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo Monitor</label><input name='modeloMonitor' value={form.modeloMonitor||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF Monitor</label><input name='codigoActivoMonitor' value={form.codigoActivoMonitor||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></div></div><CamposSpecs form={form} h={h} /><CamposUbicacion form={form} h={h} oficinasDestino={oficinasDestino} OficinaSelect={OficinaSelect} /></>)}
+        {form.tipo === 'Computadora de Escritorio' && (<><div className='bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400 space-y-3'><p className='text-xs font-bold text-blue-600'>DATOS CPU</p><div className='grid grid-cols-2 gap-3'><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Nombre Equipo</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca CPU</label><input name='marcaCPU' value={form.marcaCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo CPU</label><input name='modeloCPU' value={form.modeloCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF CPU</label><input name='codigoActivoCPU' value={form.codigoActivoCPU||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Serie CPU</label><input name='numeroSerieCPU' value={form.numeroSerieCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></div></div><div className='bg-yellow-50 p-3 rounded-lg border-l-4 border-yellow-400 space-y-3'><p className='text-xs font-bold text-yellow-700'>DATOS MONITOR</p><div className='grid grid-cols-2 gap-3'><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca Monitor</label><input name='marcaMonitor' value={form.marcaMonitor||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo Monitor</label><input name='modeloMonitor' value={form.modeloMonitor||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF Monitor</label><input name='codigoActivoMonitor' value={form.codigoActivoMonitor||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></div></div><CamposSpecs form={form} h={h} /><CamposUbicacion form={form} h={h} OficinaSelect={OficinaSelect} /></>)}
 
         {form.tipo === 'Impresora' && (<div className='bg-orange-50 p-3 rounded-lg border-l-4 border-orange-400 space-y-3'><p className='text-xs font-bold text-orange-600'>DATOS IMPRESORA / SCANNER</p><div className='grid grid-cols-2 gap-3'><div><label className='block text-xs font-medium text-gray-700 mb-1'>Subtipo</label><select name='subtipoImpresora' value={form.subtipoImpresora||'Impresora Normal'} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option>Impresora Normal</option><option>Multifuncional</option><option>Scanner</option></select></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Estado</label><select name='estado' value={form.estado} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option>Activo</option><option>En Mantenimiento</option><option>Danado</option></select></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca</label><input name='marca' value={form.marca||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Serie</label><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF</label><input name='codigoActivo' value={form.codigoActivo||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Conexion</label><select name='conexionImpresora' value={form.conexionImpresora||'En Red'} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option>En Red</option><option>Por USB</option></select></div>{form.conexionImpresora === 'En Red' && <><div><label className='block text-xs font-medium text-gray-700 mb-1'>MAC</label><input name='mac' value={form.mac||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>IP</label><input name='ip' value={form.ip||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></>}<OficinaSelect etiqueta='Oficina / Area' req={true} /><div><label className='block text-xs font-medium text-gray-700 mb-1'>Piso</label><input name='piso' value={form.piso||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Fecha Asignacion</label><input type='date' name='fechaAsignacion' value={form.fechaAsignacion||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></div></div>)}
 
@@ -541,7 +586,7 @@ function CamposSpecs({ form, h }) {
   );
 }
 
-function CamposUbicacion({ form, h, oficinasDestino, OficinaSelect }) {
+function CamposUbicacion({ form, h, OficinaSelect }) {
   return (
     <div className='bg-green-50 p-3 rounded-lg border-l-4 border-green-400 space-y-3'>
       <p className='text-xs font-bold text-green-700'>UBICACION Y ASIGNACION</p>
