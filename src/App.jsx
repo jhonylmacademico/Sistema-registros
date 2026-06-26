@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Monitor, Printer, Network, Laptop, LogOut, Plus, Search, FileText, ShieldCheck, Save, Trash2, ArrowLeft, Download, Key, Building2, Warehouse, Edit3, MapPin, CheckCircle } from 'lucide-react';
+import { Monitor, Printer, Network, Laptop, LogOut, Plus, Search, FileText, ShieldCheck, Save, Trash2, ArrowLeft, Download, Key, Building2, Warehouse, Edit3, MapPin, CheckCircle, Upload } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { Filesystem, Directory, Share } from '@capacitor/filesystem';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 
 const CENTROS_DEFAULT = [
   { id: 'sucre', nombre: 'Multicentro Sucre' },
@@ -23,8 +24,6 @@ const datosIniciales = [
 ];
 
 const OFICINAS_DEFAULT = { sucre: [{ id: 'conta', nombre: 'Contabilidad' }, { id: 'rrhh', nombre: 'Recursos Humanos' }] };
-
-const arrayBufferToBase64 = (buffer) => { let binary = ''; const bytes = new Uint8Array(buffer); for (let i = 0; i < bytes.byteLength; i++) { binary += String.fromCharCode(bytes[i]); } return window.btoa(binary); };
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -71,8 +70,8 @@ export default function App() {
       reader.onload = async () => {
         const base64 = reader.result.split(',')[1];
         await Filesystem.writeFile({ path: nombreArchivo, data: base64, directory: Directory.Cache });
-        const uri = 'file://' + (await Filesystem.getUri({ path: nombreArchivo, directory: Directory.Cache })).uri;
-        await Share.share({ url: uri });
+        const uriResult = await Filesystem.getUri({ path: nombreArchivo, directory: Directory.Cache });
+        await Share.share({ url: uriResult.uri });
         setMsg('Abre el menu y elige "Guardar en archivos" o "PDF Viewer"'); setCargando(false);
       };
       reader.readAsDataURL(blob);
@@ -98,7 +97,6 @@ export default function App() {
     doc.setFontSize(16); doc.text('Reporte de Activos Fijos', 14, 15);
     doc.setFontSize(10); doc.text('Centro: ' + (centros.find(c=>c.id===centroActual)?.nombre || ''), 14, 22);
     doc.autoTable({ startY: 28, head: [headers], body: rows, styles: { fontSize: 8 }, headStyles: { fillColor: [30, 58, 95] } });
-    doc.save('Reporte_Activos.pdf');
     const pdfBlob = doc.output('blob');
     guardarArchivoNativo(pdfBlob, 'Reporte_Activos.pdf');
   };
@@ -290,7 +288,7 @@ export default function App() {
         )}
 
         {centroActual && vista === 'formulario' && <FormularioActivo activo={editando} guardarDatos={guardarDatos} setVista={setVista} getNextNumber={getNextNumber} centroActual={centroActual} oficinasCentro={oficinasCentro} />}
-        {vista === 'config' && <ConfigVista customPass={customPass} setCustomPass={setCustomPass} setVista={setVista} setMsg={setMsg} />}
+        {vista === 'config' && <ConfigVista customPass={customPass} setCustomPass={setCustomPass} setVista={setVista} setMsg={setMsg} setActivos={setActivos} setCentros={setCentros} setOficinas={setOficinas} />}
       </div>
 
       {centroActual && (
@@ -304,10 +302,84 @@ export default function App() {
   );
 }
 
-function ConfigVista({ customPass, setCustomPass, setVista, setMsg }) {
+function ConfigVista({ customPass, setCustomPass, setVista, setMsg, setActivos, setCentros, setOficinas }) {
   const [nueva, setNueva] = useState('');
-  const h = (e) => { e.preventDefault(); if (nueva.length < 4) { alert('Minimo 4 caracteres'); return; } setCustomPass(nueva); localStorage.setItem('app_pass_v73', nueva); setMsg('Contrasena actualizada'); setTimeout(() => setMsg(''), 3000); setVista('hub'); };
-  return (<div className='bg-white p-6 rounded-xl shadow-sm'><button onClick={() => setVista('hub')} className='flex items-center text-blue-600 font-bold mb-4'><ArrowLeft size={20} /> Volver</button><h2 className='text-xl font-bold text-gray-800 mb-4 flex items-center gap-2'><Key size={24} /> Cambiar Contrasena</h2><form onSubmit={h} className='space-y-4'><input type='password' value={nueva} onChange={e => setNueva(e.target.value)} required className='w-full p-3 border border-gray-300 rounded-lg bg-gray-50' placeholder='Nueva contrasena' /><button type='submit' className='w-full bg-blue-600 text-white p-3 rounded-lg font-bold'>Guardar</button></form></div>);
+  
+  const h = (e) => { 
+    e.preventDefault(); 
+    if (nueva.length < 4) { alert('Minimo 4 caracteres'); return; } 
+    setCustomPass(nueva); 
+    localStorage.setItem('app_pass_v73', nueva); 
+    setMsg('Contrasena actualizada'); 
+    setTimeout(() => setMsg(''), 3000); 
+    setVista('hub'); 
+  };
+
+  const exportarRespaldo = () => {
+    const respaldo = {
+      activos: JSON.parse(localStorage.getItem('activos_fijos_v73') || '[]'),
+      centros: JSON.parse(localStorage.getItem('mis_centros_v73') || '[]'),
+      oficinas: JSON.parse(localStorage.getItem('mis_oficinas_v73') || '{}'),
+      pass: localStorage.getItem('app_pass_v73')
+    };
+    const json = JSON.stringify(respaldo, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'respaldo_activos.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    setMsg('Respaldo descargado'); 
+    setTimeout(()=>setMsg(''), 3000);
+  };
+
+  const importarRespaldo = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target.result);
+        if (data.activos) { localStorage.setItem('activos_fijos_v73', JSON.stringify(data.activos)); setActivos(data.activos); }
+        if (data.centros) { localStorage.setItem('mis_centros_v73', JSON.stringify(data.centros)); setCentros(data.centros); }
+        if (data.oficinas) { localStorage.setItem('mis_oficinas_v73', JSON.stringify(data.oficinas)); setOficinas(data.oficinas); }
+        if (data.pass) { localStorage.setItem('app_pass_v73', data.pass); setCustomPass(data.pass); }
+        setMsg('Respaldo restaurado exitosamente'); 
+        setTimeout(()=>setMsg(''), 3000);
+        setVista('hub');
+      } catch (err) {
+        alert('Error: El archivo seleccionado no es un respaldo valido.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  return (
+    <div className='bg-white p-6 rounded-xl shadow-sm space-y-6'>
+      <button onClick={() => setVista('hub')} className='flex items-center text-blue-600 font-bold mb-2'><ArrowLeft size={20} /> Volver</button>
+      
+      <div>
+        <h2 className='text-xl font-bold text-gray-800 mb-4 flex items-center gap-2'><Key size={24} /> Cambiar Contrasena</h2>
+        <form onSubmit={h} className='space-y-4'>
+          <input type='password' value={nueva} onChange={e => setNueva(e.target.value)} required className='w-full p-3 border border-gray-300 rounded-lg bg-gray-50' placeholder='Nueva contrasena' />
+          <button type='submit' className='w-full bg-blue-600 text-white p-3 rounded-lg font-bold'>Guardar Contrasena</button>
+        </form>
+      </div>
+
+      <div className='border-t pt-6'>
+        <h2 className='text-xl font-bold text-gray-800 mb-4 flex items-center gap-2'><Save size={24} /> Respaldo de Datos</h2>
+        <p className='text-sm text-gray-500 mb-4'>Exporta toda tu base de datos en un archivo JSON para proteger tu informacion. Si cambias de celular o borras los datos, puedes restaurarlo aqui mismo.</p>
+        <div className='grid grid-cols-2 gap-4'>
+          <button onClick={exportarRespaldo} className='bg-green-600 text-white p-4 rounded-xl font-bold flex flex-col items-center gap-2'><Download size={24} /> Exportar</button>
+          <label className='bg-yellow-500 text-white p-4 rounded-xl font-bold flex flex-col items-center gap-2 cursor-pointer'>
+            <Upload size={24} /> Importar
+            <input type='file' accept='.json' onChange={importarRespaldo} className='hidden' />
+          </label>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function FormularioActivo({ activo, guardarDatos, setVista, getNextNumber, centroActual, oficinasCentro }) {
