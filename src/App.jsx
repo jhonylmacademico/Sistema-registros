@@ -26,6 +26,7 @@ const COLORES_CENTROS = [
 
 const TIPOS_COMPUTO = ['Laptop', 'Computadora de Escritorio'];
 const TIPOS_RED = ['Impresora', 'Switch'];
+const SUBTIPOS_REPORTE = ['Laptop', 'Computadora de Escritorio', 'Impresora Normal', 'Multifuncional', 'Scanner', 'Switch'];
 
 const CAMPOS = [
   { key: 'numero', label: 'Nro. Registro' }, { key: 'tipo', label: 'Tipo Equipo' }, { key: 'nombreEquipo', label: 'Nombre Equipo' }, { key: 'marca', label: 'Marca' }, { key: 'marcaCPU', label: 'Marca CPU' }, { key: 'procesador', label: 'Procesador' }, { key: 'ram', label: 'RAM' }, { key: 'numeroSerie', label: 'Nro. Serie' }, { key: 'estado', label: 'Estado' }, { key: 'enAlmacen', label: 'En Almacen' }, { key: 'oficina', label: 'Oficina' }, { key: 'piso', label: 'Piso' }, { key: 'personaAsignada', label: 'Persona Asignada' }, { key: 'numeroEmpleado', label: 'Nro. Empleado' }
@@ -38,6 +39,7 @@ const datosIniciales = [
 ];
 
 const OFICINAS_DEFAULT = { sucre: [{ id: 'conta', nombre: 'Contabilidad' }, { id: 'rrhh', nombre: 'Recursos Humanos' }] };
+const PISOS_DEFAULT = ['1', '2'];
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -47,12 +49,14 @@ export default function App() {
   const [vista, setVista] = useState('hub');
   const [centroActual, setCentroActual] = useState(null);
   const [categoriaVista, setCategoriaVista] = useState('computo');
+  const [subtipoFiltro, setSubtipoFiltro] = useState('Todos');
   const [oficinaFiltro, setOficinaFiltro] = useState(null);
   const [pisoFiltro, setPisoFiltro] = useState('Todos');
   const [estadoFiltro, setEstadoFiltro] = useState(null);
   const [activos, setActivos] = useState([]);
   const [centros, setCentros] = useState([]);
   const [oficinas, setOficinas] = useState({});
+  const [pisos, setPisos] = useState([]);
   const [editando, setEditando] = useState(null);
   const [busqueda, setBusqueda] = useState('');
   const [msg, setMsg] = useState('');
@@ -60,35 +64,46 @@ export default function App() {
   const [pisoExpandido, setPisoExpandido] = useState(null);
   const [logo, setLogo] = useState(null);
   const [camposSeleccionados, setCamposSeleccionados] = useState(['numero', 'tipo', 'nombreEquipo', 'procesador', 'ram', 'estado', 'oficina', 'personaAsignada']);
+  const [catsReporte, setCatsReporte] = useState([...SUBTIPOS_REPORTE]);
 
   useEffect(() => {
     const c = localStorage.getItem('mis_centros_v73'); if (c) setCentros(JSON.parse(c)); else { setCentros(CENTROS_DEFAULT); localStorage.setItem('mis_centros_v73', JSON.stringify(CENTROS_DEFAULT)); }
     const d = localStorage.getItem('activos_fijos_v73'); if (d) setActivos(JSON.parse(d)); else { setActivos(datosIniciales); localStorage.setItem('activos_fijos_v73', JSON.stringify(datosIniciales)); }
     const o = localStorage.getItem('mis_oficinas_v73'); if (o) setOficinas(JSON.parse(o)); else { setOficinas(OFICINAS_DEFAULT); localStorage.setItem('mis_oficinas_v73', JSON.stringify(OFICINAS_DEFAULT)); }
-    const p = localStorage.getItem('app_pass_v73'); if (p) setCustomPass(p);
+    const p = localStorage.getItem('mis_pisos_v73'); if (p) setPisos(JSON.parse(p)); else { setPisos(PISOS_DEFAULT); localStorage.setItem('mis_pisos_v73', JSON.stringify(PISOS_DEFAULT)); }
+    const passLs = localStorage.getItem('app_pass_v73'); if (passLs) setCustomPass(passLs);
     const l = localStorage.getItem('logo_empresa_v73'); if (l) setLogo(l);
   }, []);
 
   const guardarDatos = (n) => { setActivos(n); localStorage.setItem('activos_fijos_v73', JSON.stringify(n)); };
   const guardarOficinas = (n) => { setOficinas(n); localStorage.setItem('mis_oficinas_v73', JSON.stringify(n)); };
+  const guardarPisos = (n) => { setPisos(n); localStorage.setItem('mis_pisos_v73', JSON.stringify(n)); };
   const handleLogin = (e) => { e.preventDefault(); if (user === 'admin' && pass === customPass) setIsLoggedIn(true); };
   const getNextNumber = () => { const d = JSON.parse(localStorage.getItem('activos_fijos_v73') || '[]'); return (d.reduce((m, a) => Math.max(m, parseInt(a.numero || '0')), 0) + 1).toString().padStart(4, '0'); };
   const agregarCentro = () => { const n = prompt('Nombre del nuevo Multicentro:'); if (n && n.trim()) { const nc = [...centros, { id: n.trim().toLowerCase().replace(/\s+/g, '_'), nombre: n.trim() }]; setCentros(nc); localStorage.setItem('mis_centros_v73', JSON.stringify(nc)); } };
   const agregarOficina = () => { const n = prompt('Nombre de la nueva oficina:'); if (n && n.trim()) { const act = oficinas[centroActual] || []; const nuevas = [...act, { id: n.trim().toLowerCase().replace(/\s+/g, '_'), nombre: n.trim() }]; guardarOficinas({...oficinas, [centroActual]: nuevas}); setMsg('Oficina agregada'); setTimeout(()=>setMsg(''), 2000); } };
+  const agregarPiso = () => { const n = prompt('Nombre del nuevo piso (Ej: 1, 2, Sotano):'); if (n && n.trim()) { if (!pisos.includes(n.trim())) { guardarPisos([...pisos, n.trim()]); setMsg('Piso agregado'); setTimeout(()=>setMsg(''), 2000); } else { alert('Ese piso ya existe'); } } };
 
   const limpiarFormulario = () => { setEditando(null); setVista('formulario'); };
   const getValor = (a, key) => { if (key === 'enAlmacen') return a.enAlmacen ? 'SI' : 'NO'; return a[key] || '-'; };
   
+  // Obtiene el subtipo real para filtros y reportes
+  const getSubtipo = (a) => {
+    if (a.tipo === 'Impresora') return a.subtipoImpresora || 'Impresora Normal';
+    return a.tipo;
+  };
+
   const handleCheck = (key) => { setCamposSeleccionados(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]); };
   const seleccionarTodosCampos = () => setCamposSeleccionados(CAMPOS.map(c => c.key));
   const limpiarCampos = () => setCamposSeleccionados([]);
+  const handleCatReporte = (cat) => { setCatsReporte(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]); };
 
   const handleVolver = () => {
     if (vista === 'formulario') {
       if ((editando && editando.enAlmacen) || !centroActual) setVista('almacen');
       else setVista('lista');
     } else if (vista === 'lista' || vista === 'reporte' || vista === 'oficinas') {
-      setVista('dashboard'); setEstadoFiltro(null); setOficinaFiltro(null); setPisoFiltro('Todos'); setBusqueda('');
+      setVista('dashboard'); setEstadoFiltro(null); setOficinaFiltro(null); setPisoFiltro('Todos'); setBusqueda(''); setSubtipoFiltro('Todos');
     } else if (vista === 'dashboard' || vista === 'almacen' || vista === 'config') {
       setVista('hub'); setCentroActual(null); setPisoExpandido(null);
     }
@@ -113,50 +128,68 @@ export default function App() {
   };
 
   const exportarCSV = () => {
-    const datosC = activos.filter(a => a.centro === centroActual && (categoriaVista === 'computo' ? TIPOS_COMPUTO.includes(a.tipo) : TIPOS_RED.includes(a.tipo)));
+    const datosCentro = activos.filter(a => a.centro === centroActual && !a.enAlmacen);
     const headers = camposSeleccionados.map(k => CAMPOS.find(c=>c.key===k)?.label || k);
-    const rows = datosC.map(a => camposSeleccionados.map(k => getValor(a, k)));
-    
-    // Encabezado corporativo para Excel
     const fechaGen = new Date().toLocaleDateString();
-    const linea1 = 'REPORTE DE ACTIVOS FIJOS';
-    const linea2 = 'Centro: ' + (centros.find(c=>c.id===centroActual)?.nombre || '') + ' | Categoria: ' + (categoriaVista === 'computo' ? 'Computo' : 'Red y Perifericos');
-    const linea3 = 'Generado el: ' + fechaGen;
-    const separador = '---------------------------------------------------';
     
-    const csv = '\uFEFF' + [linea1, linea2, linea3, separador, headers.join(';'), ...rows.map(r => r.map(c => '\x22' + String(c).replace(/\x22/g, '\x22\x22') + '\x22').join(';'))].join('\n');
+    let csv = '\uFEFF' + 'REPORTE DE ACTIVOS FIJOS\nCentro: ' + (centros.find(c=>c.id===centroActual)?.nombre || '') + '\nGenerado el: ' + fechaGen + '\n---------------------------------------------------\n';
+    
+    catsReporte.forEach(cat => {
+      const datosCat = datosCentro.filter(a => getSubtipo(a) === cat);
+      if (datosCat.length > 0) {
+        csv += '\n=== ' + cat.toUpperCase() + ' ===\n';
+        csv += headers.join(';') + '\n';
+        datosCat.forEach(a => {
+          const row = camposSeleccionados.map(k => getValor(a, k));
+          csv += row.map(c => '\x22' + String(c).replace(/\x22/g, '\x22\x22') + '\x22').join(';') + '\n';
+        });
+      }
+    });
+    
     guardarArchivoNativo(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), 'Reporte_Activos.csv');
   };
 
   const exportarPDF = () => {
-    const datosC = activos.filter(a => a.centro === centroActual && (categoriaVista === 'computo' ? TIPOS_COMPUTO.includes(a.tipo) : TIPOS_RED.includes(a.tipo)));
+    const datosCentro = activos.filter(a => a.centro === centroActual && !a.enAlmacen);
     const headers = camposSeleccionados.map(k => CAMPOS.find(c=>c.key===k)?.label || k);
-    const rows = datosC.map(a => camposSeleccionados.map(k => String(getValor(a, k))));
-    const doc = new jsPDF('l', 'mm', 'a4'); // Horizontal
+    const doc = new jsPDF('l', 'mm', 'a4'); 
     
-    // Logo
     if (logo) {
       try { doc.addImage(logo, 'PNG', 14, 10, 30, 15); } catch (e) { console.error('Error al agregar logo', e); }
     }
     
-    // Títulos
     doc.setFontSize(18); doc.setTextColor(30, 58, 95); doc.text('Reporte de Activos Fijos', 50, 18);
     doc.setFontSize(10); doc.setTextColor(100); 
-    doc.text('Centro: ' + (centros.find(c=>c.id===centroActual)?.nombre || '') + '  |  Categoria: ' + (categoriaVista === 'computo' ? 'Computo' : 'Red y Perifericos'), 50, 24);
+    doc.text('Centro: ' + (centros.find(c=>c.id===centroActual)?.nombre || ''), 50, 24);
     doc.text('Generado: ' + new Date().toLocaleDateString(), 250, 18);
     
-    // Tabla con estilos corporativos
-    doc.autoTable({ 
-      startY: 30, 
-      head: [headers], 
-      body: rows, 
-      styles: { fontSize: 8, cellPadding: 2, textColor: [50, 50, 50] }, 
-      headStyles: { fillColor: [30, 58, 95], textColor: 255, fontStyle: 'bold' }, 
-      alternateRowStyles: { fillColor: [240, 245, 250] },
-      margin: { left: 14, right: 14 } 
+    let currentY = 30;
+    
+    catsReporte.forEach(cat => {
+      const datosCat = datosCentro.filter(a => getSubtipo(a) === cat);
+      if (datosCat.length > 0) {
+        const rows = datosCat.map(a => camposSeleccionados.map(k => String(getValor(a, k))));
+        
+        if (currentY > 160) { doc.addPage(); currentY = 20; }
+        
+        doc.setFontSize(12); doc.setTextColor(30, 58, 95); 
+        doc.text(cat + ' (' + datosCat.length + ' equipos)', 14, currentY);
+        currentY += 4;
+        
+        doc.autoTable({ 
+          startY: currentY, 
+          head: [headers], 
+          body: rows, 
+          styles: { fontSize: 8, cellPadding: 2, textColor: [50, 50, 50] }, 
+          headStyles: { fillColor: [30, 58, 95], textColor: 255, fontStyle: 'bold' }, 
+          alternateRowStyles: { fillColor: [240, 245, 250] },
+          margin: { left: 14, right: 14 } 
+        });
+        
+        currentY = doc.lastAutoTable.finalY + 10;
+      }
     });
     
-    // Pie de página
     const pageCount = doc.internal.getNumberOfPages();
     for(let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
@@ -202,6 +235,7 @@ export default function App() {
     datosFinales = datosFinales.filter(a => a.oficina === oficinaFiltro);
     if (pisoFiltro !== 'Todos') datosFinales = datosFinales.filter(a => a.piso === pisoFiltro);
   }
+  if (subtipoFiltro !== 'Todos') datosFinales = datosFinales.filter(a => getSubtipo(a) === subtipoFiltro);
 
   const pisosDisponibles = oficinaFiltro ? ['Todos', ...new Set(datosCentro.filter(a => a.oficina === oficinaFiltro && a.piso).map(a => a.piso))] : [];
   const activosFiltrados = datosFinales.filter(a => (a.marca||'').toLowerCase().includes(busqueda.toLowerCase()) || (a.nombreEquipo||'').toLowerCase().includes(busqueda.toLowerCase()) || (a.personaAsignada||'').toLowerCase().includes(busqueda.toLowerCase()) || (a.numero||'').includes(busqueda));
@@ -289,20 +323,20 @@ export default function App() {
         {centroActual && vista === 'dashboard' && (
           <div className='space-y-4'>
             <div className='flex bg-gray-200 p-1 rounded-xl'>
-              <button onClick={() => { setCategoriaVista('computo'); setEstadoFiltro(null); setOficinaFiltro(null); }} className={'flex-1 p-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 ' + (categoriaVista === 'computo' ? 'bg-white text-blue-600 shadow' : 'text-gray-500')}>
+              <button onClick={() => { setCategoriaVista('computo'); setEstadoFiltro(null); setOficinaFiltro(null); setSubtipoFiltro('Todos'); }} className={'flex-1 p-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 ' + (categoriaVista === 'computo' ? 'bg-white text-blue-600 shadow' : 'text-gray-500')}>
                 <Laptop size={18} /> Cómputo ({activos.filter(a => a.centro === centroActual && !a.enAlmacen && TIPOS_COMPUTO.includes(a.tipo)).length})
               </button>
-              <button onClick={() => { setCategoriaVista('red'); setEstadoFiltro(null); setOficinaFiltro(null); }} className={'flex-1 p-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 ' + (categoriaVista === 'red' ? 'bg-white text-blue-600 shadow' : 'text-gray-500')}>
+              <button onClick={() => { setCategoriaVista('red'); setEstadoFiltro(null); setOficinaFiltro(null); setSubtipoFiltro('Todos'); }} className={'flex-1 p-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 ' + (categoriaVista === 'red' ? 'bg-white text-blue-600 shadow' : 'text-gray-500')}>
                 <Printer size={18} /> Red y Periféricos ({activos.filter(a => a.centro === centroActual && !a.enAlmacen && TIPOS_RED.includes(a.tipo)).length})
               </button>
             </div>
 
             <h2 className='text-xl font-bold text-gray-800 mb-2'>Resumen General</h2>
             <div className='grid grid-cols-2 gap-3'>
-              <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro(null); setVista('lista'); }} className='bg-white p-4 rounded-xl shadow-sm border-l-4 border-gray-500 text-left'><p className='text-gray-500 text-xs'>Total Equipos</p><p className='text-2xl font-bold text-gray-800'>{datosCentro.length}</p></button>
-              <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro('Activo'); setVista('lista'); }} className='bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500 text-left'><p className='text-gray-500 text-xs'>Activos</p><p className='text-2xl font-bold text-green-600'>{datosCentro.filter(a=>a.estado==='Activo').length}</p></button>
-              <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro('Danado'); setVista('lista'); }} className='bg-white p-4 rounded-xl shadow-sm border-l-4 border-red-500 text-left'><p className='text-gray-500 text-xs'>Danados</p><p className='text-2xl font-bold text-red-600'>{datosCentro.filter(a=>a.estado==='Danado').length}</p></button>
-              <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro('En Mantenimiento'); setVista('lista'); }} className='bg-white p-4 rounded-xl shadow-sm border-l-4 border-yellow-500 text-left'><p className='text-gray-500 text-xs'>Mantenimiento</p><p className='text-2xl font-bold text-yellow-600'>{datosCentro.filter(a=>a.estado==='En Mantenimiento').length}</p></button>
+              <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro(null); setSubtipoFiltro('Todos'); setVista('lista'); }} className='bg-white p-4 rounded-xl shadow-sm border-l-4 border-gray-500 text-left'><p className='text-gray-500 text-xs'>Total Equipos</p><p className='text-2xl font-bold text-gray-800'>{datosCentro.length}</p></button>
+              <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro('Activo'); setSubtipoFiltro('Todos'); setVista('lista'); }} className='bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500 text-left'><p className='text-gray-500 text-xs'>Activos</p><p className='text-2xl font-bold text-green-600'>{datosCentro.filter(a=>a.estado==='Activo').length}</p></button>
+              <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro('Danado'); setSubtipoFiltro('Todos'); setVista('lista'); }} className='bg-white p-4 rounded-xl shadow-sm border-l-4 border-red-500 text-left'><p className='text-gray-500 text-xs'>Danados</p><p className='text-2xl font-bold text-red-600'>{datosCentro.filter(a=>a.estado==='Danado').length}</p></button>
+              <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro('En Mantenimiento'); setSubtipoFiltro('Todos'); setVista('lista'); }} className='bg-white p-4 rounded-xl shadow-sm border-l-4 border-yellow-500 text-left'><p className='text-gray-500 text-xs'>Mantenimiento</p><p className='text-2xl font-bold text-yellow-600'>{datosCentro.filter(a=>a.estado==='En Mantenimiento').length}</p></button>
             </div>
 
             <div className='flex justify-between items-center mt-4 mb-2'>
@@ -330,7 +364,7 @@ export default function App() {
                           oficinasEnPiso.map(o => {
                             const count = datosCentro.filter(a => a.oficina === o.nombre && (a.piso ? a.piso : 'Sin Piso') === p).length;
                             return (
-                              <button key={o.id} onClick={() => { setOficinaFiltro(o.nombre); setPisoFiltro(p === 'Sin Piso' ? '' : p); setEstadoFiltro(null); setVista('lista'); setBusqueda(''); }} className='bg-gray-50 p-3 rounded-lg border border-gray-200 text-left active:bg-gray-100 hover:border-blue-400 transition'>
+                              <button key={o.id} onClick={() => { setOficinaFiltro(o.nombre); setPisoFiltro(p === 'Sin Piso' ? '' : p); setEstadoFiltro(null); setSubtipoFiltro('Todos'); setVista('lista'); setBusqueda(''); }} className='bg-gray-50 p-3 rounded-lg border border-gray-200 text-left active:bg-gray-100 hover:border-blue-400 transition'>
                                 <h4 className='font-bold text-gray-800 text-sm'>{o.nombre}</h4>
                                 <p className='text-xs text-gray-500 mt-1'>{count} equipos</p>
                               </button>
@@ -349,12 +383,32 @@ export default function App() {
         {centroActual && vista === 'oficinas' && (
           <div>
             <button onClick={handleVolver} className='flex items-center text-blue-600 font-bold mb-4'><ArrowLeft size={20} /> Volver al Dashboard</button>
+            
+            {/* GESTIÓN DE PISOS */}
             <div className='bg-white p-4 rounded-xl shadow-sm mb-4'>
               <div className='flex justify-between items-center mb-4'>
-                <h2 className='font-bold text-lg text-gray-800'>Administrar Oficinas de {centros.find(c=>c.id===centroActual)?.nombre}</h2>
+                <h2 className='font-bold text-lg text-gray-800'>Administrar Pisos</h2>
+                <button onClick={agregarPiso} className='bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-1 font-bold text-sm'><Plus size={18} /> Nuevo Piso</button>
+              </div>
+              {pisos.length === 0 ? <p className='text-gray-500 text-center py-4 text-sm'>No hay pisos creados.</p> : (
+                <div className='flex flex-wrap gap-2'>
+                  {pisos.map((p, index) => (
+                    <div key={index} className='flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-lg border border-gray-200'>
+                      <span className='font-bold text-gray-700 text-sm'>Piso {p}</span>
+                      <button onClick={() => { if (confirm('Eliminar el piso ' + p + '?')) { const np = pisos.filter((_, i) => i !== index); guardarPisos(np); setMsg('Piso eliminado'); setTimeout(()=>setMsg(''), 2000); } }} className='text-red-500'><Trash2 size={14} /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* GESTIÓN DE OFICINAS */}
+            <div className='bg-white p-4 rounded-xl shadow-sm'>
+              <div className='flex justify-between items-center mb-4'>
+                <h2 className='font-bold text-lg text-gray-800'>Oficinas de {centros.find(c=>c.id===centroActual)?.nombre}</h2>
                 <button onClick={agregarOficina} className='bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-1 font-bold text-sm'><Plus size={18} /> Nueva Oficina</button>
               </div>
-              {oficinasCentro.length === 0 ? <p className='text-gray-500 text-center py-8'>Aun no hay oficinas creadas.</p> : (
+              {oficinasCentro.length === 0 ? <p className='text-gray-500 text-center py-8 text-sm'>Aun no hay oficinas creadas.</p> : (
                 <div className='space-y-3'>
                   {oficinasCentro.map((o, index) => (
                     <div key={o.id} className='flex justify-between items-center bg-gray-50 p-4 rounded-lg border'>
@@ -382,9 +436,23 @@ export default function App() {
                   <p className='text-xs text-blue-600 font-bold'>FILTRANDO POR:</p>
                   <p className='text-sm font-bold text-gray-800'>{estadoFiltro ? 'Estado: ' + estadoFiltro : 'Oficina: ' + oficinaFiltro} {pisoFiltro && pisoFiltro !== 'Todos' ? '| Piso: ' + pisoFiltro : ''}</p>
                 </div>
-                <button onClick={() => { setEstadoFiltro(null); setOficinaFiltro(null); setPisoFiltro('Todos'); setBusqueda(''); }} className='text-red-500 font-bold text-sm'>LIMPIAR</button>
+                <button onClick={() => { setEstadoFiltro(null); setOficinaFiltro(null); setPisoFiltro('Todos'); setBusqueda(''); setSubtipoFiltro('Todos'); }} className='text-red-500 font-bold text-sm'>LIMPIAR</button>
               </div>
             )}
+
+            {/* CHIPS DE SUBTIPOS */}
+            <div className='flex gap-2 mb-4 overflow-x-auto pb-2'>
+              <button onClick={() => setSubtipoFiltro('Todos')} className={'px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ' + (subtipoFiltro === 'Todos' ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border')}>Todos</button>
+              {categoriaVista === 'computo' ? (
+                ['Laptop', 'Computadora de Escritorio'].map(s => (
+                  <button key={s} onClick={() => setSubtipoFiltro(s)} className={'px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ' + (subtipoFiltro === s ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border')}>{s}</button>
+                ))
+              ) : (
+                ['Impresora Normal', 'Multifuncional', 'Scanner', 'Switch'].map(s => (
+                  <button key={s} onClick={() => setSubtipoFiltro(s)} className={'px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ' + (subtipoFiltro === s ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border')}>{s}</button>
+                ))
+              )}
+            </div>
 
             {oficinaFiltro && pisosDisponibles.length > 0 && (
               <div className='flex gap-2 mb-4 overflow-x-auto pb-2'>
@@ -428,9 +496,22 @@ export default function App() {
 
         {centroActual && vista === 'reporte' && (
           <div className='space-y-4'>
+            
+            {/* SELECCIÓN DE CATEGORÍAS PARA REPORTE */}
+            <div className='bg-white p-4 rounded-xl shadow-sm'>
+              <h2 className='font-bold text-gray-800 mb-3'>1. Selecciona Equipos a Incluir:</h2>
+              <div className='grid grid-cols-2 gap-2'>
+                {SUBTIPOS_REPORTE.map(cat => (
+                  <label key={cat} className={'flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-sm ' + (catsReporte.includes(cat) ? 'bg-indigo-50 border-indigo-500 text-indigo-800 font-medium' : 'bg-gray-50 border-gray-200')}>
+                    <input type='checkbox' checked={catsReporte.includes(cat)} onChange={() => handleCatReporte(cat)} className='accent-indigo-600' />{cat}
+                  </label>
+                ))}
+              </div>
+            </div>
+
             <div className='bg-white p-4 rounded-xl shadow-sm'>
               <div className='flex justify-between items-center mb-3'>
-                <h2 className='font-bold text-gray-800'>Selecciona columnas:</h2>
+                <h2 className='font-bold text-gray-800'>2. Selecciona Columnas:</h2>
                 <div className='flex gap-2'>
                   <button onClick={seleccionarTodosCampos} className='flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-lg font-bold'><CheckSquare size={14} /> Todos</button>
                   <button onClick={limpiarCampos} className='flex items-center gap-1 text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-lg font-bold'><Square size={14} /> Limpiar</button>
@@ -445,44 +526,53 @@ export default function App() {
               </div>
             </div>
 
-            {/* VISTA PREVIA DEL REPORTE */}
-            {camposSeleccionados.length > 0 && (
+            {/* VISTA PREVIA AGRUPADA */}
+            {camposSeleccionados.length > 0 && catsReporte.length > 0 && (
               <div className='bg-white p-4 rounded-xl shadow-sm overflow-x-auto'>
-                <h3 className='font-bold text-gray-800 mb-3 text-sm'>Vista Previa:</h3>
-                <table className='w-full text-xs text-left border-collapse'>
-                  <thead>
-                    <tr className='bg-blue-800 text-white'>
-                      {camposSeleccionados.map(k => <th key={k} className='p-2 border border-blue-700 whitespace-nowrap'>{CAMPOS.find(c=>c.key===k)?.label || k}</th>)}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {datosCentro.slice(0, 5).map((a, i) => (
-                      <tr key={a.id} className={i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-                        {camposSeleccionados.map(k => <td key={k} className='p-2 border border-gray-200 whitespace-nowrap'>{getValor(a, k)}</td>)}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {datosCentro.length > 5 && <p className='text-center text-xs text-gray-400 mt-2'>Mostrando 5 de {datosCentro.length} registros...</p>}
+                <h3 className='font-bold text-gray-800 mb-3 text-sm'>Vista Previa del Reporte:</h3>
+                {catsReporte.map(cat => {
+                  const datosCat = activos.filter(a => a.centro === centroActual && !a.enAlmacen && getSubtipo(a) === cat);
+                  if (datosCat.length === 0) return null;
+                  return (
+                    <div key={cat} className='mb-6'>
+                      <h4 className='font-bold text-blue-800 text-sm mb-2 border-b pb-1'>{cat} ({datosCat.length})</h4>
+                      <table className='w-full text-xs text-left border-collapse'>
+                        <thead>
+                          <tr className='bg-blue-800 text-white'>
+                            {camposSeleccionados.map(k => <th key={k} className='p-2 border border-blue-700 whitespace-nowrap'>{CAMPOS.find(c=>c.key===k)?.label || k}</th>)}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {datosCat.slice(0, 3).map((a, i) => (
+                            <tr key={a.id} className={i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                              {camposSeleccionados.map(k => <td key={k} className='p-2 border border-gray-200 whitespace-nowrap'>{getValor(a, k)}</td>)}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {datosCat.length > 3 && <p className='text-center text-xs text-gray-400 mt-1'>+ {datosCat.length - 3} registros más...</p>}
+                    </div>
+                  );
+                })}
               </div>
             )}
 
             <div className='grid grid-cols-2 gap-4'>
-              <button onClick={exportarCSV} disabled={cargando || camposSeleccionados.length === 0} className='bg-green-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50'><Download size={20} /> Excel</button>
-              <button onClick={exportarPDF} disabled={cargando || camposSeleccionados.length === 0} className='bg-red-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50'><FileText size={20} /> PDF</button>
+              <button onClick={exportarCSV} disabled={cargando || camposSeleccionados.length === 0 || catsReporte.length === 0} className='bg-green-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50'><Download size={20} /> Excel</button>
+              <button onClick={exportarPDF} disabled={cargando || camposSeleccionados.length === 0 || catsReporte.length === 0} className='bg-red-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50'><FileText size={20} /> PDF</button>
             </div>
-            <p className='text-xs text-gray-500 text-center bg-gray-100 p-2 rounded-lg'>Al tocar el boton, se abrira el menu nativo de tu celular. Elige "Guardar en archivos" o "Abrir con..." para verlo.</p>
+            <p className='text-xs text-gray-500 text-center bg-gray-100 p-2 rounded-lg'>El reporte generará tablas separadas por cada tipo de equipo seleccionado.</p>
           </div>
         )}
 
-        {vista === 'formulario' && <FormularioActivo activo={editando} guardarDatos={guardarDatos} setVista={setVista} handleVolver={handleVolver} getNextNumber={getNextNumber} centroActual={centroActual} oficinas={oficinas} centros={centros} setMsg={setMsg} />}
-        {vista === 'config' && <ConfigVista setVista={setVista} setMsg={setMsg} setActivos={setActivos} setCentros={setCentros} setOficinas={setOficinas} setCustomPass={setCustomPass} setLogo={setLogo} />}
+        {vista === 'formulario' && <FormularioActivo activo={editando} guardarDatos={guardarDatos} setVista={setVista} handleVolver={handleVolver} getNextNumber={getNextNumber} centroActual={centroActual} oficinas={oficinas} pisos={pisos} centros={centros} setMsg={setMsg} />}
+        {vista === 'config' && <ConfigVista setVista={setVista} setMsg={setMsg} setActivos={setActivos} setCentros={setCentros} setOficinas={setOficinas} setPisos={setPisos} setCustomPass={setCustomPass} setLogo={setLogo} />}
       </div>
 
       {centroActual && vista !== 'formulario' && (
         <div className='fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]'>
           <button onClick={() => setVista('dashboard')} className={'flex flex-col items-center text-xs ' + (vista === 'dashboard' ? 'text-blue-600' : 'text-gray-400')}><FileText size={24} /><span>Inicio</span></button>
-          <button onClick={() => {setVista('lista'); setEstadoFiltro(null); setOficinaFiltro(null); setPisoFiltro('Todos');}} className={'flex flex-col items-center text-xs ' + (vista === 'lista' ? 'text-blue-600' : 'text-gray-400')}><Search size={24} /><span>Inventario</span></button>
+          <button onClick={() => {setVista('lista'); setEstadoFiltro(null); setOficinaFiltro(null); setPisoFiltro('Todos'); setSubtipoFiltro('Todos');}} className={'flex flex-col items-center text-xs ' + (vista === 'lista' ? 'text-blue-600' : 'text-gray-400')}><Search size={24} /><span>Inventario</span></button>
           <button onClick={() => setVista('reporte')} className={'flex flex-col items-center text-xs ' + (vista === 'reporte' ? 'text-blue-600' : 'text-gray-400')}><FileText size={24} /><span>Reportes</span></button>
         </div>
       )}
@@ -490,7 +580,7 @@ export default function App() {
   );
 }
 
-function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, setCustomPass, setLogo }) {
+function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, setPisos, setCustomPass, setLogo }) {
   const [nueva, setNueva] = useState('');
   
   const h = (e) => { 
@@ -518,7 +608,7 @@ function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, se
   };
 
   const exportarRespaldo = () => {
-    const respaldo = { activos: JSON.parse(localStorage.getItem('activos_fijos_v73') || '[]'), centros: JSON.parse(localStorage.getItem('mis_centros_v73') || '[]'), oficinas: JSON.parse(localStorage.getItem('mis_oficinas_v73') || '{}'), pass: localStorage.getItem('app_pass_v73'), logo: localStorage.getItem('logo_empresa_v73') };
+    const respaldo = { activos: JSON.parse(localStorage.getItem('activos_fijos_v73') || '[]'), centros: JSON.parse(localStorage.getItem('mis_centros_v73') || '[]'), oficinas: JSON.parse(localStorage.getItem('mis_oficinas_v73') || '{}'), pisos: JSON.parse(localStorage.getItem('mis_pisos_v73') || '[]'), pass: localStorage.getItem('app_pass_v73'), logo: localStorage.getItem('logo_empresa_v73') };
     const json = JSON.stringify(respaldo, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -537,6 +627,7 @@ function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, se
         if (data.activos) { localStorage.setItem('activos_fijos_v73', JSON.stringify(data.activos)); setActivos(data.activos); }
         if (data.centros) { localStorage.setItem('mis_centros_v73', JSON.stringify(data.centros)); setCentros(data.centros); }
         if (data.oficinas) { localStorage.setItem('mis_oficinas_v73', JSON.stringify(data.oficinas)); setOficinas(data.oficinas); }
+        if (data.pisos) { localStorage.setItem('mis_pisos_v73', JSON.stringify(data.pisos)); setPisos(data.pisos); }
         if (data.pass) { localStorage.setItem('app_pass_v73', data.pass); setCustomPass(data.pass); }
         if (data.logo) { localStorage.setItem('logo_empresa_v73', data.logo); setLogo(data.logo); }
         setMsg('Respaldo restaurado exitosamente'); setTimeout(()=>setMsg(''), 3000); setVista('hub');
@@ -549,7 +640,6 @@ function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, se
     <div className='bg-white p-6 rounded-xl shadow-sm space-y-6'>
       <button onClick={() => setVista('hub')} className='flex items-center text-blue-600 font-bold mb-2'><ArrowLeft size={20} /> Volver</button>
       
-      {/* LOGO EMPRESA */}
       <div className='border-b pb-6'>
         <h2 className='text-xl font-bold text-gray-800 mb-4 flex items-center gap-2'><ImageIcon size={24} /> Logo de Empresa</h2>
         <p className='text-sm text-gray-500 mb-4'>Sube una imagen (preferentemente PNG cuadrada). Se mostrara en el Login y en los Reportes PDF.</p>
@@ -583,7 +673,7 @@ function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, se
   );
 }
 
-function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNextNumber, centroActual, oficinas, centros, setMsg }) {
+function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNextNumber, centroActual, oficinas, pisos, centros, setMsg }) {
   const esAlmacen = !centroActual; 
   const [form, setForm] = useState(activo || { id: Date.now().toString(), centro: centroActual, numero: getNextNumber(), tipo: 'Laptop', subtipoImpresora: 'Impresora Normal', nombreEquipo: '', marca: '', modelo: '', codigoActivo: '', numeroSerie: '', procesador: '', generacion: '', ram: '', tipoDisco: 'SSD M.2', capacidadDisco: '', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: '', mac: '', ip: '', estado: 'Activo', enAlmacen: esAlmacen, oficina: '', piso: '', cargo: '', numeroEmpleado: '', personaAsignada: '', nombreResponsable: '', fechaAsignacion: '', marcaCPU: '', modeloCPU: '', codigoActivoCPU: '', numeroSerieCPU: '', marcaMonitor: '', modeloMonitor: '', codigoActivoMonitor: '', conexionImpresora: 'En Red', notas: '' });
 
@@ -619,6 +709,16 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
     </div>
   );
 
+  const PisoSelect = ({ req }) => (
+    <div>
+      <label className='block text-xs font-medium text-gray-700 mb-1'>Piso</label>
+      <select name='piso' value={form.piso||''} onChange={h} required={req} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'>
+        <option value='' disabled>Seleccionar...</option>
+        {pisos.map(p => <option key={p} value={p}>Piso {p}</option>)}
+      </select>
+    </div>
+  );
+
   return (
     <div>
       <button onClick={handleVolver} className='flex items-center text-blue-600 font-bold mb-4'><ArrowLeft size={20} /> Volver</button>
@@ -640,13 +740,13 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
           <div><label className='block text-xs font-bold text-gray-500 mb-1'>TIPO EQUIPO</label><select name='tipo' value={form.tipo} onChange={h} className='w-full p-3 border border-gray-300 rounded-lg bg-gray-50'><option>Laptop</option><option>Computadora de Escritorio</option><option>Impresora</option><option>Switch</option></select></div>
         </div>
 
-        {form.tipo === 'Laptop' && (<><div className='bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400 space-y-3'><p className='text-xs font-bold text-blue-600'>DATOS LAPTOP</p><div className='grid grid-cols-2 gap-3'><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Nombre Maquina</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca</label><input name='marca' value={form.marca||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF</label><input name='codigoActivo' value={form.codigoActivo||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Numero de Serie</label><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></div></div><CamposSpecs form={form} h={h} /><CamposUbicacion form={form} h={h} OficinaSelect={OficinaSelect} /></>)}
+        {form.tipo === 'Laptop' && (<><div className='bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400 space-y-3'><p className='text-xs font-bold text-blue-600'>DATOS LAPTOP</p><div className='grid grid-cols-2 gap-3'><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Nombre Maquina</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca</label><input name='marca' value={form.marca||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF</label><input name='codigoActivo' value={form.codigoActivo||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Numero de Serie</label><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></div></div><CamposSpecs form={form} h={h} /><CamposUbicacion form={form} h={h} OficinaSelect={OficinaSelect} PisoSelect={PisoSelect} /></>)}
 
-        {form.tipo === 'Computadora de Escritorio' && (<><div className='bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400 space-y-3'><p className='text-xs font-bold text-blue-600'>DATOS CPU</p><div className='grid grid-cols-2 gap-3'><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Nombre Equipo</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca CPU</label><input name='marcaCPU' value={form.marcaCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo CPU</label><input name='modeloCPU' value={form.modeloCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF CPU</label><input name='codigoActivoCPU' value={form.codigoActivoCPU||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Serie CPU</label><input name='numeroSerieCPU' value={form.numeroSerieCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></div></div><div className='bg-yellow-50 p-3 rounded-lg border-l-4 border-yellow-400 space-y-3'><p className='text-xs font-bold text-yellow-700'>DATOS MONITOR</p><div className='grid grid-cols-2 gap-3'><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca Monitor</label><input name='marcaMonitor' value={form.marcaMonitor||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo Monitor</label><input name='modeloMonitor' value={form.modeloMonitor||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF Monitor</label><input name='codigoActivoMonitor' value={form.codigoActivoMonitor||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></div></div><CamposSpecs form={form} h={h} /><CamposUbicacion form={form} h={h} OficinaSelect={OficinaSelect} /></>)}
+        {form.tipo === 'Computadora de Escritorio' && (<><div className='bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400 space-y-3'><p className='text-xs font-bold text-blue-600'>DATOS CPU</p><div className='grid grid-cols-2 gap-3'><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Nombre Equipo</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca CPU</label><input name='marcaCPU' value={form.marcaCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo CPU</label><input name='modeloCPU' value={form.modeloCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF CPU</label><input name='codigoActivoCPU' value={form.codigoActivoCPU||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Serie CPU</label><input name='numeroSerieCPU' value={form.numeroSerieCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></div></div><div className='bg-yellow-50 p-3 rounded-lg border-l-4 border-yellow-400 space-y-3'><p className='text-xs font-bold text-yellow-700'>DATOS MONITOR</p><div className='grid grid-cols-2 gap-3'><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca Monitor</label><input name='marcaMonitor' value={form.marcaMonitor||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo Monitor</label><input name='modeloMonitor' value={form.modeloMonitor||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF Monitor</label><input name='codigoActivoMonitor' value={form.codigoActivoMonitor||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></div></div><CamposSpecs form={form} h={h} /><CamposUbicacion form={form} h={h} OficinaSelect={OficinaSelect} PisoSelect={PisoSelect} /></>)}
 
-        {form.tipo === 'Impresora' && (<div className='bg-orange-50 p-3 rounded-lg border-l-4 border-orange-400 space-y-3'><p className='text-xs font-bold text-orange-600'>DATOS IMPRESORA / SCANNER</p><div className='grid grid-cols-2 gap-3'><div><label className='block text-xs font-medium text-gray-700 mb-1'>Subtipo</label><select name='subtipoImpresora' value={form.subtipoImpresora||'Impresora Normal'} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option>Impresora Normal</option><option>Multifuncional</option><option>Scanner</option></select></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Estado</label><select name='estado' value={form.estado} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option>Activo</option><option>En Mantenimiento</option><option>Danado</option></select></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca</label><input name='marca' value={form.marca||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Serie</label><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF</label><input name='codigoActivo' value={form.codigoActivo||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Conexion</label><select name='conexionImpresora' value={form.conexionImpresora||'En Red'} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option>En Red</option><option>Por USB</option></select></div>{form.conexionImpresora === 'En Red' && <><div><label className='block text-xs font-medium text-gray-700 mb-1'>MAC</label><input name='mac' value={form.mac||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>IP</label><input name='ip' value={form.ip||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></>}<OficinaSelect etiqueta='Oficina / Area' req={true} /><div><label className='block text-xs font-medium text-gray-700 mb-1'>Piso</label><input name='piso' value={form.piso||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Fecha Asignacion</label><input type='date' name='fechaAsignacion' value={form.fechaAsignacion||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></div></div>)}
+        {form.tipo === 'Impresora' && (<div className='bg-orange-50 p-3 rounded-lg border-l-4 border-orange-400 space-y-3'><p className='text-xs font-bold text-orange-600'>DATOS IMPRESORA / SCANNER</p><div className='grid grid-cols-2 gap-3'><div><label className='block text-xs font-medium text-gray-700 mb-1'>Subtipo</label><select name='subtipoImpresora' value={form.subtipoImpresora||'Impresora Normal'} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option>Impresora Normal</option><option>Multifuncional</option><option>Scanner</option></select></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Estado</label><select name='estado' value={form.estado} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option>Activo</option><option>En Mantenimiento</option><option>Danado</option></select></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca</label><input name='marca' value={form.marca||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Serie</label><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF</label><input name='codigoActivo' value={form.codigoActivo||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Conexion</label><select name='conexionImpresora' value={form.conexionImpresora||'En Red'} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option>En Red</option><option>Por USB</option></select></div>{form.conexionImpresora === 'En Red' && <><div><label className='block text-xs font-medium text-gray-700 mb-1'>MAC</label><input name='mac' value={form.mac||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>IP</label><input name='ip' value={form.ip||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></>}<OficinaSelect etiqueta='Oficina / Area' req={true} /><PisoSelect req={true} /><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Fecha Asignacion</label><input type='date' name='fechaAsignacion' value={form.fechaAsignacion||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></div></div>)}
 
-        {form.tipo === 'Switch' && (<div className='bg-orange-50 p-3 rounded-lg border-l-4 border-orange-400 space-y-3'><p className='text-xs font-bold text-orange-600'>DATOS SWITCH</p><div className='grid grid-cols-2 gap-3'><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca</label><input name='marca' value={form.marca||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Serie</label><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF</label><input name='codigoActivo' value={form.codigoActivo||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>MAC</label><input name='mac' value={form.mac||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>IP</label><input name='ip' value={form.ip||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Estado</label><select name='estado' value={form.estado} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option>Activo</option><option>En Mantenimiento</option><option>Danado</option></select></div><OficinaSelect etiqueta='Ubicacion / Area' req={false} /><div><label className='block text-xs font-medium text-gray-700 mb-1'>Piso</label><input name='piso' value={form.piso||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></div></div>)}
+        {form.tipo === 'Switch' && (<div className='bg-orange-50 p-3 rounded-lg border-l-4 border-orange-400 space-y-3'><p className='text-xs font-bold text-orange-600'>DATOS SWITCH</p><div className='grid grid-cols-2 gap-3'><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca</label><input name='marca' value={form.marca||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Serie</label><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF</label><input name='codigoActivo' value={form.codigoActivo||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>MAC</label><input name='mac' value={form.mac||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>IP</label><input name='ip' value={form.ip||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Estado</label><select name='estado' value={form.estado} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option>Activo</option><option>En Mantenimiento</option><option>Danado</option></select></div><OficinaSelect etiqueta='Ubicacion / Area' req={false} /><PisoSelect req={false} /></div></div>)}
 
         <div><label className='block text-xs font-medium text-gray-700 mb-1'>Notas</label><textarea name='notas' value={form.notas||''} onChange={h} rows='2' className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' placeholder='Observaciones...'></textarea></div>
 
@@ -679,7 +779,7 @@ function CamposSpecs({ form, h }) {
   );
 }
 
-function CamposUbicacion({ form, h, OficinaSelect }) {
+function CamposUbicacion({ form, h, OficinaSelect, PisoSelect }) {
   return (
     <div className='bg-green-50 p-3 rounded-lg border-l-4 border-green-400 space-y-3'>
       <p className='text-xs font-bold text-green-700'>UBICACION Y ASIGNACION</p>
@@ -694,7 +794,7 @@ function CamposUbicacion({ form, h, OficinaSelect }) {
       {!form.enAlmacen ? (
         <div className='grid grid-cols-2 gap-3'>
           <div><label className='block text-xs font-medium text-gray-700 mb-1'>Estado</label><select name='estado' value={form.estado} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option>Activo</option><option>En Mantenimiento</option><option>Danado</option></select></div>
-          <div><label className='block text-xs font-medium text-gray-700 mb-1'>Piso</label><input name='piso' value={form.piso||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' placeholder='Ej: 2' /></div>
+          <PisoSelect req={true} />
           <OficinaSelect etiqueta='Oficina / Area' req={true} />
           <div><label className='block text-xs font-medium text-gray-700 mb-1'>Nro. Empleado</label><input name='numeroEmpleado' value={form.numeroEmpleado||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
           <div><label className='block text-xs font-medium text-gray-700 mb-1'>Cargo que Ocupa</label><input name='cargo' value={form.cargo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
