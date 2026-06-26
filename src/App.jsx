@@ -13,7 +13,6 @@ const CENTROS_DEFAULT = [
   { id: 'camargo', nombre: 'Multicentro Camargo' }
 ];
 
-// Paleta de colores para los botones de Multicentros
 const COLORES_CENTROS = [
   { borde: 'border-blue-500', fondo: 'bg-blue-50', texto: 'text-blue-800' },
   { borde: 'border-green-500', fondo: 'bg-green-50', texto: 'text-green-800' },
@@ -24,6 +23,9 @@ const COLORES_CENTROS = [
   { borde: 'border-indigo-500', fondo: 'bg-indigo-50', texto: 'text-indigo-800' },
   { borde: 'border-teal-500', fondo: 'bg-teal-50', texto: 'text-teal-800' }
 ];
+
+const TIPOS_COMPUTO = ['Laptop', 'Computadora de Escritorio'];
+const TIPOS_RED = ['Impresora', 'Switch'];
 
 const CAMPOS = [
   { key: 'numero', label: 'Nro. Registro' }, { key: 'tipo', label: 'Tipo Equipo' }, { key: 'nombreEquipo', label: 'Nombre Equipo' }, { key: 'marca', label: 'Marca' }, { key: 'marcaCPU', label: 'Marca CPU' }, { key: 'procesador', label: 'Procesador' }, { key: 'ram', label: 'RAM' }, { key: 'numeroSerie', label: 'Nro. Serie' }, { key: 'estado', label: 'Estado' }, { key: 'enAlmacen', label: 'En Almacen' }, { key: 'oficina', label: 'Oficina' }, { key: 'piso', label: 'Piso' }, { key: 'personaAsignada', label: 'Persona Asignada' }, { key: 'numeroEmpleado', label: 'Nro. Empleado' }
@@ -44,6 +46,7 @@ export default function App() {
   const [customPass, setCustomPass] = useState('admin123');
   const [vista, setVista] = useState('hub');
   const [centroActual, setCentroActual] = useState(null);
+  const [categoriaVista, setCategoriaVista] = useState('computo'); // 'computo' o 'red'
   const [oficinaFiltro, setOficinaFiltro] = useState(null);
   const [pisoFiltro, setPisoFiltro] = useState('Todos');
   const [estadoFiltro, setEstadoFiltro] = useState(null);
@@ -54,7 +57,7 @@ export default function App() {
   const [busqueda, setBusqueda] = useState('');
   const [msg, setMsg] = useState('');
   const [cargando, setCargando] = useState(false);
-  const [pisoExpandido, setPisoExpandido] = useState(null); // Nuevo estado para el acordeón de pisos
+  const [pisoExpandido, setPisoExpandido] = useState(null);
   const [camposSeleccionados, setCamposSeleccionados] = useState(['numero', 'tipo', 'nombreEquipo', 'procesador', 'ram', 'estado', 'oficina', 'personaAsignada']);
 
   useEffect(() => {
@@ -69,12 +72,23 @@ export default function App() {
   const handleLogin = (e) => { e.preventDefault(); if (user === 'admin' && pass === customPass) setIsLoggedIn(true); };
   const getNextNumber = () => { const d = JSON.parse(localStorage.getItem('activos_fijos_v73') || '[]'); return (d.reduce((m, a) => Math.max(m, parseInt(a.numero || '0')), 0) + 1).toString().padStart(4, '0'); };
   const agregarCentro = () => { const n = prompt('Nombre del nuevo Multicentro:'); if (n && n.trim()) { const nc = [...centros, { id: n.trim().toLowerCase().replace(/\s+/g, '_'), nombre: n.trim() }]; setCentros(nc); localStorage.setItem('mis_centros_v73', JSON.stringify(nc)); } };
-  
   const agregarOficina = () => { const n = prompt('Nombre de la nueva oficina:'); if (n && n.trim()) { const act = oficinas[centroActual] || []; const nuevas = [...act, { id: n.trim().toLowerCase().replace(/\s+/g, '_'), nombre: n.trim() }]; guardarOficinas({...oficinas, [centroActual]: nuevas}); setMsg('Oficina agregada'); setTimeout(()=>setMsg(''), 2000); } };
 
   const limpiarFormulario = () => { setEditando(null); setVista('formulario'); };
   const getValor = (a, key) => { if (key === 'enAlmacen') return a.enAlmacen ? 'SI' : 'NO'; return a[key] || '-'; };
   const handleCheck = (key) => { setCamposSeleccionados(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]); };
+
+  // NUEVA FUNCIÓN: Volver Atrás Inteligente
+  const handleVolver = () => {
+    if (vista === 'formulario') {
+      setVista(editando && editando.enAlmacen ? 'almacen' : 'lista');
+    } else if (vista === 'lista' || vista === 'reporte' || vista === 'oficinas') {
+      setVista('dashboard');
+      setEstadoFiltro(null); setOficinaFiltro(null); setPisoFiltro('Todos'); setBusqueda('');
+    } else if (vista === 'dashboard' || vista === 'almacen' || vista === 'config') {
+      setVista('hub'); setCentroActual(null); setPisoExpandido(null);
+    }
+  };
 
   const guardarArchivoNativo = async (blob, nombreArchivo) => {
     setCargando(true); setMsg('Preparando archivo...');
@@ -95,7 +109,7 @@ export default function App() {
   };
 
   const exportarCSV = () => {
-    const datosC = activos.filter(a => a.centro === centroActual);
+    const datosC = activos.filter(a => a.centro === centroActual && (categoriaVista === 'computo' ? TIPOS_COMPUTO.includes(a.tipo) : TIPOS_RED.includes(a.tipo)));
     const headers = camposSeleccionados.map(k => CAMPOS.find(c=>c.key===k)?.label || k);
     const rows = datosC.map(a => camposSeleccionados.map(k => getValor(a, k)));
     const csv = '\uFEFF' + [headers.join(';'), ...rows.map(r => r.map(c => '\x22' + String(c).replace(/\x22/g, '\x22\x22') + '\x22').join(';'))].join('\n');
@@ -103,12 +117,12 @@ export default function App() {
   };
 
   const exportarPDF = () => {
-    const datosC = activos.filter(a => a.centro === centroActual);
+    const datosC = activos.filter(a => a.centro === centroActual && (categoriaVista === 'computo' ? TIPOS_COMPUTO.includes(a.tipo) : TIPOS_RED.includes(a.tipo)));
     const headers = camposSeleccionados.map(k => CAMPOS.find(c=>c.key===k)?.label || k);
     const rows = datosC.map(a => camposSeleccionados.map(k => String(getValor(a, k))));
     const doc = new jsPDF('l', 'mm', 'a4');
     doc.setFontSize(16); doc.text('Reporte de Activos Fijos', 14, 15);
-    doc.setFontSize(10); doc.text('Centro: ' + (centros.find(c=>c.id===centroActual)?.nombre || ''), 14, 22);
+    doc.setFontSize(10); doc.text('Centro: ' + (centros.find(c=>c.id===centroActual)?.nombre || '') + ' | Categoria: ' + (categoriaVista === 'computo' ? 'Computo' : 'Red y Perifericos'), 14, 22);
     doc.autoTable({ startY: 28, head: [headers], body: rows, styles: { fontSize: 8 }, headStyles: { fillColor: [30, 58, 95] } });
     const pdfBlob = doc.output('blob');
     guardarArchivoNativo(pdfBlob, 'Reporte_Activos.pdf');
@@ -130,7 +144,8 @@ export default function App() {
     );
   }
 
-  const datosCentro = centroActual ? activos.filter(a => a.centro === centroActual && !a.enAlmacen) : [];
+  // Filtra los datos del centro Y por la categoría seleccionada (Cómputo o Red)
+  const datosCentro = centroActual ? activos.filter(a => a.centro === centroActual && !a.enAlmacen && (categoriaVista === 'computo' ? TIPOS_COMPUTO.includes(a.tipo) : TIPOS_RED.includes(a.tipo))) : [];
   const oficinasCentro = oficinas[centroActual] || [];
   
   let datosFinales = datosCentro;
@@ -144,12 +159,8 @@ export default function App() {
   const activosFiltrados = datosFinales.filter(a => (a.marca||'').toLowerCase().includes(busqueda.toLowerCase()) || (a.nombreEquipo||'').toLowerCase().includes(busqueda.toLowerCase()) || (a.personaAsignada||'').toLowerCase().includes(busqueda.toLowerCase()) || (a.numero||'').includes(busqueda));
   
   const activosEnAlmacen = activos.filter(a => a.enAlmacen);
-
-  // Lógica para obtener los pisos únicos del centro actual para el acordeón
   const pisosCentro = [...new Set(datosCentro.map(a => a.piso ? a.piso : 'Sin Piso'))].sort((a, b) => {
-    if (a === 'Sin Piso') return 1;
-    if (b === 'Sin Piso') return -1;
-    return a.localeCompare(b);
+    if (a === 'Sin Piso') return 1; if (b === 'Sin Piso') return -1; return a.localeCompare(b);
   });
 
   return (
@@ -157,18 +168,16 @@ export default function App() {
       {msg && <div className='bg-green-500 text-white text-center p-2 font-bold fixed top-0 left-0 right-0 z-50'>{cargando ? 'Generando archivo...' : msg}</div>}
       <div className='bg-blue-700 text-white p-4 shadow-lg flex justify-between items-center sticky top-0 z-10'>
         <div className='flex gap-3 items-center'>
-          {(centroActual || (vista !== 'hub' && vista !== 'config')) && <button onClick={() => { setCentroActual(null); setOficinaFiltro(null); setEstadoFiltro(null); setVista('hub'); setBusqueda(''); setPisoExpandido(null); }} className='bg-blue-800 p-2 rounded-lg'><ArrowLeft size={20} /></button>}
-          {!centroActual && vista === 'hub' && <button onClick={() => setVista('config')} className='bg-blue-800 p-2 rounded-lg'><Key size={20} /></button>}
+          {vista !== 'hub' && <button onClick={handleVolver} className='bg-blue-800 p-2 rounded-lg'><ArrowLeft size={20} /></button>}
+          {vista === 'hub' && <button onClick={() => setVista('config')} className='bg-blue-800 p-2 rounded-lg'><Key size={20} /></button>}
           <h1 className='text-lg font-bold'>{vista === 'almacen' ? 'Almacén Global' : (centroActual ? centros.find(c => c.id === centroActual)?.nombre : 'Multicentros')}</h1>
         </div>
-        {centroActual && <button onClick={() => setIsLoggedIn(false)} className='bg-blue-800 p-2 rounded-lg'><LogOut size={20} /></button>}
+        <button onClick={() => setIsLoggedIn(false)} className='bg-blue-800 p-2 rounded-lg'><LogOut size={20} /></button>
       </div>
 
       <div className='p-4'>
         {vista === 'hub' && (
           <div className='space-y-4'>
-            
-            {/* BOTÓN ALMACÉN GLOBAL */}
             <button onClick={() => { setCentroActual(null); setVista('almacen'); }} className='w-full p-6 rounded-xl shadow-sm bg-indigo-600 text-white flex justify-between items-center active:bg-indigo-700 mb-4'>
               <div className='flex items-center gap-3'>
                 <Warehouse size={32} />
@@ -186,11 +195,10 @@ export default function App() {
             </div>
             
             <div className='grid grid-cols-1 gap-4'>
-              {/* Centros con colores diferenciados */}
               {centros.map((c, index) => {
                 const color = COLORES_CENTROS[index % COLORES_CENTROS.length];
                 return (
-                  <button key={c.id} onClick={() => { setCentroActual(c.id); setVista('dashboard'); setPisoExpandido(null); }} className={'p-6 rounded-xl shadow-sm border-l-4 ' + color.borde + ' ' + color.fondo + ' text-left active:bg-gray-200'}>
+                  <button key={c.id} onClick={() => { setCentroActual(c.id); setVista('dashboard'); setPisoExpandido(null); setCategoriaVista('computo'); }} className={'p-6 rounded-xl shadow-sm border-l-4 ' + color.borde + ' ' + color.fondo + ' text-left active:bg-gray-200'}>
                     <h3 className='text-lg font-bold text-gray-800'>{c.nombre}</h3>
                     <p className='text-sm text-gray-500 mt-1'>{activos.filter(a => a.centro === c.id && !a.enAlmacen).length} activos</p>
                   </button>
@@ -200,7 +208,6 @@ export default function App() {
           </div>
         )}
 
-        {/* VISTA ALMACÉN GLOBAL */}
         {vista === 'almacen' && (
           <div>
             <div className='flex gap-2 mb-4'>
@@ -208,6 +215,7 @@ export default function App() {
                 <Search className='absolute left-3 top-3.5 text-gray-400' size={18} />
                 <input placeholder='Buscar en almacén...' value={busqueda} onChange={e => setBusqueda(e.target.value)} className='w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-gray-200 shadow-sm' />
               </div>
+              <button onClick={limpiarFormulario} className='bg-blue-600 text-white px-4 rounded-xl flex items-center gap-2 shadow-sm'><Plus size={20} /> Nuevo</button>
             </div>
             <div className='space-y-3'>
               {activosEnAlmacen.length === 0 ? <p className='text-center text-gray-500 mt-10'>El almacén está vacío.</p> : 
@@ -232,6 +240,16 @@ export default function App() {
 
         {centroActual && vista === 'dashboard' && (
           <div className='space-y-4'>
+            {/* SELECTOR DE CATEGORÍA */}
+            <div className='flex bg-gray-200 p-1 rounded-xl'>
+              <button onClick={() => { setCategoriaVista('computo'); setEstadoFiltro(null); setOficinaFiltro(null); }} className={'flex-1 p-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 ' + (categoriaVista === 'computo' ? 'bg-white text-blue-600 shadow' : 'text-gray-500')}>
+                <Laptop size={18} /> Cómputo ({activos.filter(a => a.centro === centroActual && !a.enAlmacen && TIPOS_COMPUTO.includes(a.tipo)).length})
+              </button>
+              <button onClick={() => { setCategoriaVista('red'); setEstadoFiltro(null); setOficinaFiltro(null); }} className={'flex-1 p-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 ' + (categoriaVista === 'red' ? 'bg-white text-blue-600 shadow' : 'text-gray-500')}>
+                <Printer size={18} /> Red y Periféricos ({activos.filter(a => a.centro === centroActual && !a.enAlmacen && TIPOS_RED.includes(a.tipo)).length})
+              </button>
+            </div>
+
             <h2 className='text-xl font-bold text-gray-800 mb-2'>Resumen General</h2>
             <div className='grid grid-cols-2 gap-3'>
               <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro(null); setVista('lista'); }} className='bg-white p-4 rounded-xl shadow-sm border-l-4 border-gray-500 text-left'><p className='text-gray-500 text-xs'>Total Equipos</p><p className='text-2xl font-bold text-gray-800'>{datosCentro.length}</p></button>
@@ -245,14 +263,11 @@ export default function App() {
               <button onClick={() => setVista('oficinas')} className='bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg flex items-center gap-1 text-sm font-bold'><Edit3 size={16} /> Gestionar</button>
             </div>
             
-            {/* ACORDEÓN DE OFICINAS POR PISO */}
             {pisosCentro.length === 0 ? <p className='text-sm text-gray-500 bg-white p-4 rounded-lg text-center'>No hay equipos asignados a pisos aún.</p> : (
               <div className='space-y-3'>
                 {pisosCentro.map(p => {
                   const equiposEnPiso = datosCentro.filter(a => (a.piso ? a.piso : 'Sin Piso') === p).length;
-                  // Mostrar oficinas que tienen equipos en este piso
                   const oficinasEnPiso = oficinasCentro.filter(o => datosCentro.some(a => a.oficina === o.nombre && (a.piso ? a.piso : 'Sin Piso') === p));
-                  
                   return (
                     <div key={p} className='bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden'>
                       <button onClick={() => setPisoExpandido(pisoExpandido === p ? null : p)} className='w-full p-4 flex justify-between items-center active:bg-gray-50'>
@@ -262,7 +277,6 @@ export default function App() {
                           <ChevronDown size={20} className={'text-gray-400 transition-transform ' + (pisoExpandido === p ? 'rotate-180' : '')} />
                         </div>
                       </button>
-                      
                       {pisoExpandido === p && (
                         <div className='p-3 pt-0 grid grid-cols-2 gap-3'>
                           {oficinasEnPiso.length === 0 ? <p className='col-span-2 text-center text-xs text-gray-400 py-2'>No hay oficinas con equipos en este piso.</p> :
@@ -287,7 +301,7 @@ export default function App() {
 
         {centroActual && vista === 'oficinas' && (
           <div>
-            <button onClick={() => setVista('dashboard')} className='flex items-center text-blue-600 font-bold mb-4'><ArrowLeft size={20} /> Volver al Dashboard</button>
+            <button onClick={handleVolver} className='flex items-center text-blue-600 font-bold mb-4'><ArrowLeft size={20} /> Volver al Dashboard</button>
             <div className='bg-white p-4 rounded-xl shadow-sm mb-4'>
               <div className='flex justify-between items-center mb-4'>
                 <h2 className='font-bold text-lg text-gray-800'>Administrar Oficinas de {centros.find(c=>c.id===centroActual)?.nombre}</h2>
@@ -385,8 +399,8 @@ export default function App() {
           </div>
         )}
 
-        {vista === 'formulario' && <FormularioActivo activo={editando} guardarDatos={guardarDatos} setVista={setVista} getNextNumber={getNextNumber} centroActual={centroActual} oficinas={oficinas} centros={centros} setMsg={setMsg} />}
-        {vista === 'config' && <ConfigVista customPass={customPass} setCustomPass={setCustomPass} setVista={setVista} setMsg={setMsg} setActivos={setActivos} setCentros={setCentros} setOficinas={setOficinas} />}
+        {vista === 'formulario' && <FormularioActivo activo={editando} guardarDatos={guardarDatos} setVista={setVista} handleVolver={handleVolver} getNextNumber={getNextNumber} centroActual={centroActual} oficinas={oficinas} centros={centros} setMsg={setMsg} />}
+        {vista === 'config' && <ConfigVista setVista={setVista} setMsg={setMsg} setActivos={setActivos} setCentros={setCentros} setOficinas={setOficinas} setCustomPass={setCustomPass} />}
       </div>
 
       {centroActual && vista !== 'formulario' && (
@@ -400,7 +414,7 @@ export default function App() {
   );
 }
 
-function ConfigVista({ customPass, setCustomPass, setVista, setMsg, setActivos, setCentros, setOficinas }) {
+function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, setCustomPass }) {
   const [nueva, setNueva] = useState('');
   
   const h = (e) => { 
@@ -414,27 +428,18 @@ function ConfigVista({ customPass, setCustomPass, setVista, setMsg, setActivos, 
   };
 
   const exportarRespaldo = () => {
-    const respaldo = {
-      activos: JSON.parse(localStorage.getItem('activos_fijos_v73') || '[]'),
-      centros: JSON.parse(localStorage.getItem('mis_centros_v73') || '[]'),
-      oficinas: JSON.parse(localStorage.getItem('mis_oficinas_v73') || '{}'),
-      pass: localStorage.getItem('app_pass_v73')
-    };
+    const respaldo = { activos: JSON.parse(localStorage.getItem('activos_fijos_v73') || '[]'), centros: JSON.parse(localStorage.getItem('mis_centros_v73') || '[]'), oficinas: JSON.parse(localStorage.getItem('mis_oficinas_v73') || '{}'), pass: localStorage.getItem('app_pass_v73') };
     const json = JSON.stringify(respaldo, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = 'respaldo_activos.json';
-    a.click();
+    a.href = url; a.download = 'respaldo_activos.json'; a.click();
     URL.revokeObjectURL(url);
-    setMsg('Respaldo descargado'); 
-    setTimeout(()=>setMsg(''), 3000);
+    setMsg('Respaldo descargado'); setTimeout(()=>setMsg(''), 3000);
   };
 
   const importarRespaldo = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
@@ -443,12 +448,8 @@ function ConfigVista({ customPass, setCustomPass, setVista, setMsg, setActivos, 
         if (data.centros) { localStorage.setItem('mis_centros_v73', JSON.stringify(data.centros)); setCentros(data.centros); }
         if (data.oficinas) { localStorage.setItem('mis_oficinas_v73', JSON.stringify(data.oficinas)); setOficinas(data.oficinas); }
         if (data.pass) { localStorage.setItem('app_pass_v73', data.pass); setCustomPass(data.pass); }
-        setMsg('Respaldo restaurado exitosamente'); 
-        setTimeout(()=>setMsg(''), 3000);
-        setVista('hub');
-      } catch (err) {
-        alert('Error: El archivo seleccionado no es un respaldo valido.');
-      }
+        setMsg('Respaldo restaurado exitosamente'); setTimeout(()=>setMsg(''), 3000); setVista('hub');
+      } catch (err) { alert('Error: El archivo seleccionado no es un respaldo valido.'); }
     };
     reader.readAsText(file);
   };
@@ -456,7 +457,6 @@ function ConfigVista({ customPass, setCustomPass, setVista, setMsg, setActivos, 
   return (
     <div className='bg-white p-6 rounded-xl shadow-sm space-y-6'>
       <button onClick={() => setVista('hub')} className='flex items-center text-blue-600 font-bold mb-2'><ArrowLeft size={20} /> Volver</button>
-      
       <div>
         <h2 className='text-xl font-bold text-gray-800 mb-4 flex items-center gap-2'><Key size={24} /> Cambiar Contrasena</h2>
         <form onSubmit={h} className='space-y-4'>
@@ -464,10 +464,9 @@ function ConfigVista({ customPass, setCustomPass, setVista, setMsg, setActivos, 
           <button type='submit' className='w-full bg-blue-600 text-white p-3 rounded-lg font-bold'>Guardar Contrasena</button>
         </form>
       </div>
-
       <div className='border-t pt-6'>
         <h2 className='text-xl font-bold text-gray-800 mb-4 flex items-center gap-2'><Save size={24} /> Respaldo de Datos</h2>
-        <p className='text-sm text-gray-500 mb-4'>Exporta toda tu base de datos en un archivo JSON para proteger tu informacion. Si cambias de celular o borras los datos, puedes restaurarlo aqui mismo.</p>
+        <p className='text-sm text-gray-500 mb-4'>Exporta toda tu base de datos en un archivo JSON para proteger tu informacion.</p>
         <div className='grid grid-cols-2 gap-4'>
           <button onClick={exportarRespaldo} className='bg-green-600 text-white p-4 rounded-xl font-bold flex flex-col items-center gap-2'><Download size={24} /> Exportar</button>
           <label className='bg-yellow-500 text-white p-4 rounded-xl font-bold flex flex-col items-center gap-2 cursor-pointer'>
@@ -480,28 +479,18 @@ function ConfigVista({ customPass, setCustomPass, setVista, setMsg, setActivos, 
   );
 }
 
-function FormularioActivo({ activo, guardarDatos, setVista, getNextNumber, centroActual, oficinas, centros, setMsg }) {
-  const [form, setForm] = useState(activo || { id: Date.now().toString(), centro: centroActual, numero: getNextNumber(), tipo: 'Laptop', subtipoImpresora: 'Impresora Normal', nombreEquipo: '', marca: '', modelo: '', codigoActivo: '', numeroSerie: '', procesador: '', generacion: '', ram: '', tipoDisco: 'SSD M.2', capacidadDisco: '', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: '', mac: '', ip: '', estado: 'Activo', enAlmacen: false, oficina: '', piso: '', cargo: '', numeroEmpleado: '', personaAsignada: '', nombreResponsable: '', fechaAsignacion: '', marcaCPU: '', modeloCPU: '', codigoActivoCPU: '', numeroSerieCPU: '', marcaMonitor: '', modeloMonitor: '', codigoActivoMonitor: '', conexionImpresora: 'En Red', notas: '' });
+function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNextNumber, centroActual, oficinas, centros, setMsg }) {
+  const esAlmacen = !centroActual; // Si no hay centro actual, venimos del Almacén
+  const [form, setForm] = useState(activo || { id: Date.now().toString(), centro: centroActual, numero: getNextNumber(), tipo: 'Laptop', subtipoImpresora: 'Impresora Normal', nombreEquipo: '', marca: '', modelo: '', codigoActivo: '', numeroSerie: '', procesador: '', generacion: '', ram: '', tipoDisco: 'SSD M.2', capacidadDisco: '', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: '', mac: '', ip: '', estado: 'Activo', enAlmacen: esAlmacen, oficina: '', piso: '', cargo: '', numeroEmpleado: '', personaAsignada: '', nombreResponsable: '', fechaAsignacion: '', marcaCPU: '', modeloCPU: '', codigoActivoCPU: '', numeroSerieCPU: '', marcaMonitor: '', modeloMonitor: '', codigoActivoMonitor: '', conexionImpresora: 'En Red', notas: '' });
 
   const oficinasDestino = oficinas[form.centro] || [];
 
   const h = (e) => {
     const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     let newForm = { ...form, [e.target.name]: val };
-    
     if (e.target.name === 'enAlmacen' && val === true) {
-      newForm = {
-        ...newForm,
-        personaAsignada: '',
-        cargo: '',
-        numeroEmpleado: '',
-        nombreResponsable: '',
-        oficina: '',
-        piso: '',
-        fechaAsignacion: ''
-      };
-      setMsg('Equipo enviado a Almacén. Datos de asignación limpiados.');
-      setTimeout(()=>setMsg(''), 3000);
+      newForm = { ...newForm, personaAsignada: '', cargo: '', numeroEmpleado: '', nombreResponsable: '', oficina: '', piso: '', fechaAsignacion: '' };
+      setMsg('Equipo enviado a Almacén. Datos de asignación limpiados.'); setTimeout(()=>setMsg(''), 3000);
     }
     setForm(newForm);
   };
@@ -511,10 +500,10 @@ function FormularioActivo({ activo, guardarDatos, setVista, getNextNumber, centr
     const datos = JSON.parse(localStorage.getItem('activos_fijos_v73') || '[]'); 
     if (activo) { guardarDatos(datos.map(a => a.id === activo.id ? form : a)); } 
     else { guardarDatos([...datos, form]); } 
-    setVista(centroActual ? 'lista' : 'almacen'); 
+    handleVolver(); // Usar el volver inteligente
   };
   
-  const handleEliminar = () => { if (confirm('Eliminar?')) { const datos = JSON.parse(localStorage.getItem('activos_fijos_v73') || '[]'); guardarDatos(datos.filter(a => a.id !== form.id)); setVista(centroActual ? 'lista' : 'almacen'); } };
+  const handleEliminar = () => { if (confirm('Eliminar?')) { const datos = JSON.parse(localStorage.getItem('activos_fijos_v73') || '[]'); guardarDatos(datos.filter(a => a.id !== form.id)); handleVolver(); } };
 
   const OficinaSelect = ({ etiqueta, req }) => (
     <div>
@@ -528,17 +517,19 @@ function FormularioActivo({ activo, guardarDatos, setVista, getNextNumber, centr
 
   return (
     <div>
-      <button onClick={() => setVista(centroActual ? 'lista' : 'almacen')} className='flex items-center text-blue-600 font-bold mb-4'><ArrowLeft size={20} /> Volver</button>
+      <button onClick={handleVolver} className='flex items-center text-blue-600 font-bold mb-4'><ArrowLeft size={20} /> Volver</button>
       <form onSubmit={handleSubmit} className='bg-white p-4 rounded-xl shadow-sm space-y-4'>
         <h2 className='font-bold text-lg text-gray-800 border-b pb-2'>{activo ? 'Editar Nro. ' + form.numero : 'Nuevo Registro'}</h2>
         
-        {!centroActual && (
+        {/* SELECTOR DE MULTICENTRO (Visible si no hay centro actual, ej: desde el Almacén) */}
+        {esAlmacen && (
           <div className='bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400'>
             <label className='block text-xs font-bold text-blue-600 mb-1'>ASIGNAR A MULTICENTRO</label>
-            <select name='centro' value={form.centro||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'>
+            <select name='centro' value={form.centro||''} onChange={h} required={!form.enAlmacen} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'>
               <option value='' disabled>Seleccionar destino...</option>
               {centros.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
             </select>
+            <p className='text-xs text-gray-500 mt-1'>Obligatorio si no está en almacén.</p>
           </div>
         )}
 
