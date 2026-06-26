@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Monitor, Printer, Network, Laptop, LogOut, Plus, Search, FileText, ShieldCheck, Save, Trash2, ArrowLeft, Download, Key, Building2, Warehouse, Edit3, MapPin, CheckCircle, Upload, ChevronDown } from 'lucide-react';
+import { Monitor, Printer, Network, Laptop, LogOut, Plus, Search, FileText, ShieldCheck, Save, Trash2, ArrowLeft, Download, Key, Building2, Warehouse, Edit3, MapPin, CheckCircle, Upload, ChevronDown, Image as ImageIcon, CheckSquare, Square } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Filesystem, Directory } from '@capacitor/filesystem';
@@ -58,6 +58,7 @@ export default function App() {
   const [msg, setMsg] = useState('');
   const [cargando, setCargando] = useState(false);
   const [pisoExpandido, setPisoExpandido] = useState(null);
+  const [logo, setLogo] = useState(null);
   const [camposSeleccionados, setCamposSeleccionados] = useState(['numero', 'tipo', 'nombreEquipo', 'procesador', 'ram', 'estado', 'oficina', 'personaAsignada']);
 
   useEffect(() => {
@@ -65,6 +66,7 @@ export default function App() {
     const d = localStorage.getItem('activos_fijos_v73'); if (d) setActivos(JSON.parse(d)); else { setActivos(datosIniciales); localStorage.setItem('activos_fijos_v73', JSON.stringify(datosIniciales)); }
     const o = localStorage.getItem('mis_oficinas_v73'); if (o) setOficinas(JSON.parse(o)); else { setOficinas(OFICINAS_DEFAULT); localStorage.setItem('mis_oficinas_v73', JSON.stringify(OFICINAS_DEFAULT)); }
     const p = localStorage.getItem('app_pass_v73'); if (p) setCustomPass(p);
+    const l = localStorage.getItem('logo_empresa_v73'); if (l) setLogo(l);
   }, []);
 
   const guardarDatos = (n) => { setActivos(n); localStorage.setItem('activos_fijos_v73', JSON.stringify(n)); };
@@ -76,18 +78,17 @@ export default function App() {
 
   const limpiarFormulario = () => { setEditando(null); setVista('formulario'); };
   const getValor = (a, key) => { if (key === 'enAlmacen') return a.enAlmacen ? 'SI' : 'NO'; return a[key] || '-'; };
+  
   const handleCheck = (key) => { setCamposSeleccionados(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]); };
+  const seleccionarTodosCampos = () => setCamposSeleccionados(CAMPOS.map(c => c.key));
+  const limpiarCampos = () => setCamposSeleccionados([]);
 
   const handleVolver = () => {
     if (vista === 'formulario') {
-      if ((editando && editando.enAlmacen) || !centroActual) {
-        setVista('almacen');
-      } else {
-        setVista('lista');
-      }
+      if ((editando && editando.enAlmacen) || !centroActual) setVista('almacen');
+      else setVista('lista');
     } else if (vista === 'lista' || vista === 'reporte' || vista === 'oficinas') {
-      setVista('dashboard');
-      setEstadoFiltro(null); setOficinaFiltro(null); setPisoFiltro('Todos'); setBusqueda('');
+      setVista('dashboard'); setEstadoFiltro(null); setOficinaFiltro(null); setPisoFiltro('Todos'); setBusqueda('');
     } else if (vista === 'dashboard' || vista === 'almacen' || vista === 'config') {
       setVista('hub'); setCentroActual(null); setPisoExpandido(null);
     }
@@ -115,7 +116,15 @@ export default function App() {
     const datosC = activos.filter(a => a.centro === centroActual && (categoriaVista === 'computo' ? TIPOS_COMPUTO.includes(a.tipo) : TIPOS_RED.includes(a.tipo)));
     const headers = camposSeleccionados.map(k => CAMPOS.find(c=>c.key===k)?.label || k);
     const rows = datosC.map(a => camposSeleccionados.map(k => getValor(a, k)));
-    const csv = '\uFEFF' + [headers.join(';'), ...rows.map(r => r.map(c => '\x22' + String(c).replace(/\x22/g, '\x22\x22') + '\x22').join(';'))].join('\n');
+    
+    // Encabezado corporativo para Excel
+    const fechaGen = new Date().toLocaleDateString();
+    const linea1 = 'REPORTE DE ACTIVOS FIJOS';
+    const linea2 = 'Centro: ' + (centros.find(c=>c.id===centroActual)?.nombre || '') + ' | Categoria: ' + (categoriaVista === 'computo' ? 'Computo' : 'Red y Perifericos');
+    const linea3 = 'Generado el: ' + fechaGen;
+    const separador = '---------------------------------------------------';
+    
+    const csv = '\uFEFF' + [linea1, linea2, linea3, separador, headers.join(';'), ...rows.map(r => r.map(c => '\x22' + String(c).replace(/\x22/g, '\x22\x22') + '\x22').join(';'))].join('\n');
     guardarArchivoNativo(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), 'Reporte_Activos.csv');
   };
 
@@ -123,24 +132,61 @@ export default function App() {
     const datosC = activos.filter(a => a.centro === centroActual && (categoriaVista === 'computo' ? TIPOS_COMPUTO.includes(a.tipo) : TIPOS_RED.includes(a.tipo)));
     const headers = camposSeleccionados.map(k => CAMPOS.find(c=>c.key===k)?.label || k);
     const rows = datosC.map(a => camposSeleccionados.map(k => String(getValor(a, k))));
-    const doc = new jsPDF('l', 'mm', 'a4');
-    doc.setFontSize(16); doc.text('Reporte de Activos Fijos', 14, 15);
-    doc.setFontSize(10); doc.text('Centro: ' + (centros.find(c=>c.id===centroActual)?.nombre || '') + ' | Categoria: ' + (categoriaVista === 'computo' ? 'Computo' : 'Red y Perifericos'), 14, 22);
-    doc.autoTable({ startY: 28, head: [headers], body: rows, styles: { fontSize: 8 }, headStyles: { fillColor: [30, 58, 95] } });
+    const doc = new jsPDF('l', 'mm', 'a4'); // Horizontal
+    
+    // Logo
+    if (logo) {
+      try { doc.addImage(logo, 'PNG', 14, 10, 30, 15); } catch (e) { console.error('Error al agregar logo', e); }
+    }
+    
+    // Títulos
+    doc.setFontSize(18); doc.setTextColor(30, 58, 95); doc.text('Reporte de Activos Fijos', 50, 18);
+    doc.setFontSize(10); doc.setTextColor(100); 
+    doc.text('Centro: ' + (centros.find(c=>c.id===centroActual)?.nombre || '') + '  |  Categoria: ' + (categoriaVista === 'computo' ? 'Computo' : 'Red y Perifericos'), 50, 24);
+    doc.text('Generado: ' + new Date().toLocaleDateString(), 250, 18);
+    
+    // Tabla con estilos corporativos
+    doc.autoTable({ 
+      startY: 30, 
+      head: [headers], 
+      body: rows, 
+      styles: { fontSize: 8, cellPadding: 2, textColor: [50, 50, 50] }, 
+      headStyles: { fillColor: [30, 58, 95], textColor: 255, fontStyle: 'bold' }, 
+      alternateRowStyles: { fillColor: [240, 245, 250] },
+      margin: { left: 14, right: 14 } 
+    });
+    
+    // Pie de página
+    const pageCount = doc.internal.getNumberOfPages();
+    for(let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8); doc.setTextColor(150);
+      doc.text('Pagina ' + i + ' de ' + pageCount, doc.internal.pageSize.width - 20, doc.internal.pageSize.height - 10);
+    }
+    
     const pdfBlob = doc.output('blob');
     guardarArchivoNativo(pdfBlob, 'Reporte_Activos.pdf');
   };
 
   if (!isLoggedIn) {
     return (
-      <div className='min-h-screen bg-gray-900 flex items-center justify-center p-4'>
-        <div className='bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-sm border border-gray-700'>
-          <div className='flex justify-center mb-6 text-blue-400'><ShieldCheck size={48} /></div>
-          <h1 className='text-white text-2xl font-bold text-center mb-6'>Control de Activos Fijos</h1>
+      <div className='min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-800 flex items-center justify-center p-4'>
+        <div className='bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm border border-gray-100'>
+          <div className='flex justify-center mb-6'>
+            {logo ? <img src={logo} alt='Logo' className='h-24 object-contain' /> : <ShieldCheck size={64} className='text-blue-600' />}
+          </div>
+          <h1 className='text-gray-800 text-2xl font-bold text-center mb-1'>Control de Activos</h1>
+          <p className='text-gray-400 text-center text-sm mb-6 font-medium'>Ingrese sus credenciales</p>
           <form onSubmit={handleLogin} className='space-y-4'>
-            <input type='text' placeholder='Usuario' value={user} onChange={e => setUser(e.target.value)} className='w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600' />
-            <input type='password' placeholder='Contrasena' value={pass} onChange={e => setPass(e.target.value)} className='w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600' />
-            <button type='submit' className='w-full bg-blue-600 text-white p-3 rounded-lg font-bold'>Ingresar</button>
+            <div>
+              <label className='block text-xs font-bold text-gray-500 mb-1'>USUARIO</label>
+              <input type='text' placeholder='admin' value={user} onChange={e => setUser(e.target.value)} className='w-full p-3 rounded-xl bg-gray-50 border border-gray-200 focus:border-blue-500 focus:outline-none' />
+            </div>
+            <div>
+              <label className='block text-xs font-bold text-gray-500 mb-1'>CONTRASENA</label>
+              <input type='password' placeholder='********' value={pass} onChange={e => setPass(e.target.value)} className='w-full p-3 rounded-xl bg-gray-50 border border-gray-200 focus:border-blue-500 focus:outline-none' />
+            </div>
+            <button type='submit' className='w-full bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg hover:bg-blue-700 transition'>INGRESAR</button>
           </form>
         </div>
       </div>
@@ -383,7 +429,13 @@ export default function App() {
         {centroActual && vista === 'reporte' && (
           <div className='space-y-4'>
             <div className='bg-white p-4 rounded-xl shadow-sm'>
-              <h2 className='font-bold text-gray-800 mb-3'>Selecciona columnas:</h2>
+              <div className='flex justify-between items-center mb-3'>
+                <h2 className='font-bold text-gray-800'>Selecciona columnas:</h2>
+                <div className='flex gap-2'>
+                  <button onClick={seleccionarTodosCampos} className='flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-lg font-bold'><CheckSquare size={14} /> Todos</button>
+                  <button onClick={limpiarCampos} className='flex items-center gap-1 text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-lg font-bold'><Square size={14} /> Limpiar</button>
+                </div>
+              </div>
               <div className='grid grid-cols-2 gap-2'>
                 {CAMPOS.map(c => (
                   <label key={c.key} className={'flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-sm ' + (camposSeleccionados.includes(c.key) ? 'bg-blue-50 border-blue-500 text-blue-800 font-medium' : 'bg-gray-50 border-gray-200')}>
@@ -392,16 +444,39 @@ export default function App() {
                 ))}
               </div>
             </div>
+
+            {/* VISTA PREVIA DEL REPORTE */}
+            {camposSeleccionados.length > 0 && (
+              <div className='bg-white p-4 rounded-xl shadow-sm overflow-x-auto'>
+                <h3 className='font-bold text-gray-800 mb-3 text-sm'>Vista Previa:</h3>
+                <table className='w-full text-xs text-left border-collapse'>
+                  <thead>
+                    <tr className='bg-blue-800 text-white'>
+                      {camposSeleccionados.map(k => <th key={k} className='p-2 border border-blue-700 whitespace-nowrap'>{CAMPOS.find(c=>c.key===k)?.label || k}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {datosCentro.slice(0, 5).map((a, i) => (
+                      <tr key={a.id} className={i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                        {camposSeleccionados.map(k => <td key={k} className='p-2 border border-gray-200 whitespace-nowrap'>{getValor(a, k)}</td>)}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {datosCentro.length > 5 && <p className='text-center text-xs text-gray-400 mt-2'>Mostrando 5 de {datosCentro.length} registros...</p>}
+              </div>
+            )}
+
             <div className='grid grid-cols-2 gap-4'>
-              <button onClick={exportarCSV} disabled={cargando} className='bg-green-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2'><Download size={20} /> Excel</button>
-              <button onClick={exportarPDF} disabled={cargando} className='bg-red-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2'><FileText size={20} /> PDF</button>
+              <button onClick={exportarCSV} disabled={cargando || camposSeleccionados.length === 0} className='bg-green-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50'><Download size={20} /> Excel</button>
+              <button onClick={exportarPDF} disabled={cargando || camposSeleccionados.length === 0} className='bg-red-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50'><FileText size={20} /> PDF</button>
             </div>
             <p className='text-xs text-gray-500 text-center bg-gray-100 p-2 rounded-lg'>Al tocar el boton, se abrira el menu nativo de tu celular. Elige "Guardar en archivos" o "Abrir con..." para verlo.</p>
           </div>
         )}
 
         {vista === 'formulario' && <FormularioActivo activo={editando} guardarDatos={guardarDatos} setVista={setVista} handleVolver={handleVolver} getNextNumber={getNextNumber} centroActual={centroActual} oficinas={oficinas} centros={centros} setMsg={setMsg} />}
-        {vista === 'config' && <ConfigVista setVista={setVista} setMsg={setMsg} setActivos={setActivos} setCentros={setCentros} setOficinas={setOficinas} setCustomPass={setCustomPass} />}
+        {vista === 'config' && <ConfigVista setVista={setVista} setMsg={setMsg} setActivos={setActivos} setCentros={setCentros} setOficinas={setOficinas} setCustomPass={setCustomPass} setLogo={setLogo} />}
       </div>
 
       {centroActual && vista !== 'formulario' && (
@@ -415,7 +490,7 @@ export default function App() {
   );
 }
 
-function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, setCustomPass }) {
+function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, setCustomPass, setLogo }) {
   const [nueva, setNueva] = useState('');
   
   const h = (e) => { 
@@ -428,8 +503,22 @@ function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, se
     setVista('hub'); 
   };
 
+  const handleLogo = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target.result;
+      localStorage.setItem('logo_empresa_v73', base64);
+      setLogo(base64);
+      setMsg('Logo de empresa actualizado'); 
+      setTimeout(() => setMsg(''), 3000);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const exportarRespaldo = () => {
-    const respaldo = { activos: JSON.parse(localStorage.getItem('activos_fijos_v73') || '[]'), centros: JSON.parse(localStorage.getItem('mis_centros_v73') || '[]'), oficinas: JSON.parse(localStorage.getItem('mis_oficinas_v73') || '{}'), pass: localStorage.getItem('app_pass_v73') };
+    const respaldo = { activos: JSON.parse(localStorage.getItem('activos_fijos_v73') || '[]'), centros: JSON.parse(localStorage.getItem('mis_centros_v73') || '[]'), oficinas: JSON.parse(localStorage.getItem('mis_oficinas_v73') || '{}'), pass: localStorage.getItem('app_pass_v73'), logo: localStorage.getItem('logo_empresa_v73') };
     const json = JSON.stringify(respaldo, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -449,6 +538,7 @@ function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, se
         if (data.centros) { localStorage.setItem('mis_centros_v73', JSON.stringify(data.centros)); setCentros(data.centros); }
         if (data.oficinas) { localStorage.setItem('mis_oficinas_v73', JSON.stringify(data.oficinas)); setOficinas(data.oficinas); }
         if (data.pass) { localStorage.setItem('app_pass_v73', data.pass); setCustomPass(data.pass); }
+        if (data.logo) { localStorage.setItem('logo_empresa_v73', data.logo); setLogo(data.logo); }
         setMsg('Respaldo restaurado exitosamente'); setTimeout(()=>setMsg(''), 3000); setVista('hub');
       } catch (err) { alert('Error: El archivo seleccionado no es un respaldo valido.'); }
     };
@@ -458,6 +548,18 @@ function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, se
   return (
     <div className='bg-white p-6 rounded-xl shadow-sm space-y-6'>
       <button onClick={() => setVista('hub')} className='flex items-center text-blue-600 font-bold mb-2'><ArrowLeft size={20} /> Volver</button>
+      
+      {/* LOGO EMPRESA */}
+      <div className='border-b pb-6'>
+        <h2 className='text-xl font-bold text-gray-800 mb-4 flex items-center gap-2'><ImageIcon size={24} /> Logo de Empresa</h2>
+        <p className='text-sm text-gray-500 mb-4'>Sube una imagen (preferentemente PNG cuadrada). Se mostrara en el Login y en los Reportes PDF.</p>
+        <label className='bg-blue-50 text-blue-700 border-2 border-dashed border-blue-200 p-6 rounded-xl font-bold flex flex-col items-center gap-2 cursor-pointer'>
+          <Upload size={32} />
+          <span>Seleccionar Logo</span>
+          <input type='file' accept='image/*' onChange={handleLogo} className='hidden' />
+        </label>
+      </div>
+
       <div>
         <h2 className='text-xl font-bold text-gray-800 mb-4 flex items-center gap-2'><Key size={24} /> Cambiar Contrasena</h2>
         <form onSubmit={h} className='space-y-4'>
@@ -465,6 +567,7 @@ function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, se
           <button type='submit' className='w-full bg-blue-600 text-white p-3 rounded-lg font-bold'>Guardar Contrasena</button>
         </form>
       </div>
+
       <div className='border-t pt-6'>
         <h2 className='text-xl font-bold text-gray-800 mb-4 flex items-center gap-2'><Save size={24} /> Respaldo de Datos</h2>
         <p className='text-sm text-gray-500 mb-4'>Exporta toda tu base de datos en un archivo JSON para proteger tu informacion.</p>
@@ -522,7 +625,6 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
       <form onSubmit={handleSubmit} className='bg-white p-4 rounded-xl shadow-sm space-y-4'>
         <h2 className='font-bold text-lg text-gray-800 border-b pb-2'>{activo ? 'Editar Nro. ' + form.numero : 'Nuevo Registro'}</h2>
         
-        {/* SELECTOR DE MULTICENTRO (Solo visible si venimos del Almacén Y además desactivamos el check de En Almacén) */}
         {esAlmacen && !form.enAlmacen && (
           <div className='bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400'>
             <label className='block text-xs font-bold text-blue-600 mb-1'>ASIGNAR A MULTICENTRO</label>
