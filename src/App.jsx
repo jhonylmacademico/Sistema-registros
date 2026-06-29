@@ -854,29 +854,46 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
     return texto;
   };
 
-  const descargarQR = () => {
+  const manejarQR = async () => {
     const canvas = document.querySelector('#qr-canvas-container canvas');
-    if (canvas) {
-      const dataUrl = canvas.toDataURL('image/png');
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = `QR_Activo_${form.numero}.png`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setMsg('QR Guardado en Descargas'); setTimeout(()=>setMsg(''), 2000);
+    if (!canvas) {
+      setMsg('Error: No se pudo generar el QR.');
+      setTimeout(() => setMsg(''), 3000);
+      return;
     }
-  };
-
-  const compartirQR = () => {
-    const canvas = document.querySelector('#qr-canvas-container canvas');
-    if (canvas) {
+    
+    setCargando(true);
+    setMsg('Preparando imagen del QR...');
+    
+    try {
       const dataUrl = canvas.toDataURL('image/png');
-      const arr = dataUrl.split(','), mime = arr[0].match(/:(.*?);/)[1], bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
-      while(n--){ u8arr[n] = bstr.charCodeAt(n); }
-      const blob = new Blob([u8arr], {type:mime});
-      guardarArchivoNativo(blob, `QR_Activo_${form.numero}.png`);
+      const base64 = dataUrl.split(',')[1];
+      const nombreArchivo = `QR_Activo_${form.numero}.png`;
+      
+      // Escribir directamente en caché usando Filesystem nativo
+      await Filesystem.writeFile({
+        path: nombreArchivo,
+        data: base64,
+        directory: Directory.Cache
+      });
+      
+      // Obtener la URI real para Android
+      const uriResult = await Filesystem.getUri({ path: nombreArchivo, directory: Directory.Cache });
+      
+      // Abrir el menú nativo de Android (sirve para compartir y para guardar en archivos/galería)
+      await Share.share({
+        url: uriResult.uri,
+        dialogTitle: 'Guardar o Compartir QR'
+      });
+      
+      setMsg('Menú abierto: Elige "Guardar en archivos" o tu app favorita.');
+    } catch (e) {
+      console.error(e);
+      setMsg('Error al procesar el QR. Intente de nuevo.');
     }
+    
+    setCargando(false);
+    setTimeout(() => setMsg(''), 4000);
   };
 
   const handleSubmit = (e) => { 
@@ -1039,14 +1056,10 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
               <QRCodeCanvas value={generarDatosQR(form)} size={180} level='M' includeMargin={true} />
             </div>
             <p className='text-xs text-gray-400 text-center'>Si escaneas este código con cualquier app de QR, verás los datos del equipo. Si lo escaneas con esta app, abrirá esta ficha.</p>
-            <div className='flex gap-2 w-full'>
-              <button type='button' onClick={descargarQR} className='flex-1 bg-gray-800 text-white px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-2 text-sm'>
-                <Download size={18} /> Guardar
-              </button>
-              <button type='button' onClick={compartirQR} className='flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-2 text-sm'>
-                <Share2 size={18} /> Compartir
-              </button>
-            </div>
+            {/* BOTÓN UNIFICADO PARA GUARDAR O COMPARTIR VÍA NATIVO ANDROID */}
+            <button type='button' onClick={manejarQR} disabled={cargando} className='w-full bg-blue-600 text-white px-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 text-sm disabled:opacity-50'>
+              <Share2 size={18} /> Guardar o Compartir QR
+            </button>
           </div>
         )}
 
