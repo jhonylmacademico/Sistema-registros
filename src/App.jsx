@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Monitor, Printer, Network, Laptop, LogOut, Plus, Search, FileText, ShieldCheck, Save, Trash2, ArrowLeft, Download, Key, Building2, Warehouse, Edit3, MapPin, CheckCircle, Upload, ChevronDown, Image as ImageIcon, CheckSquare, Square, Layers } from 'lucide-react';
+import { Monitor, Printer, Network, Laptop, LogOut, Plus, Search, FileText, ShieldCheck, Save, Trash2, ArrowLeft, Download, Key, Building2, Warehouse, Edit3, MapPin, CheckCircle, Upload, ChevronDown, Image as ImageIcon, CheckSquare, Square, Layers, History } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Filesystem, Directory } from '@capacitor/filesystem';
@@ -33,9 +33,9 @@ const CAMPOS = [
 ];
 
 const datosIniciales = [
-  { id: '1', centro: 'sucre', numero: '0001', tipo: 'Laptop', nombreEquipo: 'LAP-JPEREZ', marca: 'Lenovo', modelo: 'T14', codigoActivo: 'AF-001', numeroSerie: 'LP-001', procesador: 'Intel i5', generacion: '10ma', ram: '8 GB', tipoDisco: 'SSD M.2', capacidadDisco: '256 GB', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: 'Win 11', mac: 'AA:BB:CC:DD:EE:01', ip: '192.168.1.10', estado: 'Activo', enAlmacen: false, oficina: 'Contabilidad', piso: '2', cargo: 'Contador', numeroEmpleado: 'EMP-001', personaAsignada: 'Juan Perez', nombreResponsable: 'Juan Perez', fechaAsignacion: '2024-01-15', notas: '' },
-  { id: '2', centro: 'sucre', numero: '0002', tipo: 'Impresora', subtipoImpresora: 'Multifuncional', marca: 'HP', modelo: 'MFP', numeroSerie: 'IMP-002', codigoActivo: 'AF-002', conexionImpresora: 'En Red', mac: 'AA:BB:CC:DD:EE:02', ip: '192.168.1.50', estado: 'Activo', enAlmacen: false, oficina: 'Recursos Humanos', piso: '1', fechaAsignacion: '2024-01-10', notas: '' },
-  { id: '3', centro: 'sucre', numero: '0003', tipo: 'Laptop', marca: 'Dell', modelo: 'Latitude', procesador: 'Intel i7', ram: '16 GB', tipoDisco: 'SSD M.2', capacidadDisco: '512 GB', tipoDisco2: 'Ninguno', capacidadDisco2: '', estado: 'Danado', enAlmacen: false, oficina: 'Contabilidad', piso: '2', personaAsignada: 'Ana Torres', nombreResponsable: 'Ana Torres', fechaAsignacion: '2024-02-20', notas: 'Pantalla rota' }
+  { id: '1', centro: 'sucre', numero: '0001', tipo: 'Laptop', nombreEquipo: 'LAP-JPEREZ', marca: 'Lenovo', modelo: 'T14', codigoActivo: 'AF-001', numeroSerie: 'LP-001', procesador: 'Intel i5', generacion: '10ma', ram: '8 GB', tipoDisco: 'SSD M.2', capacidadDisco: '256 GB', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: 'Win 11', mac: 'AA:BB:CC:DD:EE:01', ip: '192.168.1.10', estado: 'Activo', enAlmacen: false, oficina: 'Contabilidad', piso: '2', cargo: 'Contador', numeroEmpleado: 'EMP-001', personaAsignada: 'Juan Perez', nombreResponsable: 'Juan Perez', fechaAsignacion: '2024-01-15', notas: '', historial: [{ fecha: '15/01/2024', nota: 'Equipo registrado en el sistema' }] },
+  { id: '2', centro: 'sucre', numero: '0002', tipo: 'Impresora', subtipoImpresora: 'Multifuncional', marca: 'HP', modelo: 'MFP', numeroSerie: 'IMP-002', codigoActivo: 'AF-002', conexionImpresora: 'En Red', mac: 'AA:BB:CC:DD:EE:02', ip: '192.168.1.50', estado: 'Activo', enAlmacen: false, oficina: 'Recursos Humanos', piso: '1', fechaAsignacion: '2024-01-10', notas: '', historial: [{ fecha: '10/01/2024', nota: 'Equipo registrado en el sistema' }] },
+  { id: '3', centro: 'sucre', numero: '0003', tipo: 'Laptop', marca: 'Dell', modelo: 'Latitude', procesador: 'Intel i7', ram: '16 GB', tipoDisco: 'SSD M.2', capacidadDisco: '512 GB', tipoDisco2: 'Ninguno', capacidadDisco2: '', estado: 'Danado', enAlmacen: false, oficina: 'Contabilidad', piso: '2', personaAsignada: 'Ana Torres', nombreResponsable: 'Ana Torres', fechaAsignacion: '2024-02-20', notas: 'Pantalla rota', historial: [{ fecha: '20/02/2024', nota: 'Equipo registrado en el sistema' }] }
 ];
 
 const OFICINAS_DEFAULT = { sucre: [{ id: 'conta', nombre: 'Contabilidad', piso: '2' }, { id: 'rrhh', nombre: 'Recursos Humanos', piso: '1' }] };
@@ -56,7 +56,7 @@ export default function App() {
   const [activos, setActivos] = useState([]);
   const [centros, setCentros] = useState([]);
   const [oficinas, setOficinas] = useState({});
-  const [pisos, setPisos] = useState({}); // Ahora es un objeto por centro
+  const [pisos, setPisos] = useState({}); 
   const [editando, setEditando] = useState(null);
   const [busqueda, setBusqueda] = useState('');
   const [msg, setMsg] = useState('');
@@ -271,7 +271,6 @@ export default function App() {
   
   const activosEnAlmacen = activos.filter(a => a.enAlmacen);
   
-  // Agrupar oficinas por piso para el Dashboard
   const oficinasAgrupadas = {};
   oficinasCentro.forEach(o => {
     const p = o.piso || 'Sin Piso';
@@ -431,7 +430,7 @@ export default function App() {
                   {pisosCentroActual.map((p, index) => (
                     <div key={index} className='flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-lg border border-gray-200'>
                       <span className='font-bold text-gray-700 text-sm'>Piso {p}</span>
-                      <button onClick={() => { if (confirm('Eliminar el piso ' + p + '? Las oficinas aquí perderán su piso asignado.')) { const np = pisosCentroActual.filter((_, i) => i !== index); guardarPisos({...pisos, [centroActual]: np}); /* Limpiar oficinas */ const no = oficinasCentro.map(o => o.piso === p ? {...o, piso: ''} : o); guardarOficinas({...oficinas, [centroActual]: no}); setMsg('Piso eliminado'); setTimeout(()=>setMsg(''), 2000); } }} className='text-red-500'><Trash2 size={14} /></button>
+                      <button onClick={() => { if (confirm('Eliminar el piso ' + p + '? Las oficinas aquí perderán su piso asignado.')) { const np = pisosCentroActual.filter((_, i) => i !== index); guardarPisos({...pisos, [centroActual]: np}); const no = oficinasCentro.map(o => o.piso === p ? {...o, piso: ''} : o); guardarOficinas({...oficinas, [centroActual]: no}); setMsg('Piso eliminado'); setTimeout(()=>setMsg(''), 2000); } }} className='text-red-500'><Trash2 size={14} /></button>
                     </div>
                   ))}
                 </div>
@@ -710,7 +709,8 @@ function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, se
 
 function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNextNumber, centroActual, oficinas, centros, setMsg }) {
   const esAlmacen = !centroActual; 
-  const [form, setForm] = useState(activo || { id: Date.now().toString(), centro: centroActual, numero: getNextNumber(), tipo: 'Laptop', subtipoImpresora: 'Impresora Normal', nombreEquipo: '', marca: '', modelo: '', codigoActivo: '', numeroSerie: '', procesador: '', generacion: '', ram: '', tipoDisco: 'SSD M.2', capacidadDisco: '', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: '', mac: '', ip: '', estado: 'Activo', enAlmacen: esAlmacen, oficina: '', piso: '', cargo: '', numeroEmpleado: '', personaAsignada: '', nombreResponsable: '', fechaAsignacion: '', marcaCPU: '', modeloCPU: '', codigoActivoCPU: '', numeroSerieCPU: '', marcaMonitor: '', modeloMonitor: '', codigoActivoMonitor: '', conexionImpresora: 'En Red', notas: '' });
+  const [form, setForm] = useState(activo || { id: Date.now().toString(), centro: centroActual, numero: getNextNumber(), tipo: 'Laptop', subtipoImpresora: 'Impresora Normal', nombreEquipo: '', marca: '', modelo: '', codigoActivo: '', numeroSerie: '', procesador: '', generacion: '', ram: '', tipoDisco: 'SSD M.2', capacidadDisco: '', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: '', mac: '', ip: '', estado: 'Activo', enAlmacen: esAlmacen, oficina: '', piso: '', cargo: '', numeroEmpleado: '', personaAsignada: '', nombreResponsable: '', fechaAsignacion: '', marcaCPU: '', modeloCPU: '', codigoActivoCPU: '', numeroSerieCPU: '', marcaMonitor: '', modeloMonitor: '', codigoActivoMonitor: '', conexionImpresora: 'En Red', notas: '', historial: [] });
+  const [verBitacora, setVerBitacora] = useState(false);
 
   const oficinasDestino = oficinas[form.centro] || [];
 
@@ -718,7 +718,6 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
     const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     let newForm = { ...form, [e.target.name]: val };
     
-    // Auto-completar piso al seleccionar oficina
     if (e.target.name === 'oficina') {
       const oficinaSeleccionada = oficinasDestino.find(o => o.nombre === val);
       if (oficinaSeleccionada) {
@@ -736,8 +735,30 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
   const handleSubmit = (e) => { 
     e.preventDefault(); 
     const datos = JSON.parse(localStorage.getItem('activos_fijos_v74') || '[]'); 
-    if (activo) { guardarDatos(datos.map(a => a.id === activo.id ? form : a)); } 
-    else { guardarDatos([...datos, form]); } 
+    
+    let formFinal = { ...form };
+    const hoy = new Date().toLocaleDateString();
+
+    if (activo) {
+      // EDICIÓN: Generar bitácora si hay cambios
+      let logs = [];
+      if (activo.personaAsignada !== formFinal.personaAsignada && formFinal.personaAsignada) logs.push(`Asignado a ${formFinal.personaAsignada}`);
+      if (activo.estado !== formFinal.estado) logs.push(`Estado cambiado a: ${formFinal.estado}`);
+      if (activo.oficina !== formFinal.oficina && formFinal.oficina) logs.push(`Movido a oficina: ${formFinal.oficina}`);
+      if (activo.enAlmacen !== formFinal.enAlmacen) {
+        logs.push(formFinal.enAlmacen ? 'Enviado a Almacén Global' : 'Sacado de Almacén y asignado');
+      }
+
+      if (logs.length > 0) {
+        const historialPrevio = activo.historial || [];
+        formFinal.historial = [...historialPrevio, ...logs.map(nota => ({ fecha: hoy, nota }))];
+      }
+      guardarDatos(datos.map(a => a.id === activo.id ? formFinal : a));
+    } else {
+      // NUEVO REGISTRO
+      formFinal.historial = [{ fecha: hoy, nota: 'Equipo registrado en el sistema' }];
+      guardarDatos([...datos, formFinal]);
+    }
     handleVolver(); 
   };
   
@@ -790,6 +811,27 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
         {form.tipo === 'Switch' && (<div className='bg-orange-50 p-3 rounded-lg border-l-4 border-orange-400 space-y-3'><p className='text-xs font-bold text-orange-600'>DATOS SWITCH</p><div className='grid grid-cols-2 gap-3'><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca</label><input name='marca' value={form.marca||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Serie</label><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF</label><input name='codigoActivo' value={form.codigoActivo||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>MAC</label><input name='mac' value={form.mac||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>IP</label><input name='ip' value={form.ip||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Estado</label><select name='estado' value={form.estado} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option>Activo</option><option>En Mantenimiento</option><option>Danado</option></select></div><OficinaSelect etiqueta='Ubicacion / Area' req={false} /><PisoInput req={false} /></div></div>)}
 
         <div><label className='block text-xs font-medium text-gray-700 mb-1'>Notas</label><textarea name='notas' value={form.notas||''} onChange={h} rows='2' className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' placeholder='Observaciones...'></textarea></div>
+
+        {/* SECCIÓN BITÁCORA / HISTORIAL */}
+        {activo && (
+          <div className='bg-gray-50 p-3 rounded-lg border border-gray-200'>
+            <button type='button' onClick={() => setVerBitacora(!verBitacora)} className='w-full flex justify-between items-center font-bold text-gray-700'>
+              <span className='flex items-center gap-2'><History size={18} /> Ver Bitácora / Historial ({(form.historial || []).length})</span>
+              <ChevronDown size={18} className={verBitacora ? 'rotate-180 transition-transform' : 'transition-transform'} />
+            </button>
+            {verBitacora && (
+              <div className='mt-3 space-y-2 max-h-48 overflow-y-auto'>
+                {(form.historial || []).length === 0 ? <p className='text-xs text-gray-400 text-center py-2'>Sin movimientos registrados.</p> :
+                (form.historial || []).slice().reverse().map((h, i) => (
+                  <div key={i} className='text-xs bg-white p-2 rounded border-l-4 border-blue-400 shadow-sm'>
+                    <p className='font-bold text-gray-500'>[{h.fecha}]</p>
+                    <p className='text-gray-700 mt-1'>{h.nota}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className='flex gap-3 pt-2'>
           <button type='submit' className='flex-1 bg-blue-600 text-white p-3 rounded-lg font-bold flex items-center justify-center gap-2'><Save size={20} /> Guardar</button>
