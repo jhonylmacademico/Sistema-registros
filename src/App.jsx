@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Monitor, Printer, Network, Laptop, LogOut, Plus, Search, FileText, ShieldCheck, Save, Trash2, ArrowLeft, Download, Key, Building2, Warehouse, Edit3, MapPin, CheckCircle, Upload, ChevronDown, Image as ImageIcon, CheckSquare, Square, Layers, History, Camera as CameraIcon, X, ScanLine, QrCode } from 'lucide-react';
+import { Monitor, Printer, Network, Laptop, LogOut, Plus, Search, FileText, ShieldCheck, Save, Trash2, ArrowLeft, Download, Key, Building2, Warehouse, Edit3, MapPin, CheckCircle, Upload, ChevronDown, Image as ImageIcon, CheckSquare, Square, Layers, History, Camera as CameraIcon, X, ScanLine, QrCode, Share2 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Filesystem, Directory } from '@capacitor/filesystem';
@@ -27,9 +27,9 @@ const COLORES_CENTROS = [
   { borde: 'border-teal-500', fondo: 'bg-teal-50', texto: 'text-teal-800' }
 ];
 
-const TIPOS_COMPUTO = ['Laptop', 'Computadora de Escritorio'];
+const TIPOS_COMPUTO = ['Laptop', 'Computadora de Escritorio', 'Computadora All in One'];
 const TIPOS_RED = ['Impresora', 'Impresora Multifuncional', 'Scanner', 'Switch'];
-const SUBTIPOS_REPORTE = ['Laptop', 'Computadora de Escritorio', 'Impresora', 'Impresora Multifuncional', 'Scanner', 'Switch'];
+const SUBTIPOS_REPORTE = ['Laptop', 'Computadora de Escritorio', 'Computadora All in One', 'Impresora', 'Impresora Multifuncional', 'Scanner', 'Switch'];
 
 const CAMPOS = [
   { key: 'numero', label: 'Nro. Registro' }, { key: 'tipo', label: 'Tipo Equipo' }, { key: 'nombreEquipo', label: 'Nombre Equipo' }, { key: 'marca', label: 'Marca' }, { key: 'marcaCPU', label: 'Marca CPU' }, { key: 'procesador', label: 'Procesador' }, { key: 'ram', label: 'RAM' }, { key: 'numeroSerie', label: 'Nro. Serie' }, { key: 'estado', label: 'Estado' }, { key: 'enAlmacen', label: 'En Almacen' }, { key: 'oficina', label: 'Oficina' }, { key: 'piso', label: 'Piso' }, { key: 'personaAsignada', label: 'Persona Asignada' }, { key: 'numeroEmpleado', label: 'Nro. Empleado' }, { key: 'historial', label: 'Historial / Bitácora' }
@@ -266,7 +266,6 @@ export default function App() {
         
         const code = jsQR(imageData.data, imageData.width, imageData.height);
         if (code) {
-          // Buscar el ID interno en el texto escaneado
           const match = code.data.match(/ID_APP:(.*)/);
           if (match && match[1]) {
             const idEscaneado = match[1].trim();
@@ -282,7 +281,6 @@ export default function App() {
               setMsg('');
             }
           } else {
-            // Si no tiene el ID de la app, es un QR externo. Mostrar el texto.
             alert('Código QR leído:\n\n' + code.data);
             setMsg('');
           }
@@ -366,7 +364,6 @@ export default function App() {
         {vista === 'hub' && (
           <div className='space-y-4'>
             
-            {/* BOTÓN ESCANEAR QR */}
             <button onClick={escanearQR} className='w-full p-6 rounded-xl shadow-sm bg-purple-600 text-white flex justify-between items-center active:bg-purple-700 mb-4'>
               <div className='flex items-center gap-3'>
                 <ScanLine size={32} />
@@ -861,6 +858,20 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
     const canvas = document.querySelector('#qr-canvas-container canvas');
     if (canvas) {
       const dataUrl = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `QR_Activo_${form.numero}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setMsg('QR Guardado en Descargas'); setTimeout(()=>setMsg(''), 2000);
+    }
+  };
+
+  const compartirQR = () => {
+    const canvas = document.querySelector('#qr-canvas-container canvas');
+    if (canvas) {
+      const dataUrl = canvas.toDataURL('image/png');
       const arr = dataUrl.split(','), mime = arr[0].match(/:(.*?);/)[1], bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
       while(n--){ u8arr[n] = bstr.charCodeAt(n); }
       const blob = new Blob([u8arr], {type:mime});
@@ -916,6 +927,7 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
   );
 
   const esTipoRed = ['Impresora', 'Impresora Multifuncional', 'Scanner', 'Switch'].includes(form.tipo);
+  const esTipoUnificado = ['Laptop', 'Computadora All in One'].includes(form.tipo);
 
   return (
     <div>
@@ -939,6 +951,7 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
             <select name='tipo' value={form.tipo} onChange={h} className='w-full p-3 border border-gray-300 rounded-lg bg-gray-50'>
               <option>Laptop</option>
               <option>Computadora de Escritorio</option>
+              <option>Computadora All in One</option>
               <option>Impresora</option>
               <option>Impresora Multifuncional</option>
               <option>Scanner</option>
@@ -947,9 +960,47 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
           </div>
         </div>
 
-        {form.tipo === 'Laptop' && (<><div className='bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400 space-y-3'><p className='text-xs font-bold text-blue-600'>DATOS LAPTOP</p><div className='grid grid-cols-2 gap-3'><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Nombre Maquina</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca</label><input name='marca' value={form.marca||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF</label><input name='codigoActivo' value={form.codigoActivo||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Numero de Serie</label><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></div></div><CamposSpecs form={form} h={h} /><CamposUbicacion form={form} h={h} OficinaSelect={OficinaSelect} PisoInput={PisoInput} /></>)}
+        {esTipoUnificado && (
+          <>
+          <div className='bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400 space-y-3'>
+            <p className='text-xs font-bold text-blue-600'>DATOS {form.tipo === 'Laptop' ? 'LAPTOP' : 'ALL IN ONE'}</p>
+            <div className='grid grid-cols-2 gap-3'>
+              <div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Nombre Maquina</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca</label><input name='marca' value={form.marca||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF</label><input name='codigoActivo' value={form.codigoActivo||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Numero de Serie</label><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+            </div>
+          </div>
+          <CamposSpecs form={form} h={h} />
+          <CamposUbicacion form={form} h={h} OficinaSelect={OficinaSelect} PisoInput={PisoInput} />
+          </>
+        )}
 
-        {form.tipo === 'Computadora de Escritorio' && (<><div className='bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400 space-y-3'><p className='text-xs font-bold text-blue-600'>DATOS CPU</p><div className='grid grid-cols-2 gap-3'><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Nombre Equipo</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca CPU</label><input name='marcaCPU' value={form.marcaCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo CPU</label><input name='modeloCPU' value={form.modeloCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF CPU</label><input name='codigoActivoCPU' value={form.codigoActivoCPU||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Serie CPU</label><input name='numeroSerieCPU' value={form.numeroSerieCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></div></div><div className='bg-yellow-50 p-3 rounded-lg border-l-4 border-yellow-400 space-y-3'><p className='text-xs font-bold text-yellow-700'>DATOS MONITOR</p><div className='grid grid-cols-2 gap-3'><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca Monitor</label><input name='marcaMonitor' value={form.marcaMonitor||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo Monitor</label><input name='modeloMonitor' value={form.modeloMonitor||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF Monitor</label><input name='codigoActivoMonitor' value={form.codigoActivoMonitor||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></div></div><CamposSpecs form={form} h={h} /><CamposUbicacion form={form} h={h} OficinaSelect={OficinaSelect} PisoInput={PisoInput} /></>)}
+        {form.tipo === 'Computadora de Escritorio' && (
+          <>
+          <div className='bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400 space-y-3'>
+            <p className='text-xs font-bold text-blue-600'>DATOS CPU / GABINETE</p>
+            <div className='grid grid-cols-2 gap-3'>
+              <div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Nombre Equipo</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca CPU</label><input name='marcaCPU' value={form.marcaCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo CPU</label><input name='modeloCPU' value={form.modeloCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF CPU</label><input name='codigoActivoCPU' value={form.codigoActivoCPU||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Serie CPU</label><input name='numeroSerieCPU' value={form.numeroSerieCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+            </div>
+          </div>
+          <div className='bg-yellow-50 p-3 rounded-lg border-l-4 border-yellow-400 space-y-3'>
+            <p className='text-xs font-bold text-yellow-700'>DATOS MONITOR</p>
+            <div className='grid grid-cols-2 gap-3'>
+              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca Monitor</label><input name='marcaMonitor' value={form.marcaMonitor||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo Monitor</label><input name='modeloMonitor' value={form.modeloMonitor||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+              <div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF Monitor</label><input name='codigoActivoMonitor' value={form.codigoActivoMonitor||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+            </div>
+          </div>
+          <CamposSpecs form={form} h={h} />
+          <CamposUbicacion form={form} h={h} OficinaSelect={OficinaSelect} PisoInput={PisoInput} />
+          </>
+        )}
 
         {esTipoRed && (
           <div className='bg-orange-50 p-3 rounded-lg border-l-4 border-orange-400 space-y-3'>
@@ -988,9 +1039,14 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
               <QRCodeCanvas value={generarDatosQR(form)} size={180} level='M' includeMargin={true} />
             </div>
             <p className='text-xs text-gray-400 text-center'>Si escaneas este código con cualquier app de QR, verás los datos del equipo. Si lo escaneas con esta app, abrirá esta ficha.</p>
-            <button type='button' onClick={descargarQR} className='bg-gray-800 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 text-sm'>
-              <Download size={18} /> Descargar / Compartir QR
-            </button>
+            <div className='flex gap-2 w-full'>
+              <button type='button' onClick={descargarQR} className='flex-1 bg-gray-800 text-white px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-2 text-sm'>
+                <Download size={18} /> Guardar
+              </button>
+              <button type='button' onClick={compartirQR} className='flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-2 text-sm'>
+                <Share2 size={18} /> Compartir
+              </button>
+            </div>
           </div>
         )}
 
