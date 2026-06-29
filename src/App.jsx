@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Monitor, Printer, Network, Laptop, LogOut, Plus, Search, FileText, ShieldCheck, Save, Trash2, ArrowLeft, Download, Key, Building2, Warehouse, Edit3, MapPin, CheckCircle, Upload, ChevronDown, Image as ImageIcon, CheckSquare, Square, Layers, History, Camera as CameraIcon, X } from 'lucide-react';
+import { Monitor, Printer, Network, Laptop, LogOut, Plus, Search, FileText, ShieldCheck, Save, Trash2, ArrowLeft, Download, Key, Building2, Warehouse, Edit3, MapPin, CheckCircle, Upload, ChevronDown, Image as ImageIcon, CheckSquare, Square, Layers, History, Camera as CameraIcon, X, ScanLine, QrCode } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { QRCodeCanvas } from 'qrcode.react';
+import jsQR from 'jsqr';
 
 const CENTROS_DEFAULT = [
   { id: 'sucre', nombre: 'Multicentro Sucre' },
@@ -242,6 +244,52 @@ export default function App() {
     guardarArchivoNativo(pdfBlob, 'Reporte_Activos.pdf');
   };
 
+  const escanearQR = async () => {
+    try {
+      setMsg('Abriendo cámara...');
+      const image = await Camera.getPhoto({
+        quality: 60,
+        allowEditing: false,
+        resultType: CameraResultType.Base64,
+        source: CameraSource.Camera
+      });
+
+      setMsg('Leyendo código QR...');
+      const img = new Image();
+      img.onload = () => {
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = img.width;
+        tempCanvas.height = img.height;
+        const ctx = tempCanvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+        
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+        if (code) {
+          const idEscaneado = code.data.split(':')[1];
+          const equipo = activos.find(a => a.id === idEscaneado);
+          if (equipo) {
+            setMsg('Equipo encontrado!');
+            setTimeout(() => setMsg(''), 2000);
+            setCentroActual(equipo.centro);
+            setEditando(equipo);
+            setVista('formulario');
+          } else {
+            alert('Código QR válido, pero el equipo no está registrado en este dispositivo.');
+            setMsg('');
+          }
+        } else {
+          alert('No se detectó ningún código QR en la foto. Intenta acercar más la cámara.');
+          setMsg('');
+        }
+      };
+      img.src = 'data:image/jpeg;base64,' + image.base64String;
+    } catch (e) {
+      setMsg('Escaneo cancelado.');
+      setTimeout(() => setMsg(''), 2000);
+    }
+  };
+
   if (!isLoggedIn) {
     return (
       <div className='min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-800 flex items-center justify-center p-4'>
@@ -309,6 +357,18 @@ export default function App() {
       <div className='p-4'>
         {vista === 'hub' && (
           <div className='space-y-4'>
+            
+            {/* BOTÓN ESCANEAR QR */}
+            <button onClick={escanearQR} className='w-full p-6 rounded-xl shadow-sm bg-purple-600 text-white flex justify-between items-center active:bg-purple-700 mb-4'>
+              <div className='flex items-center gap-3'>
+                <ScanLine size={32} />
+                <div className='text-left'>
+                  <h3 className='text-lg font-bold'>Escanear Código QR</h3>
+                  <p className='text-sm text-purple-200'>Buscar equipo con la cámara</p>
+                </div>
+              </div>
+            </button>
+
             <button onClick={() => { setCentroActual(null); setVista('almacen'); }} className='w-full p-6 rounded-xl shadow-sm bg-indigo-600 text-white flex justify-between items-center active:bg-indigo-700 mb-4'>
               <div className='flex items-center gap-3'>
                 <Warehouse size={32} />
@@ -609,7 +669,7 @@ export default function App() {
           </div>
         )}
 
-        {vista === 'formulario' && <FormularioActivo activo={editando} guardarDatos={guardarDatos} setVista={setVista} handleVolver={handleVolver} getNextNumber={getNextNumber} centroActual={centroActual} oficinas={oficinas} centros={centros} setMsg={setMsg} />}
+        {vista === 'formulario' && <FormularioActivo activo={editando} guardarDatos={guardarDatos} setVista={setVista} handleVolver={handleVolver} getNextNumber={getNextNumber} centroActual={centroActual} oficinas={oficinas} centros={centros} setMsg={setMsg} guardarArchivoNativo={guardarArchivoNativo} />}
         {vista === 'config' && <ConfigVista setVista={setVista} setMsg={setMsg} setActivos={setActivos} setCentros={setCentros} setOficinas={setOficinas} setPisos={setPisos} setCustomPass={setCustomPass} setLogo={setLogo} guardarArchivoNativo={guardarArchivoNativo} />}
       </div>
 
@@ -720,7 +780,7 @@ function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, se
   );
 }
 
-function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNextNumber, centroActual, oficinas, centros, setMsg }) {
+function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNextNumber, centroActual, oficinas, centros, setMsg, guardarArchivoNativo }) {
   const esAlmacen = !centroActual; 
   const [form, setForm] = useState(activo || { id: Date.now().toString(), centro: centroActual, numero: getNextNumber(), tipo: 'Laptop', subtipoImpresora: 'Impresora Normal', nombreEquipo: '', marca: '', modelo: '', codigoActivo: '', numeroSerie: '', procesador: '', generacion: '', ram: '', tipoDisco: 'SSD M.2', capacidadDisco: '', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: '', mac: '', ip: '', estado: 'Activo', enAlmacen: esAlmacen, oficina: '', piso: '', cargo: '', numeroEmpleado: '', personaAsignada: '', nombreResponsable: '', fechaAsignacion: '', marcaCPU: '', modeloCPU: '', codigoActivoCPU: '', numeroSerieCPU: '', marcaMonitor: '', modeloMonitor: '', codigoActivoMonitor: '', conexionImpresora: 'En Red', notas: '', fotoEquipo: '', fotoSerie: '', historial: [] });
   const [verBitacora, setVerBitacora] = useState(false);
@@ -764,6 +824,17 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
   const eliminarFoto = (campo) => {
     setForm({ ...form, [campo]: '' });
     setMsg('Foto eliminada'); setTimeout(()=>setMsg(''), 1500);
+  };
+
+  const descargarQR = () => {
+    const canvas = document.querySelector('#qr-canvas-container canvas');
+    if (canvas) {
+      const dataUrl = canvas.toDataURL('image/png');
+      const arr = dataUrl.split(','), mime = arr[0].match(/:(.*?);/)[1], bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+      while(n--){ u8arr[n] = bstr.charCodeAt(n); }
+      const blob = new Blob([u8arr], {type:mime});
+      guardarArchivoNativo(blob, `QR_Activo_${form.numero}.png`);
+    }
   };
 
   const handleSubmit = (e) => { 
@@ -877,6 +948,20 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
         )}
 
         <div><label className='block text-xs font-medium text-gray-700 mb-1'>Notas</label><textarea name='notas' value={form.notas||''} onChange={h} rows='2' className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' placeholder='Observaciones...'></textarea></div>
+
+        {/* SECCIÓN CÓDIGO QR */}
+        {activo && (
+          <div className='bg-white p-4 rounded-xl shadow-sm flex flex-col items-center gap-3 border border-gray-200'>
+            <h3 className='font-bold text-gray-700 flex items-center gap-2'><QrCode size={20} /> Código QR del Activo</h3>
+            <div id='qr-canvas-container' className='p-4 bg-white border-2 border-gray-100 rounded-lg'>
+              <QRCodeCanvas value={'ACTIVO-ID:' + form.id} size={160} level='H' includeMargin={true} />
+            </div>
+            <p className='text-xs text-gray-400 text-center'>Imprime este código y pégalo en el equipo. Luego usa "Escanear QR" en el menú principal.</p>
+            <button type='button' onClick={descargarQR} className='bg-gray-800 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 text-sm'>
+              <Download size={18} /> Descargar / Compartir QR
+            </button>
+          </div>
+        )}
 
         {/* SECCIÓN EVIDENCIA FOTOGRÁFICA */}
         <div className='bg-gray-50 p-3 rounded-lg border border-gray-200 space-y-3'>
