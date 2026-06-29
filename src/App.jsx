@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Monitor, Printer, Network, Laptop, LogOut, Plus, Search, FileText, ShieldCheck, Save, Trash2, ArrowLeft, Download, Key, Building2, Warehouse, Edit3, MapPin, CheckCircle, Upload, ChevronDown, Image as ImageIcon, CheckSquare, Square, Layers, History, Camera, X } from 'lucide-react';
+import { Monitor, Printer, Network, Laptop, LogOut, Plus, Search, FileText, ShieldCheck, Save, Trash2, ArrowLeft, Download, Key, Building2, Warehouse, Edit3, MapPin, CheckCircle, Upload, ChevronDown, Image as ImageIcon, CheckSquare, Square, Layers, History, Camera as CameraIcon, X } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Filesystem, Directory } from '@capacitor/filesystem';
@@ -126,7 +126,6 @@ export default function App() {
   };
   
   const getSubtipo = (a) => {
-    // Mapeo para compatibilidad con datos viejos
     if (a.tipo === 'Impresora') {
       if (a.subtipoImpresora === 'Multifuncional') return 'Impresora Multifuncional';
       if (a.subtipoImpresora === 'Scanner') return 'Scanner';
@@ -749,7 +748,7 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
   const tomarFoto = async (campo) => {
     try {
       const image = await Camera.getPhoto({
-        quality: 30, // Baja calidad para no saturar el localStorage
+        quality: 30,
         allowEditing: false,
         resultType: CameraResultType.Base64,
         source: CameraSource.Camera
@@ -814,7 +813,6 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
     </div>
   );
 
-  // Si el tipo seleccionado es alguno de los de red/periféricos
   const esTipoRed = ['Impresora', 'Impresora Multifuncional', 'Scanner', 'Switch'].includes(form.tipo);
 
   return (
@@ -892,7 +890,7 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
                 </div>
               ) : (
                 <button type='button' onClick={() => tomarFoto('fotoEquipo')} className='w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 active:bg-gray-100'>
-                  <Camera size={24} />
+                  <CameraIcon size={24} />
                   <span className='text-xs mt-1 font-bold'>Foto del Equipo</span>
                 </button>
               )}
@@ -905,7 +903,7 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
                 </div>
               ) : (
                 <button type='button' onClick={() => tomarFoto('fotoSerie')} className='w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 active:bg-gray-100'>
-                  <Camera size={24} />
+                  <CameraIcon size={24} />
                   <span className='text-xs mt-1 font-bold'>Foto N° de Serie</span>
                 </button>
               )}
