@@ -854,46 +854,36 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
     return texto;
   };
 
-  const manejarQR = async () => {
-    const canvas = document.querySelector('#qr-canvas-container canvas');
-    if (!canvas) {
-      setMsg('Error: No se pudo generar el QR.');
-      setTimeout(() => setMsg(''), 3000);
-      return;
-    }
-    
-    setCargando(true);
-    setMsg('Preparando imagen del QR...');
-    
+  const compartirQR = async () => {
     try {
+      const canvas = document.querySelector('#qr-canvas-container canvas');
+      if (!canvas) return;
+      
+      setMsg('Preparando QR para compartir...');
+      
       const dataUrl = canvas.toDataURL('image/png');
       const base64 = dataUrl.split(',')[1];
       const nombreArchivo = `QR_Activo_${form.numero}.png`;
       
-      // Escribir directamente en caché usando Filesystem nativo
       await Filesystem.writeFile({
         path: nombreArchivo,
         data: base64,
         directory: Directory.Cache
       });
       
-      // Obtener la URI real para Android
       const uriResult = await Filesystem.getUri({ path: nombreArchivo, directory: Directory.Cache });
       
-      // Abrir el menú nativo de Android (sirve para compartir y para guardar en archivos/galería)
       await Share.share({
         url: uriResult.uri,
-        dialogTitle: 'Guardar o Compartir QR'
+        dialogTitle: 'Compartir Código QR'
       });
       
-      setMsg('Menú abierto: Elige "Guardar en archivos" o tu app favorita.');
+      setMsg('Listo. Elige por dónde compartir o guardar.');
+      setTimeout(() => setMsg(''), 3000);
     } catch (e) {
-      console.error(e);
-      setMsg('Error al procesar el QR. Intente de nuevo.');
+      setMsg('Error al compartir. Intente de nuevo.');
+      setTimeout(() => setMsg(''), 3000);
     }
-    
-    setCargando(false);
-    setTimeout(() => setMsg(''), 4000);
   };
 
   const handleSubmit = (e) => { 
@@ -1053,12 +1043,11 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
           <div className='bg-white p-4 rounded-xl shadow-sm flex flex-col items-center gap-3 border border-gray-200'>
             <h3 className='font-bold text-gray-700 flex items-center gap-2'><QrCode size={20} /> Código QR del Activo</h3>
             <div id='qr-canvas-container' className='p-4 bg-white border-2 border-gray-100 rounded-lg'>
-              <QRCodeCanvas value={generarDatosQR(form)} size={180} level='M' includeMargin={true} />
+              <QRCodeCanvas value={generarDatosQR(form)} size={180} level='M' />
             </div>
             <p className='text-xs text-gray-400 text-center'>Si escaneas este código con cualquier app de QR, verás los datos del equipo. Si lo escaneas con esta app, abrirá esta ficha.</p>
-            {/* BOTÓN UNIFICADO PARA GUARDAR O COMPARTIR VÍA NATIVO ANDROID */}
-            <button type='button' onClick={manejarQR} disabled={cargando} className='w-full bg-blue-600 text-white px-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 text-sm disabled:opacity-50'>
-              <Share2 size={18} /> Guardar o Compartir QR
+            <button type='button' onClick={compartirQR} className='w-full bg-blue-600 text-white px-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 text-sm'>
+              <Share2 size={18} /> Compartir QR
             </button>
           </div>
         )}
