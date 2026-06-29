@@ -266,16 +266,24 @@ export default function App() {
         
         const code = jsQR(imageData.data, imageData.width, imageData.height);
         if (code) {
-          const idEscaneado = code.data.split(':')[1];
-          const equipo = activos.find(a => a.id === idEscaneado);
-          if (equipo) {
-            setMsg('Equipo encontrado!');
-            setTimeout(() => setMsg(''), 2000);
-            setCentroActual(equipo.centro);
-            setEditando(equipo);
-            setVista('formulario');
+          // Buscar el ID interno en el texto escaneado
+          const match = code.data.match(/ID_APP:(.*)/);
+          if (match && match[1]) {
+            const idEscaneado = match[1].trim();
+            const equipo = activos.find(a => a.id === idEscaneado);
+            if (equipo) {
+              setMsg('Equipo encontrado!');
+              setTimeout(() => setMsg(''), 2000);
+              setCentroActual(equipo.centro);
+              setEditando(equipo);
+              setVista('formulario');
+            } else {
+              alert('El código pertenece a un equipo, pero no está en este dispositivo.');
+              setMsg('');
+            }
           } else {
-            alert('Código QR válido, pero el equipo no está registrado en este dispositivo.');
+            // Si no tiene el ID de la app, es un QR externo. Mostrar el texto.
+            alert('Código QR leído:\n\n' + code.data);
             setMsg('');
           }
         } else {
@@ -826,6 +834,29 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
     setMsg('Foto eliminada'); setTimeout(()=>setMsg(''), 1500);
   };
 
+  const generarDatosQR = (f) => {
+    let texto = '=== ACTIVO FIJO ===\n';
+    texto += `Nro: ${f.numero}\n`;
+    texto += `Tipo: ${f.tipo}\n`;
+    if (f.nombreEquipo) texto += `Nombre: ${f.nombreEquipo}\n`;
+    if (f.marca) texto += `Marca: ${f.marca}\n`;
+    if (f.modelo) texto += `Modelo: ${f.modelo}\n`;
+    if (f.numeroSerie) texto += `Serie: ${f.numeroSerie}\n`;
+    if (f.codigoActivo) texto += `Cod AF: ${f.codigoActivo}\n`;
+    texto += `Estado: ${f.estado}\n`;
+    if (f.enAlmacen) {
+      texto += 'Ubicacion: EN ALMACEN\n';
+    } else {
+      if (f.personaAsignada) texto += `Asignado a: ${f.personaAsignada}\n`;
+      if (f.cargo) texto += `Cargo: ${f.cargo}\n`;
+      if (f.oficina) texto += `Oficina: ${f.oficina} (Piso ${f.piso || '-'})\n`;
+    }
+    texto += `Fecha: ${f.fechaAsignacion || 'N/A'}\n`;
+    texto += '===================\n';
+    texto += `ID_APP:${f.id}`;
+    return texto;
+  };
+
   const descargarQR = () => {
     const canvas = document.querySelector('#qr-canvas-container canvas');
     if (canvas) {
@@ -954,9 +985,9 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
           <div className='bg-white p-4 rounded-xl shadow-sm flex flex-col items-center gap-3 border border-gray-200'>
             <h3 className='font-bold text-gray-700 flex items-center gap-2'><QrCode size={20} /> Código QR del Activo</h3>
             <div id='qr-canvas-container' className='p-4 bg-white border-2 border-gray-100 rounded-lg'>
-              <QRCodeCanvas value={'ACTIVO-ID:' + form.id} size={160} level='H' includeMargin={true} />
+              <QRCodeCanvas value={generarDatosQR(form)} size={180} level='M' includeMargin={true} />
             </div>
-            <p className='text-xs text-gray-400 text-center'>Imprime este código y pégalo en el equipo. Luego usa "Escanear QR" en el menú principal.</p>
+            <p className='text-xs text-gray-400 text-center'>Si escaneas este código con cualquier app de QR, verás los datos del equipo. Si lo escaneas con esta app, abrirá esta ficha.</p>
             <button type='button' onClick={descargarQR} className='bg-gray-800 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 text-sm'>
               <Download size={18} /> Descargar / Compartir QR
             </button>
