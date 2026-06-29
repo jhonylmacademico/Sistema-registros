@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Monitor, Printer, Network, Laptop, LogOut, Plus, Search, FileText, ShieldCheck, Save, Trash2, ArrowLeft, Download, Key, Building2, Warehouse, Edit3, MapPin, CheckCircle, Upload, ChevronDown, Image as ImageIcon, CheckSquare, Square, Layers, History } from 'lucide-react';
+import { Monitor, Printer, Network, Laptop, LogOut, Plus, Search, FileText, ShieldCheck, Save, Trash2, ArrowLeft, Download, Key, Building2, Warehouse, Edit3, MapPin, CheckCircle, Upload, ChevronDown, Image as ImageIcon, CheckSquare, Square, Layers, History, Camera, X } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 
 const CENTROS_DEFAULT = [
   { id: 'sucre', nombre: 'Multicentro Sucre' },
@@ -25,17 +26,17 @@ const COLORES_CENTROS = [
 ];
 
 const TIPOS_COMPUTO = ['Laptop', 'Computadora de Escritorio'];
-const TIPOS_RED = ['Impresora', 'Switch'];
-const SUBTIPOS_REPORTE = ['Laptop', 'Computadora de Escritorio', 'Impresora Normal', 'Multifuncional', 'Scanner', 'Switch'];
+const TIPOS_RED = ['Impresora', 'Impresora Multifuncional', 'Scanner', 'Switch'];
+const SUBTIPOS_REPORTE = ['Laptop', 'Computadora de Escritorio', 'Impresora', 'Impresora Multifuncional', 'Scanner', 'Switch'];
 
 const CAMPOS = [
-  { key: 'numero', label: 'Nro. Registro' }, { key: 'tipo', label: 'Tipo Equipo' }, { key: 'nombreEquipo', label: 'Nombre Equipo' }, { key: 'marca', label: 'Marca' }, { key: 'marcaCPU', label: 'Marca CPU' }, { key: 'procesador', label: 'Procesador' }, { key: 'ram', label: 'RAM' }, { key: 'numeroSerie', label: 'Nro. Serie' }, { key: 'estado', label: 'Estado' }, { key: 'enAlmacen', label: 'En Almacen' }, { key: 'oficina', label: 'Oficina' }, { key: 'piso', label: 'Piso' }, { key: 'personaAsignada', label: 'Persona Asignada' }, { key: 'numeroEmpleado', label: 'Nro. Empleado' }
+  { key: 'numero', label: 'Nro. Registro' }, { key: 'tipo', label: 'Tipo Equipo' }, { key: 'nombreEquipo', label: 'Nombre Equipo' }, { key: 'marca', label: 'Marca' }, { key: 'marcaCPU', label: 'Marca CPU' }, { key: 'procesador', label: 'Procesador' }, { key: 'ram', label: 'RAM' }, { key: 'numeroSerie', label: 'Nro. Serie' }, { key: 'estado', label: 'Estado' }, { key: 'enAlmacen', label: 'En Almacen' }, { key: 'oficina', label: 'Oficina' }, { key: 'piso', label: 'Piso' }, { key: 'personaAsignada', label: 'Persona Asignada' }, { key: 'numeroEmpleado', label: 'Nro. Empleado' }, { key: 'historial', label: 'Historial / Bitácora' }
 ];
 
 const datosIniciales = [
-  { id: '1', centro: 'sucre', numero: '0001', tipo: 'Laptop', nombreEquipo: 'LAP-JPEREZ', marca: 'Lenovo', modelo: 'T14', codigoActivo: 'AF-001', numeroSerie: 'LP-001', procesador: 'Intel i5', generacion: '10ma', ram: '8 GB', tipoDisco: 'SSD M.2', capacidadDisco: '256 GB', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: 'Win 11', mac: 'AA:BB:CC:DD:EE:01', ip: '192.168.1.10', estado: 'Activo', enAlmacen: false, oficina: 'Contabilidad', piso: '2', cargo: 'Contador', numeroEmpleado: 'EMP-001', personaAsignada: 'Juan Perez', nombreResponsable: 'Juan Perez', fechaAsignacion: '2024-01-15', notas: '', historial: [{ fecha: '15/01/2024', nota: 'Equipo registrado en el sistema' }] },
-  { id: '2', centro: 'sucre', numero: '0002', tipo: 'Impresora', subtipoImpresora: 'Multifuncional', marca: 'HP', modelo: 'MFP', numeroSerie: 'IMP-002', codigoActivo: 'AF-002', conexionImpresora: 'En Red', mac: 'AA:BB:CC:DD:EE:02', ip: '192.168.1.50', estado: 'Activo', enAlmacen: false, oficina: 'Recursos Humanos', piso: '1', fechaAsignacion: '2024-01-10', notas: '', historial: [{ fecha: '10/01/2024', nota: 'Equipo registrado en el sistema' }] },
-  { id: '3', centro: 'sucre', numero: '0003', tipo: 'Laptop', marca: 'Dell', modelo: 'Latitude', procesador: 'Intel i7', ram: '16 GB', tipoDisco: 'SSD M.2', capacidadDisco: '512 GB', tipoDisco2: 'Ninguno', capacidadDisco2: '', estado: 'Danado', enAlmacen: false, oficina: 'Contabilidad', piso: '2', personaAsignada: 'Ana Torres', nombreResponsable: 'Ana Torres', fechaAsignacion: '2024-02-20', notas: 'Pantalla rota', historial: [{ fecha: '20/02/2024', nota: 'Equipo registrado en el sistema' }] }
+  { id: '1', centro: 'sucre', numero: '0001', tipo: 'Laptop', nombreEquipo: 'LAP-JPEREZ', marca: 'Lenovo', modelo: 'T14', codigoActivo: 'AF-001', numeroSerie: 'LP-001', procesador: 'Intel i5', generacion: '10ma', ram: '8 GB', tipoDisco: 'SSD M.2', capacidadDisco: '256 GB', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: 'Win 11', mac: 'AA:BB:CC:DD:EE:01', ip: '192.168.1.10', estado: 'Activo', enAlmacen: false, oficina: 'Contabilidad', piso: '2', cargo: 'Contador', numeroEmpleado: 'EMP-001', personaAsignada: 'Juan Perez', nombreResponsable: 'Juan Perez', fechaAsignacion: '2024-01-15', notas: '', fotoEquipo: '', fotoSerie: '', historial: [{ fecha: '15/01/2024', nota: 'Equipo registrado en el sistema' }] },
+  { id: '2', centro: 'sucre', numero: '0002', tipo: 'Impresora Multifuncional', marca: 'HP', modelo: 'MFP', numeroSerie: 'IMP-002', codigoActivo: 'AF-002', conexionImpresora: 'En Red', mac: 'AA:BB:CC:DD:EE:02', ip: '192.168.1.50', estado: 'Activo', enAlmacen: false, oficina: 'Recursos Humanos', piso: '1', fechaAsignacion: '2024-01-10', notas: '', fotoEquipo: '', fotoSerie: '', historial: [{ fecha: '10/01/2024', nota: 'Equipo registrado en el sistema' }] },
+  { id: '3', centro: 'sucre', numero: '0003', tipo: 'Laptop', marca: 'Dell', modelo: 'Latitude', procesador: 'Intel i7', ram: '16 GB', tipoDisco: 'SSD M.2', capacidadDisco: '512 GB', tipoDisco2: 'Ninguno', capacidadDisco2: '', estado: 'Danado', enAlmacen: false, oficina: 'Contabilidad', piso: '2', personaAsignada: 'Ana Torres', nombreResponsable: 'Ana Torres', fechaAsignacion: '2024-02-20', notas: 'Pantalla rota', fotoEquipo: '', fotoSerie: '', historial: [{ fecha: '20/02/2024', nota: 'Equipo registrado en el sistema' }] }
 ];
 
 const OFICINAS_DEFAULT = { sucre: [{ id: 'conta', nombre: 'Contabilidad', piso: '2' }, { id: 'rrhh', nombre: 'Recursos Humanos', piso: '1' }] };
@@ -114,10 +115,23 @@ export default function App() {
   };
 
   const limpiarFormulario = () => { setEditando(null); setVista('formulario'); };
-  const getValor = (a, key) => { if (key === 'enAlmacen') return a.enAlmacen ? 'SI' : 'NO'; return a[key] || '-'; };
+  
+  const getValor = (a, key) => { 
+    if (key === 'enAlmacen') return a.enAlmacen ? 'SI' : 'NO'; 
+    if (key === 'historial') {
+      if (!a.historial || a.historial.length === 0) return 'Sin registros';
+      return a.historial.map(h => `[${h.fecha}] ${h.nota}`).join(' \n ');
+    }
+    return a[key] || '-'; 
+  };
   
   const getSubtipo = (a) => {
-    if (a.tipo === 'Impresora') return a.subtipoImpresora || 'Impresora Normal';
+    // Mapeo para compatibilidad con datos viejos
+    if (a.tipo === 'Impresora') {
+      if (a.subtipoImpresora === 'Multifuncional') return 'Impresora Multifuncional';
+      if (a.subtipoImpresora === 'Scanner') return 'Scanner';
+      return 'Impresora';
+    }
     return a.tipo;
   };
 
@@ -208,7 +222,7 @@ export default function App() {
           startY: currentY, 
           head: [headers], 
           body: rows, 
-          styles: { fontSize: 8, cellPadding: 2, textColor: [50, 50, 50] }, 
+          styles: { fontSize: 7, cellPadding: 2, textColor: [50, 50, 50], valign: 'top' }, 
           headStyles: { fillColor: [30, 58, 95], textColor: 255, fontStyle: 'bold' }, 
           alternateRowStyles: { fillColor: [240, 245, 250] },
           margin: { left: 14, right: 14 } 
@@ -254,7 +268,7 @@ export default function App() {
     );
   }
 
-  const datosCentro = centroActual ? activos.filter(a => a.centro === centroActual && !a.enAlmacen && (categoriaVista === 'computo' ? TIPOS_COMPUTO.includes(a.tipo) : TIPOS_RED.includes(a.tipo))) : [];
+  const datosCentro = centroActual ? activos.filter(a => a.centro === centroActual && !a.enAlmacen && (categoriaVista === 'computo' ? TIPOS_COMPUTO.includes(getSubtipo(a)) : TIPOS_RED.includes(getSubtipo(a)))) : [];
   const oficinasCentro = oficinas[centroActual] || [];
   const pisosCentroActual = pisos[centroActual] || [];
   
@@ -360,10 +374,10 @@ export default function App() {
           <div className='space-y-4'>
             <div className='flex bg-gray-200 p-1 rounded-xl'>
               <button onClick={() => { setCategoriaVista('computo'); setEstadoFiltro(null); setOficinaFiltro(null); setSubtipoFiltro('Todos'); }} className={'flex-1 p-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 ' + (categoriaVista === 'computo' ? 'bg-white text-blue-600 shadow' : 'text-gray-500')}>
-                <Laptop size={18} /> Cómputo ({activos.filter(a => a.centro === centroActual && !a.enAlmacen && TIPOS_COMPUTO.includes(a.tipo)).length})
+                <Laptop size={18} /> Cómputo ({activos.filter(a => a.centro === centroActual && !a.enAlmacen && TIPOS_COMPUTO.includes(getSubtipo(a))).length})
               </button>
               <button onClick={() => { setCategoriaVista('red'); setEstadoFiltro(null); setOficinaFiltro(null); setSubtipoFiltro('Todos'); }} className={'flex-1 p-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 ' + (categoriaVista === 'red' ? 'bg-white text-blue-600 shadow' : 'text-gray-500')}>
-                <Printer size={18} /> Red y Periféricos ({activos.filter(a => a.centro === centroActual && !a.enAlmacen && TIPOS_RED.includes(a.tipo)).length})
+                <Printer size={18} /> Red y Periféricos ({activos.filter(a => a.centro === centroActual && !a.enAlmacen && TIPOS_RED.includes(getSubtipo(a))).length})
               </button>
             </div>
 
@@ -477,11 +491,11 @@ export default function App() {
             <div className='flex gap-2 mb-4 overflow-x-auto pb-2'>
               <button onClick={() => setSubtipoFiltro('Todos')} className={'px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ' + (subtipoFiltro === 'Todos' ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border')}>Todos</button>
               {categoriaVista === 'computo' ? (
-                ['Laptop', 'Computadora de Escritorio'].map(s => (
+                TIPOS_COMPUTO.map(s => (
                   <button key={s} onClick={() => setSubtipoFiltro(s)} className={'px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ' + (subtipoFiltro === s ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border')}>{s}</button>
                 ))
               ) : (
-                ['Impresora Normal', 'Multifuncional', 'Scanner', 'Switch'].map(s => (
+                TIPOS_RED.map(s => (
                   <button key={s} onClick={() => setSubtipoFiltro(s)} className={'px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ' + (subtipoFiltro === s ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border')}>{s}</button>
                 ))
               )}
@@ -709,7 +723,7 @@ function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, se
 
 function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNextNumber, centroActual, oficinas, centros, setMsg }) {
   const esAlmacen = !centroActual; 
-  const [form, setForm] = useState(activo || { id: Date.now().toString(), centro: centroActual, numero: getNextNumber(), tipo: 'Laptop', subtipoImpresora: 'Impresora Normal', nombreEquipo: '', marca: '', modelo: '', codigoActivo: '', numeroSerie: '', procesador: '', generacion: '', ram: '', tipoDisco: 'SSD M.2', capacidadDisco: '', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: '', mac: '', ip: '', estado: 'Activo', enAlmacen: esAlmacen, oficina: '', piso: '', cargo: '', numeroEmpleado: '', personaAsignada: '', nombreResponsable: '', fechaAsignacion: '', marcaCPU: '', modeloCPU: '', codigoActivoCPU: '', numeroSerieCPU: '', marcaMonitor: '', modeloMonitor: '', codigoActivoMonitor: '', conexionImpresora: 'En Red', notas: '', historial: [] });
+  const [form, setForm] = useState(activo || { id: Date.now().toString(), centro: centroActual, numero: getNextNumber(), tipo: 'Laptop', subtipoImpresora: 'Impresora Normal', nombreEquipo: '', marca: '', modelo: '', codigoActivo: '', numeroSerie: '', procesador: '', generacion: '', ram: '', tipoDisco: 'SSD M.2', capacidadDisco: '', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: '', mac: '', ip: '', estado: 'Activo', enAlmacen: esAlmacen, oficina: '', piso: '', cargo: '', numeroEmpleado: '', personaAsignada: '', nombreResponsable: '', fechaAsignacion: '', marcaCPU: '', modeloCPU: '', codigoActivoCPU: '', numeroSerieCPU: '', marcaMonitor: '', modeloMonitor: '', codigoActivoMonitor: '', conexionImpresora: 'En Red', notas: '', fotoEquipo: '', fotoSerie: '', historial: [] });
   const [verBitacora, setVerBitacora] = useState(false);
 
   const oficinasDestino = oficinas[form.centro] || [];
@@ -732,6 +746,27 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
     setForm(newForm);
   };
 
+  const tomarFoto = async (campo) => {
+    try {
+      const image = await Camera.getPhoto({
+        quality: 30, // Baja calidad para no saturar el localStorage
+        allowEditing: false,
+        resultType: CameraResultType.Base64,
+        source: CameraSource.Camera
+      });
+      const base64String = 'data:image/jpeg;base64,' + image.base64String;
+      setForm({ ...form, [campo]: base64String });
+      setMsg('Foto capturada correctamente'); setTimeout(()=>setMsg(''), 2000);
+    } catch (e) {
+      setMsg('Captura cancelada o error.'); setTimeout(()=>setMsg(''), 2000);
+    }
+  };
+
+  const eliminarFoto = (campo) => {
+    setForm({ ...form, [campo]: '' });
+    setMsg('Foto eliminada'); setTimeout(()=>setMsg(''), 1500);
+  };
+
   const handleSubmit = (e) => { 
     e.preventDefault(); 
     const datos = JSON.parse(localStorage.getItem('activos_fijos_v74') || '[]'); 
@@ -740,11 +775,10 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
     const hoy = new Date().toLocaleDateString();
 
     if (activo) {
-      // EDICIÓN: Generar bitácora si hay cambios
       let logs = [];
-      if (activo.personaAsignada !== formFinal.personaAsignada && formFinal.personaAsignada) logs.push(`Asignado a ${formFinal.personaAsignada}`);
-      if (activo.estado !== formFinal.estado) logs.push(`Estado cambiado a: ${formFinal.estado}`);
-      if (activo.oficina !== formFinal.oficina && formFinal.oficina) logs.push(`Movido a oficina: ${formFinal.oficina}`);
+      if (activo.personaAsignada !== formFinal.personaAsignada && formFinal.personaAsignada) logs.push('Asignado a ' + formFinal.personaAsignada);
+      if (activo.estado !== formFinal.estado) logs.push('Estado cambiado a: ' + formFinal.estado);
+      if (activo.oficina !== formFinal.oficina && formFinal.oficina) logs.push('Movido a oficina: ' + formFinal.oficina);
       if (activo.enAlmacen !== formFinal.enAlmacen) {
         logs.push(formFinal.enAlmacen ? 'Enviado a Almacén Global' : 'Sacado de Almacén y asignado');
       }
@@ -755,7 +789,6 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
       }
       guardarDatos(datos.map(a => a.id === activo.id ? formFinal : a));
     } else {
-      // NUEVO REGISTRO
       formFinal.historial = [{ fecha: hoy, nota: 'Equipo registrado en el sistema' }];
       guardarDatos([...datos, formFinal]);
     }
@@ -781,6 +814,9 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
     </div>
   );
 
+  // Si el tipo seleccionado es alguno de los de red/periféricos
+  const esTipoRed = ['Impresora', 'Impresora Multifuncional', 'Scanner', 'Switch'].includes(form.tipo);
+
   return (
     <div>
       <button onClick={handleVolver} className='flex items-center text-blue-600 font-bold mb-4'><ArrowLeft size={20} /> Volver</button>
@@ -799,18 +835,83 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
 
         <div className='grid grid-cols-2 gap-4'>
           <div><label className='block text-xs font-bold text-gray-500 mb-1'>Nro. REGISTRO</label><input name='numero' value={form.numero} readOnly className='w-full p-3 border border-gray-200 rounded-lg bg-blue-50 text-blue-800 font-bold' /></div>
-          <div><label className='block text-xs font-bold text-gray-500 mb-1'>TIPO EQUIPO</label><select name='tipo' value={form.tipo} onChange={h} className='w-full p-3 border border-gray-300 rounded-lg bg-gray-50'><option>Laptop</option><option>Computadora de Escritorio</option><option>Impresora</option><option>Switch</option></select></div>
+          <div><label className='block text-xs font-bold text-gray-500 mb-1'>TIPO EQUIPO</label>
+            <select name='tipo' value={form.tipo} onChange={h} className='w-full p-3 border border-gray-300 rounded-lg bg-gray-50'>
+              <option>Laptop</option>
+              <option>Computadora de Escritorio</option>
+              <option>Impresora</option>
+              <option>Impresora Multifuncional</option>
+              <option>Scanner</option>
+              <option>Switch</option>
+            </select>
+          </div>
         </div>
 
         {form.tipo === 'Laptop' && (<><div className='bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400 space-y-3'><p className='text-xs font-bold text-blue-600'>DATOS LAPTOP</p><div className='grid grid-cols-2 gap-3'><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Nombre Maquina</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca</label><input name='marca' value={form.marca||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF</label><input name='codigoActivo' value={form.codigoActivo||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Numero de Serie</label><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></div></div><CamposSpecs form={form} h={h} /><CamposUbicacion form={form} h={h} OficinaSelect={OficinaSelect} PisoInput={PisoInput} /></>)}
 
         {form.tipo === 'Computadora de Escritorio' && (<><div className='bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400 space-y-3'><p className='text-xs font-bold text-blue-600'>DATOS CPU</p><div className='grid grid-cols-2 gap-3'><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Nombre Equipo</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca CPU</label><input name='marcaCPU' value={form.marcaCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo CPU</label><input name='modeloCPU' value={form.modeloCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF CPU</label><input name='codigoActivoCPU' value={form.codigoActivoCPU||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Serie CPU</label><input name='numeroSerieCPU' value={form.numeroSerieCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></div></div><div className='bg-yellow-50 p-3 rounded-lg border-l-4 border-yellow-400 space-y-3'><p className='text-xs font-bold text-yellow-700'>DATOS MONITOR</p><div className='grid grid-cols-2 gap-3'><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca Monitor</label><input name='marcaMonitor' value={form.marcaMonitor||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo Monitor</label><input name='modeloMonitor' value={form.modeloMonitor||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF Monitor</label><input name='codigoActivoMonitor' value={form.codigoActivoMonitor||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></div></div><CamposSpecs form={form} h={h} /><CamposUbicacion form={form} h={h} OficinaSelect={OficinaSelect} PisoInput={PisoInput} /></>)}
 
-        {form.tipo === 'Impresora' && (<div className='bg-orange-50 p-3 rounded-lg border-l-4 border-orange-400 space-y-3'><p className='text-xs font-bold text-orange-600'>DATOS IMPRESORA / SCANNER</p><div className='grid grid-cols-2 gap-3'><div><label className='block text-xs font-medium text-gray-700 mb-1'>Subtipo</label><select name='subtipoImpresora' value={form.subtipoImpresora||'Impresora Normal'} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option>Impresora Normal</option><option>Multifuncional</option><option>Scanner</option></select></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Estado</label><select name='estado' value={form.estado} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option>Activo</option><option>En Mantenimiento</option><option>Danado</option></select></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca</label><input name='marca' value={form.marca||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Serie</label><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF</label><input name='codigoActivo' value={form.codigoActivo||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Conexion</label><select name='conexionImpresora' value={form.conexionImpresora||'En Red'} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option>En Red</option><option>Por USB</option></select></div>{form.conexionImpresora === 'En Red' && <><div><label className='block text-xs font-medium text-gray-700 mb-1'>MAC</label><input name='mac' value={form.mac||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>IP</label><input name='ip' value={form.ip||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></>}<OficinaSelect etiqueta='Oficina / Area' req={true} /><PisoInput req={true} /><div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Fecha Asignacion</label><input type='date' name='fechaAsignacion' value={form.fechaAsignacion||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></div></div>)}
-
-        {form.tipo === 'Switch' && (<div className='bg-orange-50 p-3 rounded-lg border-l-4 border-orange-400 space-y-3'><p className='text-xs font-bold text-orange-600'>DATOS SWITCH</p><div className='grid grid-cols-2 gap-3'><div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca</label><input name='marca' value={form.marca||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Serie</label><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF</label><input name='codigoActivo' value={form.codigoActivo||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>MAC</label><input name='mac' value={form.mac||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>IP</label><input name='ip' value={form.ip||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>Estado</label><select name='estado' value={form.estado} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option>Activo</option><option>En Mantenimiento</option><option>Danado</option></select></div><OficinaSelect etiqueta='Ubicacion / Area' req={false} /><PisoInput req={false} /></div></div>)}
+        {esTipoRed && (
+          <div className='bg-orange-50 p-3 rounded-lg border-l-4 border-orange-400 space-y-3'>
+            <p className='text-xs font-bold text-orange-600'>DATOS {form.tipo.toUpperCase()}</p>
+            <div className='grid grid-cols-2 gap-3'>
+              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Estado</label><select name='estado' value={form.estado} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option>Activo</option><option>En Mantenimiento</option><option>Danado</option></select></div>
+              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca</label><input name='marca' value={form.marca||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Serie</label><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF</label><input name='codigoActivo' value={form.codigoActivo||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+              
+              {form.tipo !== 'Switch' && (
+                <div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Conexion</label><select name='conexionImpresora' value={form.conexionImpresora||'En Red'} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option>En Red</option><option>Por USB</option></select></div>
+              )}
+              
+              {(form.tipo === 'Switch' || form.conexionImpresora === 'En Red') && (
+                <>
+                  <div><label className='block text-xs font-medium text-gray-700 mb-1'>MAC</label><input name='mac' value={form.mac||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+                  <div><label className='block text-xs font-medium text-gray-700 mb-1'>IP</label><input name='ip' value={form.ip||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+                </>
+              )}
+              <OficinaSelect etiqueta='Oficina / Area' req={true} />
+              <PisoInput req={true} />
+              <div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Fecha Asignacion</label><input type='date' name='fechaAsignacion' value={form.fechaAsignacion||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+            </div>
+          </div>
+        )}
 
         <div><label className='block text-xs font-medium text-gray-700 mb-1'>Notas</label><textarea name='notas' value={form.notas||''} onChange={h} rows='2' className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' placeholder='Observaciones...'></textarea></div>
+
+        {/* SECCIÓN EVIDENCIA FOTOGRÁFICA */}
+        <div className='bg-gray-50 p-3 rounded-lg border border-gray-200 space-y-3'>
+          <p className='text-xs font-bold text-gray-600'>EVIDENCIA FOTOGRÁFICA (OPCIONAL)</p>
+          <div className='grid grid-cols-2 gap-4'>
+            <div className='text-center'>
+              {form.fotoEquipo ? (
+                <div className='relative'>
+                  <img src={form.fotoEquipo} alt='Foto Equipo' className='w-full h-32 object-cover rounded-lg border' />
+                  <button type='button' onClick={() => eliminarFoto('fotoEquipo')} className='absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 shadow-md'><X size={14} /></button>
+                </div>
+              ) : (
+                <button type='button' onClick={() => tomarFoto('fotoEquipo')} className='w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 active:bg-gray-100'>
+                  <Camera size={24} />
+                  <span className='text-xs mt-1 font-bold'>Foto del Equipo</span>
+                </button>
+              )}
+            </div>
+            <div className='text-center'>
+              {form.fotoSerie ? (
+                <div className='relative'>
+                  <img src={form.fotoSerie} alt='Foto Serie' className='w-full h-32 object-cover rounded-lg border' />
+                  <button type='button' onClick={() => eliminarFoto('fotoSerie')} className='absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 shadow-md'><X size={14} /></button>
+                </div>
+              ) : (
+                <button type='button' onClick={() => tomarFoto('fotoSerie')} className='w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 active:bg-gray-100'>
+                  <Camera size={24} />
+                  <span className='text-xs mt-1 font-bold'>Foto N° de Serie</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* SECCIÓN BITÁCORA / HISTORIAL */}
         {activo && (
