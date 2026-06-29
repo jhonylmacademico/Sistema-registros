@@ -810,6 +810,37 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
     setForm(newForm);
   };
 
+  // LÓGICA DE AUTOCOMPLETADO INTELIGENTE
+  const parseGeneracion = (procesador) => {
+    if (!procesador) return '';
+    const match = procesador.match(/[-\s](\d{1,2})\d{3}/); // Busca el primer dígito antes de 3 dígitos (ej: i7-9700 -> 9, Ryzen 5 5600 -> 5)
+    if (match && match[1]) {
+      const genNum = parseInt(match[1]);
+      const ordinales = ['', '1ra', '2da', '3ra', '4ta', '5ta', '6ta', '7ma', '8va', '9na', '10ma', '11va', '12va', '13va', '14va'];
+      return ordinales[genNum] || `${genNum}va`;
+    }
+    return '';
+  };
+
+  const handleProcesador = (e) => {
+    const val = e.target.value;
+    setForm({ ...form, procesador: val, generacion: parseGeneracion(val) });
+  };
+
+  const formatMemory = (campo) => {
+    let val = (form[campo] || '').toString().trim();
+    if (!val) return;
+    const num = parseFloat(val.replace(/[^0-9.]/g, ''));
+    if (!isNaN(num) && num > 0) {
+      if (num >= 1000) {
+        const tb = (num / 1000).toFixed(1).replace('.0', '');
+        setForm({ ...form, [campo]: `${tb} TB` });
+      } else {
+        setForm({ ...form, [campo]: `${num} GB` });
+      }
+    }
+  };
+
   const tomarFoto = async (campo) => {
     try {
       const image = await Camera.getPhoto({
@@ -979,8 +1010,8 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
               <div><label className='block text-xs font-medium text-gray-700 mb-1'>Numero de Serie</label><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
             </div>
           </div>
-          <CamposSpecs form={form} h={h} />
-          <CamposUbicacion form={form} h={h} OficinaSelect={OficinaSelect} PisoInput={PisoInput} />
+          <CamposSpecs form={form} setForm={setForm} handleProcesador={handleProcesador} formatMemory={formatMemory} />
+          <CamposUbicacion form={form} h={h} setForm={setForm} OficinaSelect={OficinaSelect} PisoInput={PisoInput} />
           </>
         )}
 
@@ -1004,8 +1035,8 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
               <div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF Monitor</label><input name='codigoActivoMonitor' value={form.codigoActivoMonitor||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
             </div>
           </div>
-          <CamposSpecs form={form} h={h} />
-          <CamposUbicacion form={form} h={h} OficinaSelect={OficinaSelect} PisoInput={PisoInput} />
+          <CamposSpecs form={form} setForm={setForm} handleProcesador={handleProcesador} formatMemory={formatMemory} />
+          <CamposUbicacion form={form} h={h} setForm={setForm} OficinaSelect={OficinaSelect} PisoInput={PisoInput} />
           </>
         )}
 
@@ -1031,7 +1062,13 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
               )}
               <OficinaSelect etiqueta='Oficina / Area' req={true} />
               <PisoInput req={true} />
-              <div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Fecha Asignacion</label><input type='date' name='fechaAsignacion' value={form.fechaAsignacion||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+              <div className='col-span-2'>
+                <label className='block text-xs font-medium text-gray-700 mb-1'>Fecha Asignacion</label>
+                <div className='flex gap-2'>
+                  <input type='date' name='fechaAsignacion' value={form.fechaAsignacion||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' />
+                  <button type='button' onClick={() => setForm({...form, fechaAsignacion: '1999-01-01'})} className='bg-gray-200 text-gray-600 px-3 rounded-lg text-xs font-bold whitespace-nowrap'>Histórico</button>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -1115,27 +1152,28 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
   );
 }
 
-function CamposSpecs({ form, h }) {
+function CamposSpecs({ form, setForm, handleProcesador, formatMemory }) {
+  const h = (e) => setForm({ ...form, [e.target.name]: e.target.value });
   return (
     <div className='bg-purple-50 p-3 rounded-lg border-l-4 border-purple-400 space-y-3'>
       <p className='text-xs font-bold text-purple-600'>ESPECIFICACIONES</p>
       <div className='grid grid-cols-2 gap-3'>
-        <div><label className='block text-xs font-medium text-gray-700 mb-1'>Procesador</label><input name='procesador' value={form.procesador||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
-        <div><label className='block text-xs font-medium text-gray-700 mb-1'>Generacion</label><input name='generacion' value={form.generacion||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
-        <div><label className='block text-xs font-medium text-gray-700 mb-1'>RAM</label><input name='ram' value={form.ram||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+        <div><label className='block text-xs font-medium text-gray-700 mb-1'>Procesador</label><input name='procesador' value={form.procesador||''} onChange={handleProcesador} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+        <div><label className='block text-xs font-medium text-gray-700 mb-1'>Generacion</label><input name='generacion' value={form.generacion||''} onChange={h} placeholder='Se autocompleta' className='w-full p-2.5 border border-gray-300 rounded-lg bg-gray-50 text-sm' /></div>
+        <div><label className='block text-xs font-medium text-gray-700 mb-1'>RAM</label><input name='ram' value={form.ram||''} onChange={h} onBlur={() => formatMemory('ram')} placeholder='Ej: 8' className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
         <div><label className='block text-xs font-medium text-gray-700 mb-1'>S.O.</label><input name='sistemaOperativo' value={form.sistemaOperativo||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
         <div><label className='block text-xs font-medium text-gray-700 mb-1'>MAC</label><input name='mac' value={form.mac||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
         <div><label className='block text-xs font-medium text-gray-700 mb-1'>IP</label><input name='ip' value={form.ip||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
       </div>
       <div className='border-t border-purple-200 pt-3 mt-2 grid grid-cols-2 gap-3'>
-        <div><p className='text-xs font-bold text-purple-800 mb-1'>DISCO 1</p><select name='tipoDisco' value={form.tipoDisco||'SSD M.2'} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm mb-1'><option>SSD M.2</option><option>SSD SATA</option><option>HDD</option><option>M.2 NVMe</option></select><input name='capacidadDisco' value={form.capacidadDisco||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' placeholder='Capacidad' /></div>
-        <div><p className='text-xs font-bold text-purple-800 mb-1'>DISCO 2</p><select name='tipoDisco2' value={form.tipoDisco2||'Ninguno'} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm mb-1'><option>Ninguno</option><option>SSD M.2</option><option>SSD SATA</option><option>HDD</option><option>M.2 NVMe</option></select><input name='capacidadDisco2' value={form.capacidadDisco2||''} onChange={h} disabled={form.tipoDisco2==='Ninguno'} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' placeholder='Capacidad' /></div>
+        <div><p className='text-xs font-bold text-purple-800 mb-1'>DISCO 1</p><select name='tipoDisco' value={form.tipoDisco||'SSD M.2'} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm mb-1'><option>SSD M.2</option><option>SSD SATA</option><option>HDD</option><option>M.2 NVMe</option></select><input name='capacidadDisco' value={form.capacidadDisco||''} onChange={h} onBlur={() => formatMemory('capacidadDisco')} placeholder='Ej: 256' className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+        <div><p className='text-xs font-bold text-purple-800 mb-1'>DISCO 2</p><select name='tipoDisco2' value={form.tipoDisco2||'Ninguno'} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm mb-1'><option>Ninguno</option><option>SSD M.2</option><option>SSD SATA</option><option>HDD</option><option>M.2 NVMe</option></select><input name='capacidadDisco2' value={form.capacidadDisco2||''} onChange={h} onBlur={() => formatMemory('capacidadDisco2')} disabled={form.tipoDisco2==='Ninguno'} placeholder='Ej: 512' className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
       </div>
     </div>
   );
 }
 
-function CamposUbicacion({ form, h, OficinaSelect, PisoInput }) {
+function CamposUbicacion({ form, h, setForm, OficinaSelect, PisoInput }) {
   return (
     <div className='bg-green-50 p-3 rounded-lg border-l-4 border-green-400 space-y-3'>
       <p className='text-xs font-bold text-green-700'>UBICACION Y ASIGNACION</p>
@@ -1156,7 +1194,13 @@ function CamposUbicacion({ form, h, OficinaSelect, PisoInput }) {
           <div><label className='block text-xs font-medium text-gray-700 mb-1'>Cargo que Ocupa</label><input name='cargo' value={form.cargo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
           <div><label className='block text-xs font-medium text-gray-700 mb-1'>Persona Asignada</label><input name='personaAsignada' value={form.personaAsignada||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
           <div><label className='block text-xs font-medium text-gray-700 mb-1'>Nombre Responsable</label><input name='nombreResponsable' value={form.nombreResponsable||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
-          <div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Fecha Asignacion</label><input type='date' name='fechaAsignacion' value={form.fechaAsignacion||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+          <div className='col-span-2'>
+            <label className='block text-xs font-medium text-gray-700 mb-1'>Fecha Asignacion</label>
+            <div className='flex gap-2'>
+              <input type='date' name='fechaAsignacion' value={form.fechaAsignacion||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' />
+              <button type='button' onClick={() => setForm({...form, fechaAsignacion: '1999-01-01'})} className='bg-gray-200 text-gray-600 px-3 rounded-lg text-xs font-bold whitespace-nowrap'>Histórico</button>
+            </div>
+          </div>
         </div>
       ) : (
         <div className='grid grid-cols-2 gap-3'>
