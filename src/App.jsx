@@ -54,7 +54,6 @@ const CAMPOS = [
   { key: 'conexionImpresora', label: 'Conexión' }
 ];
 
-// Mapeo inteligente: Qué campos pertenecen a qué dispositivo
 const CAMPOS_POR_TIPO = {
   'Laptop': ['numero', 'nombreEquipo', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'procesador', 'generacion', 'ram', 'sistemaOperativo', 'mac', 'ip', 'tipoDisco', 'capacidadDisco', 'tipoDisco2', 'capacidadDisco2', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
   'Computadora All in One': ['numero', 'nombreEquipo', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'procesador', 'generacion', 'ram', 'sistemaOperativo', 'mac', 'ip', 'tipoDisco', 'capacidadDisco', 'tipoDisco2', 'capacidadDisco2', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
@@ -96,8 +95,9 @@ export default function App() {
   const [cargando, setCargando] = useState(false);
   const [pisoExpandido, setPisoExpandido] = useState(null);
   const [logo, setLogo] = useState(null);
-  const [reporteCols, setReporteCols] = useState({}); // Objeto para columnas por dispositivo
+  const [reporteCols, setReporteCols] = useState({}); 
   const [catsReporte, setCatsReporte] = useState([...SUBTIPOS_REPORTE]);
+  const [reporteExpandido, setReporteExpandido] = useState(null); // Nuevo estado para colapsar reportes
 
   useEffect(() => {
     const c = localStorage.getItem('mis_centros_v74'); if (c) setCentros(JSON.parse(c)); else { setCentros(CENTROS_DEFAULT); localStorage.setItem('mis_centros_v74', JSON.stringify(CENTROS_DEFAULT)); }
@@ -161,7 +161,6 @@ export default function App() {
     return a.tipo;
   };
 
-  // Manejo de columnas por tipo de dispositivo
   const handleCheckCol = (tipo, key) => {
     setReporteCols(prev => {
       const current = prev[tipo] || [];
@@ -453,35 +452,40 @@ export default function App() {
           <div className='space-y-4'>
             <div className='bg-white p-4 rounded-xl shadow-sm'><h2 className='font-bold text-gray-800 mb-3'>1. Selecciona Equipos a Incluir:</h2><div className='grid grid-cols-2 gap-2'>{SUBTIPOS_REPORTE.map(cat => (<label key={cat} className={'flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-sm ' + (catsReporte.includes(cat) ? 'bg-indigo-50 border-indigo-500 text-indigo-800 font-medium' : 'bg-gray-50 border-gray-200')}><input type='checkbox' checked={catsReporte.includes(cat)} onChange={() => handleCatReporte(cat)} className='accent-indigo-600' />{cat}</label>))}</div></div>
             
-            <div className='bg-white p-4 rounded-xl shadow-sm space-y-4'>
-              <h2 className='font-bold text-gray-800'>2. Selecciona Columnas por Dispositivo:</h2>
+            <div className='bg-white p-4 rounded-xl shadow-sm space-y-3'>
+              <h2 className='font-bold text-gray-800'>2. Selecciona Columnas (Toca para desplegar):</h2>
               {catsReporte.length === 0 ? <p className='text-sm text-gray-500 text-center py-4'>Primero selecciona un tipo de equipo arriba.</p> : catsReporte.map(cat => {
                 const cols = reporteCols[cat] || [];
                 const camposDisponibles = CAMPOS_POR_TIPO[cat] || [];
                 return (
-                  <div key={cat} className='border border-gray-100 rounded-xl p-3 bg-gray-50'>
-                    <div className='flex justify-between items-center mb-3'>
-                      <h3 className='font-bold text-sm text-gray-700'>{cat}</h3>
-                      <div className='flex gap-1'>
-                        <button type='button' onClick={() => selectAllCols(cat)} className='text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold'>Todos</button>
-                        <button type='button' onClick={() => clearCols(cat)} className='text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded font-bold'>Limpiar</button>
+                  <div key={cat} className='border border-gray-100 rounded-xl bg-gray-50 overflow-hidden'>
+                    <button type='button' onClick={() => setReporteExpandido(reporteExpandido === cat ? null : cat)} className='w-full p-3 flex justify-between items-center font-bold text-gray-700 active:bg-gray-100'>
+                      <span>{cat} <span className='text-xs font-normal text-gray-400'>({cols.length} cols)</span></span>
+                      <ChevronDown size={18} className={reporteExpandido === cat ? 'rotate-180 transition-transform' : 'transition-transform'} />
+                    </button>
+                    {reporteExpandido === cat && (
+                      <div className='p-3 pt-0'>
+                        <div className='flex justify-end gap-1 mb-2'>
+                          <button type='button' onClick={() => selectAllCols(cat)} className='text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold'>Todos</button>
+                          <button type='button' onClick={() => clearCols(cat)} className='text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded font-bold'>Limpiar</button>
+                        </div>
+                        <div className='grid grid-cols-2 gap-2'>
+                          {camposDisponibles.map((key, idx) => {
+                            const isSelected = cols.includes(key);
+                            const label = CAMPOS.find(c => c.key === key)?.label || key;
+                            const colorClass = COLORES_CHECKS[idx % COLORES_CHECKS.length];
+                            const order = cols.indexOf(key) + 1;
+                            return (
+                              <label key={key} className={'flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-sm transition-all ' + (isSelected ? `bg-white border-gray-300 font-bold ${colorClass}` : 'bg-gray-50 border-gray-200 text-gray-500')}>
+                                <input type='checkbox' checked={isSelected} onChange={() => handleCheckCol(cat, key)} className='w-4 h-4 accent-blue-600' />
+                                <span className='flex-1 truncate'>{label}</span>
+                                {isSelected && <span className='ml-auto text-xs font-bold bg-gray-800 text-white px-1.5 py-0.5 rounded-full'>{order}</span>}
+                              </label>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                    <div className='grid grid-cols-2 gap-2'>
-                      {camposDisponibles.map((key, idx) => {
-                        const isSelected = cols.includes(key);
-                        const label = CAMPOS.find(c => c.key === key)?.label || key;
-                        const colorClass = COLORES_CHECKS[idx % COLORES_CHECKS.length];
-                        const order = cols.indexOf(key) + 1;
-                        return (
-                          <label key={key} className={'flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-sm transition-all ' + (isSelected ? `bg-white border-gray-300 font-bold ${colorClass}` : 'bg-gray-50 border-gray-200 text-gray-500')}>
-                            <input type='checkbox' checked={isSelected} onChange={() => handleCheckCol(cat, key)} className='w-4 h-4 accent-blue-600' />
-                            <span className='flex-1 truncate'>{label}</span>
-                            {isSelected && <span className='ml-auto text-xs font-bold bg-gray-800 text-white px-1.5 py-0.5 rounded-full'>{order}</span>}
-                          </label>
-                        );
-                      })}
-                    </div>
+                    )}
                   </div>
                 );
               })}
@@ -514,7 +518,7 @@ export default function App() {
           </div>
         )}
 
-        {vista === 'formulario' && <FormularioActivo activo={editando} guardarDatos={guardarDatos} setVista={setVista} handleVolver={handleVolver} getNextNumber={getNextNumber} centroActual={centroActual} oficinas={oficinas} centros={centros} setMsg={setMsg} guardarArchivoNativo={guardarArchivoNativo} escanearParaCampo={escanearParaCampo} />}
+        {vista === 'formulario' && <FormularioActivo activo={editando} guardarDatos={guardarDatos} setVista={setVista} handleVolver={handleVolver} getNextNumber={getNextNumber} centroActual={centroActual} categoriaVista={categoriaVista} oficinas={oficinas} centros={centros} setMsg={setMsg} guardarArchivoNativo={guardarArchivoNativo} escanearParaCampo={escanearParaCampo} />}
         {vista === 'config' && <ConfigVista setVista={setVista} setMsg={setMsg} setActivos={setActivos} setCentros={setCentros} setOficinas={setOficinas} setPisos={setPisos} setCustomPass={setCustomPass} setLogo={setLogo} guardarArchivoNativo={guardarArchivoNativo} />}
       </div>
 
@@ -545,9 +549,14 @@ function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, se
   );
 }
 
-function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNextNumber, centroActual, oficinas, centros, setMsg, guardarArchivoNativo, escanearParaCampo }) {
+function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNextNumber, centroActual, categoriaVista, oficinas, centros, setMsg, guardarArchivoNativo, escanearParaCampo }) {
   const esAlmacen = !centroActual; 
-  const [form, setForm] = useState(activo || { id: Date.now().toString(), centro: centroActual, numero: getNextNumber(), tipo: 'Laptop', subtipoImpresora: 'Impresora Normal', nombreEquipo: '', marca: '', modelo: '', codigoActivo: '', numeroSerie: '', procesador: '', generacion: '', ram: '', tipoDisco: 'SSD M.2', capacidadDisco: '', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: '', mac: '', ip: '', estado: 'Activo', enAlmacen: esAlmacen, oficina: '', piso: '', cargo: '', numeroEmpleado: '', personaAsignada: '', nombreResponsable: '', fechaAsignacion: '', marcaCPU: '', modeloCPU: '', codigoActivoCPU: '', numeroSerieCPU: '', marcaMonitor: '', modeloMonitor: '', codigoActivoMonitor: '', numeroSerieMonitor: '', conexionImpresora: 'En Red', notas: '', fotoEquipo: '', fotoSerie: '', historial: [] });
+  
+  // Determinar opciones de tipo de equipo basadas en la categoría visual o si es almacén (muestra todo)
+  const opcionesTipo = esAlmacen ? [...TIPOS_COMPUTO, ...TIPOS_RED] : (categoriaVista === 'red' ? TIPOS_RED : TIPOS_COMPUTO);
+  const tipoDefault = categoriaVista === 'red' ? 'Impresora' : 'Laptop';
+
+  const [form, setForm] = useState(activo || { id: Date.now().toString(), centro: centroActual, numero: getNextNumber(), tipo: tipoDefault, subtipoImpresora: 'Impresora Normal', nombreEquipo: '', marca: '', modelo: '', codigoActivo: '', numeroSerie: '', procesador: '', generacion: '', ram: '', tipoDisco: 'SSD M.2', capacidadDisco: '', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: '', mac: '', ip: '', estado: 'Activo', enAlmacen: esAlmacen, oficina: '', piso: '', cargo: '', numeroEmpleado: '', personaAsignada: '', nombreResponsable: '', fechaAsignacion: '', marcaCPU: '', modeloCPU: '', codigoActivoCPU: '', numeroSerieCPU: '', marcaMonitor: '', modeloMonitor: '', codigoActivoMonitor: '', numeroSerieMonitor: '', conexionImpresora: 'En Red', notas: '', fotoEquipo: '', fotoSerie: '', historial: [] });
   const [verBitacora, setVerBitacora] = useState(false);
   const [errores, setErrores] = useState({});
 
@@ -613,7 +622,11 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
         {esAlmacen && !form.enAlmacen && (<div className='bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400'><label className='block text-xs font-bold text-blue-600 mb-1'>ASIGNAR A MULTICENTRO</label><select name='centro' value={form.centro||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option value='' disabled>Seleccionar...</option>{centros.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}</select></div>)}
         <div className='grid grid-cols-2 gap-4'>
           <div><label className='block text-xs font-bold text-gray-500 mb-1'>Nro. REGISTRO</label><input name='numero' value={form.numero} readOnly className='w-full p-3 border border-gray-200 rounded-lg bg-blue-50 text-blue-800 font-bold' /></div>
-          <div><label className='block text-xs font-bold text-gray-500 mb-1'>TIPO EQUIPO</label><select name='tipo' value={form.tipo} onChange={h} className='w-full p-3 border border-gray-300 rounded-lg bg-gray-50'><option>Laptop</option><option>Computadora de Escritorio</option><option>Computadora All in One</option><option>Impresora</option><option>Impresora Multifuncional</option><option>Scanner</option><option>Switch</option></select></div>
+          <div><label className='block text-xs font-bold text-gray-500 mb-1'>TIPO EQUIPO</label>
+            <select name='tipo' value={form.tipo} onChange={h} className='w-full p-3 border border-gray-300 rounded-lg bg-gray-50'>
+              {opcionesTipo.map(opt => <option key={opt}>{opt}</option>)}
+            </select>
+          </div>
         </div>
 
         {esTipoUnificado && (
