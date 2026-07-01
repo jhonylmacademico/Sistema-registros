@@ -27,13 +27,6 @@ const COLORES_CENTROS = [
   { borde: 'border-teal-500', fondo: 'bg-teal-50', texto: 'text-teal-800' }
 ];
 
-const COLORES_CHECKS = [
-  'text-blue-600', 'text-green-600', 'text-amber-600', 'text-pink-600', 
-  'text-purple-600', 'text-red-600', 'text-indigo-600', 'text-teal-600',
-  'text-orange-600', 'text-cyan-600', 'text-lime-600', 'text-fuchsia-600',
-  'text-rose-600', 'text-emerald-600', 'text-violet-600', 'text-sky-600'
-];
-
 const TIPOS_COMPUTO = ['Laptop', 'Computadora de Escritorio', 'Computadora All in One'];
 const TIPOS_RED = ['Impresora', 'Impresora Multifuncional', 'Scanner', 'Switch'];
 const SUBTIPOS_REPORTE = ['Laptop', 'Computadora de Escritorio', 'Computadora All in One', 'Impresora', 'Impresora Multifuncional', 'Scanner', 'Switch'];
@@ -82,8 +75,7 @@ export default function App() {
   const [cargando, setCargando] = useState(false);
   const [pisoExpandido, setPisoExpandido] = useState(null);
   const [logo, setLogo] = useState(null);
-  const [camposSeleccionados, setCamposSeleccionados] = useState(['numero', 'tipo', 'nombreEquipo', 'procesador', 'ram', 'estado', 'oficina', 'personaAsignada']);
-  const [ordenCols, setOrdenCols] = useState({});
+  const [reporteCols, setReporteCols] = useState({}); // Objeto para columnas por dispositivo
   const [catsReporte, setCatsReporte] = useState([...SUBTIPOS_REPORTE]);
 
   useEffect(() => {
@@ -122,10 +114,7 @@ export default function App() {
       if (pisosCentro.length > 0) {
         p = prompt(`En qué piso está? (Opciones: ${pisosCentro.join(', ')}):`, pisosCentro[0]);
         if (p && !pisosCentro.includes(p)) { alert('Ese piso no existe. Primero créalo en la sección de pisos.'); return; }
-      } else {
-        alert('Primero crea al menos un piso para este centro.');
-        return;
-      }
+      } else { alert('Primero crea al menos un piso para este centro.'); return; }
       const act = oficinas[centroActual] || []; 
       const nuevas = [...act, { id: n.trim().toLowerCase().replace(/\s+/g, '_'), nombre: n.trim(), piso: p }]; 
       guardarOficinas({...oficinas, [centroActual]: nuevas}); 
@@ -137,10 +126,7 @@ export default function App() {
   
   const getValor = (a, key) => { 
     if (key === 'enAlmacen') return a.enAlmacen ? 'SI' : 'NO'; 
-    if (key === 'historial') {
-      if (!a.historial || a.historial.length === 0) return 'Sin registros';
-      return a.historial.map(h => `[${h.fecha}] ${h.nota}`).join(' \n ');
-    }
+    if (key === 'historial') { if (!a.historial || a.historial.length === 0) return 'Sin registros'; return a.historial.map(h => `[${h.fecha}] ${h.nota}`).join(' \n '); }
     if (key === 'centro') return centros.find(c => c.id === a.centro)?.nombre || '-';
     return a[key] || '-'; 
   };
@@ -154,24 +140,17 @@ export default function App() {
     return a.tipo;
   };
 
-  const handleCheck = (key) => {
-    setCamposSeleccionados(prev => {
-      if (prev.includes(key)) {
-        const newOrden = {}; let count = 1;
-        prev.filter(k => k !== key).forEach(k => { newOrden[k] = count++; });
-        setOrdenCols(newOrden);
-        return prev.filter(k => k !== key);
-      } else {
-        setOrdenCols(prevOrden => ({ ...prevOrden, [key]: prev.length + 1 }));
-        return [...prev, key];
-      }
+  // Manejo de columnas por tipo de dispositivo
+  const handleCheckCol = (tipo, key) => {
+    setReporteCols(prev => {
+      const current = prev[tipo] || [];
+      const newCols = current.includes(key) ? current.filter(k => k !== key) : [...current, key];
+      return { ...prev, [tipo]: newCols };
     });
   };
-  const seleccionarTodosCampos = () => { 
-    const todos = CAMPOS.map(c => c.key); setCamposSeleccionados(todos); 
-    const newOrden = {}; todos.forEach((k, i) => newOrden[k] = i + 1); setOrdenCols(newOrden);
-  };
-  const limpiarCampos = () => { setCamposSeleccionados([]); setOrdenCols({}); };
+  const selectAllCols = (tipo) => setReporteCols(prev => ({ ...prev, [tipo]: CAMPOS.map(c => c.key) }));
+  const clearCols = (tipo) => setReporteCols(prev => { const n = {...prev}; delete n[tipo]; return n; });
+
   const handleCatReporte = (cat) => { setCatsReporte(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]); };
 
   const handleVolver = () => {
@@ -205,24 +184,22 @@ export default function App() {
 
   const exportarCSV = () => {
     const datosCentro = activos.filter(a => a.centro === centroActual && !a.enAlmacen);
-    const camposOrdenados = [...camposSeleccionados].sort((a, b) => (ordenCols[a] || 0) - (ordenCols[b] || 0));
-    const headers = camposOrdenados.map(k => CAMPOS.find(c=>c.key===k)?.label || k);
     const fechaGen = new Date().toLocaleDateString();
-    
     let csv = '\uFEFF' + 'REPORTE DE ACTIVOS FIJOS\nCentro: ' + (centros.find(c=>c.id===centroActual)?.nombre || '') + '\nGenerado el: ' + fechaGen + '\n---------------------------------------------------\n';
     
     catsReporte.forEach(cat => {
       const datosCat = datosCentro.filter(a => getSubtipo(a) === cat);
-      if (datosCat.length > 0) {
+      const cols = reporteCols[cat] || [];
+      if (datosCat.length > 0 && cols.length > 0) {
+        const headers = cols.map(k => CAMPOS.find(c=>c.key===k)?.label || k);
         csv += '\n=== ' + cat.toUpperCase() + ' ===\n';
         csv += headers.join(';') + '\n';
         datosCat.forEach(a => {
-          const row = camposOrdenados.map(k => getValor(a, k));
+          const row = cols.map(k => getValor(a, k));
           csv += row.map(c => '\x22' + String(c).replace(/\x22/g, '\x22\x22') + '\x22').join(';') + '\n';
         });
       }
     });
-    
     guardarArchivoNativo(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), 'Reporte_Activos.csv');
   };
 
@@ -233,32 +210,25 @@ export default function App() {
 
   const exportarPDF = () => {
     const datosCentro = activos.filter(a => a.centro === centroActual && !a.enAlmacen);
-    const camposOrdenados = [...camposSeleccionados].sort((a, b) => (ordenCols[a] || 0) - (ordenCols[b] || 0));
-    const headers = camposOrdenados.map(k => CAMPOS.find(c=>c.key===k)?.label || k);
     const doc = new jsPDF('l', 'mm', 'a4'); 
-    
     if (logo) { try { doc.addImage(logo, 'PNG', 14, 10, 30, 15); } catch (e) {} }
-    
     doc.setFontSize(18); doc.setTextColor(30, 58, 95); doc.text('Reporte de Activos Fijos', 50, 18);
     doc.setFontSize(10); doc.setTextColor(100); 
     doc.text('Centro: ' + (centros.find(c=>c.id===centroActual)?.nombre || ''), 50, 24);
     doc.text('Generado: ' + new Date().toLocaleDateString(), 250, 18);
-    
     let currentY = 30;
     
     catsReporte.forEach(cat => {
       const datosCat = datosCentro.filter(a => getSubtipo(a) === cat);
-      if (datosCat.length > 0) {
-        const rows = datosCat.map(a => camposOrdenados.map(k => String(getValor(a, k))));
-        
+      const cols = reporteCols[cat] || [];
+      if (datosCat.length > 0 && cols.length > 0) {
+        const headers = cols.map(k => CAMPOS.find(c=>c.key===k)?.label || k);
+        const rows = datosCat.map(a => cols.map(k => String(getValor(a, k))));
         if (currentY > 160) { doc.addPage(); currentY = 20; }
-        
         doc.setFontSize(12); doc.setTextColor(30, 58, 95); 
         doc.text(cat + ' (' + datosCat.length + ' equipos)', 14, currentY);
         currentY += 4;
-        
         const color = COLORES_PDF[cat] || [30, 58, 95];
-        
         doc.autoTable({ 
           startY: currentY, head: [headers], body: rows, 
           styles: { fontSize: 7, cellPadding: 2, textColor: [50, 50, 50], valign: 'top' }, 
@@ -274,7 +244,6 @@ export default function App() {
       doc.setPage(i); doc.setFontSize(8); doc.setTextColor(150);
       doc.text('Pagina ' + i + ' de ' + pageCount, doc.internal.pageSize.width - 20, doc.internal.pageSize.height - 10);
     }
-    
     guardarArchivoNativo(doc.output('blob'), 'Reporte_Activos.pdf');
   };
 
@@ -285,31 +254,30 @@ export default function App() {
       setMsg('Leyendo código...');
       const img = new Image();
       img.onload = async () => {
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = img.width; tempCanvas.height = img.height;
-        const ctx = tempCanvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-        
-        let detectedCode = null;
-        if ('BarcodeDetector' in window) {
-          try { const detector = new BarcodeDetector({ formats: ['code_39', 'code_128', 'ean_13', 'qr_code'] }); const codes = await detector.detect(tempCanvas); if (codes.length > 0) detectedCode = codes[0].rawValue; } catch(e) {}
-        }
-        if (!detectedCode) {
-          const imageData = ctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-          const code = jsQR(imageData.data, imageData.width, imageData.height);
-          if (code) detectedCode = code.data;
-        }
-
-        if (detectedCode) {
-          const match = detectedCode.match(/ID_APP:(.*)/);
-          if (match && match[1]) {
-            const equipo = activos.find(a => a.id === match[1].trim());
-            if (equipo) { setCentroActual(equipo.centro); setEditando(equipo); setVista('detalles'); setMsg(''); return; }
+        try {
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = img.width; tempCanvas.height = img.height;
+          const ctx = tempCanvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          let detectedCode = null;
+          
+          if ('BarcodeDetector' in window) {
+            try { const detector = new BarcodeDetector({ formats: ['code_39', 'code_128', 'ean_13', 'qr_code'] }); const codes = await detector.detect(tempCanvas); if (codes.length > 0) detectedCode = codes[0].rawValue; } catch(e) {}
           }
-          const equipo = activos.find(a => a.codigoActivo === detectedCode || a.numeroSerie === detectedCode || a.numeroSerieCPU === detectedCode);
-          if (equipo) { setCentroActual(equipo.centro); setEditando(equipo); setVista('detalles'); setMsg(''); return; }
-          alert('Código leído: ' + detectedCode + '\n\nPero no se encontró ningún equipo con este código.'); setMsg('');
-        } else { alert('No se detectó ningún código. Intenta acercar más la cámara o mejorar la luz.'); setMsg(''); }
+          if (!detectedCode) {
+            const imageData = ctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
+            if (code) detectedCode = code.data;
+          }
+
+          if (detectedCode) {
+            const match = detectedCode.match(/ID_APP:(.*)/);
+            if (match && match[1]) { const equipo = activos.find(a => a.id === match[1].trim()); if (equipo) { setCentroActual(equipo.centro); setEditando(equipo); setVista('detalles'); setMsg(''); return; } }
+            const equipo = activos.find(a => a.codigoActivo === detectedCode || a.numeroSerie === detectedCode || a.numeroSerieCPU === detectedCode);
+            if (equipo) { setCentroActual(equipo.centro); setEditando(equipo); setVista('detalles'); setMsg(''); return; }
+            alert('Código leído: ' + detectedCode + '\n\nPero no se encontró ningún equipo con este código.'); setMsg('');
+          } else { alert('No se detectó ningún código. Intenta acercar más la cámara o mejorar la luz.'); setMsg(''); }
+        } catch (err) { alert('Error al procesar la imagen.'); setMsg(''); }
       };
       img.src = 'data:image/jpeg;base64,' + image.base64String;
     } catch (e) { setMsg('Escaneo cancelado.'); setTimeout(() => setMsg(''), 2000); }
@@ -319,28 +287,29 @@ export default function App() {
     try {
       setMsg('Abriendo cámara para escanear...');
       const image = await Camera.getPhoto({ quality: 80, allowEditing: false, resultType: CameraResultType.Base64, source: CameraSource.Camera });
+      setMsg('Procesando imagen...');
       const img = new Image();
       img.onload = async () => {
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = img.width; tempCanvas.height = img.height;
-        const ctx = tempCanvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-        
-        let detectedCode = null;
-        if ('BarcodeDetector' in window) {
-          try { const detector = new BarcodeDetector({ formats: ['code_39', 'code_128', 'ean_13', 'qr_code'] }); const codes = await detector.detect(tempCanvas); if (codes.length > 0) detectedCode = codes[0].rawValue; } catch(e) {}
-        }
-        if (!detectedCode) {
-          const imageData = ctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-          const code = jsQR(imageData.data, imageData.width, imageData.height);
-          if (code) detectedCode = code.data;
-        }
-
-        if (detectedCode) {
-          const val = detectedCode.match(/ID_APP:(.*)/) ? detectedCode.match(/ID_APP:(.*)/)[1] : detectedCode;
-          setForm(prev => ({ ...prev, [campo]: val }));
-          setMsg('Código capturado: ' + val); setTimeout(()=>setMsg(''), 3000);
-        } else { alert('No se detectó ningún código. Asegúrate de enfocar bien en buena luz.'); setMsg(''); }
+        try {
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = img.width; tempCanvas.height = img.height;
+          const ctx = tempCanvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          let detectedCode = null;
+          if ('BarcodeDetector' in window) {
+            try { const detector = new BarcodeDetector({ formats: ['code_39', 'code_128', 'ean_13', 'qr_code'] }); const codes = await detector.detect(tempCanvas); if (codes.length > 0) detectedCode = codes[0].rawValue; } catch(e) {}
+          }
+          if (!detectedCode) {
+            const imageData = ctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
+            if (code) detectedCode = code.data;
+          }
+          if (detectedCode) {
+            const val = detectedCode.match(/ID_APP:(.*)/) ? detectedCode.match(/ID_APP:(.*)/)[1] : detectedCode;
+            setForm(prev => ({ ...prev, [campo]: val }));
+            setMsg('Código capturado'); setTimeout(()=>setMsg(''), 2000);
+          } else { alert('No se detectó código. Si es de barras, asegúrate de que la foto sea nítida y con buena luz. Si tu celular no lo lee, puedes escribirlo manualmente.'); setMsg(''); }
+        } catch (err) { alert('Error al analizar la foto.'); setMsg(''); }
       };
       img.src = 'data:image/jpeg;base64,' + image.base64String;
     } catch (e) { setMsg('Cancelado'); setTimeout(() => setMsg(''), 2000); }
@@ -366,7 +335,6 @@ export default function App() {
   const datosCentro = centroActual ? activos.filter(a => a.centro === centroActual && !a.enAlmacen && (categoriaVista === 'computo' ? TIPOS_COMPUTO.includes(getSubtipo(a)) : TIPOS_RED.includes(getSubtipo(a)))) : [];
   const oficinasCentro = oficinas[centroActual] || [];
   const pisosCentroActual = pisos[centroActual] || [];
-  
   let datosFinales = datosCentro;
   if (estadoFiltro) datosFinales = datosFinales.filter(a => a.estado === estadoFiltro);
   else if (oficinaFiltro) { datosFinales = datosFinales.filter(a => a.oficina === oficinaFiltro); if (pisoFiltro !== 'Todos') datosFinales = datosFinales.filter(a => a.piso === pisoFiltro); }
@@ -374,7 +342,6 @@ export default function App() {
 
   const pisosDisponibles = oficinaFiltro ? ['Todos', ...new Set(datosCentro.filter(a => a.oficina === oficinaFiltro && a.piso).map(a => a.piso))] : [];
   const activosFiltrados = datosFinales.filter(a => (a.marca||'').toLowerCase().includes(busqueda.toLowerCase()) || (a.nombreEquipo||'').toLowerCase().includes(busqueda.toLowerCase()) || (a.personaAsignada||'').toLowerCase().includes(busqueda.toLowerCase()) || (a.numero||'').includes(busqueda));
-  
   const activosEnAlmacen = activos.filter(a => a.enAlmacen);
   const oficinasAgrupadas = {};
   oficinasCentro.forEach(o => { const p = o.piso || 'Sin Piso'; if (!oficinasAgrupadas[p]) oficinasAgrupadas[p] = []; oficinasAgrupadas[p].push(o); });
@@ -395,39 +362,17 @@ export default function App() {
       <div className='p-4'>
         {vista === 'hub' && (
           <div className='space-y-4'>
-            <button onClick={escanearQR} className='w-full p-6 rounded-xl shadow-sm bg-purple-600 text-white flex justify-between items-center active:bg-purple-700 mb-4'>
-              <div className='flex items-center gap-3'><ScanLine size={32} /><div className='text-left'><h3 className='text-lg font-bold'>Escanear Código (QR o Barras)</h3><p className='text-sm text-purple-200'>Ver ficha del equipo al instante</p></div></div>
-            </button>
-            <button onClick={() => { setCentroActual(null); setVista('almacen'); }} className='w-full p-6 rounded-xl shadow-sm bg-indigo-600 text-white flex justify-between items-center active:bg-indigo-700 mb-4'>
-              <div className='flex items-center gap-3'><Warehouse size={32} /><div className='text-left'><h3 className='text-lg font-bold'>Almacén Global</h3><p className='text-sm text-indigo-200'>Equipos sin asignar</p></div></div>
-              <span className='bg-white text-indigo-600 font-bold text-xl rounded-full w-10 h-10 flex items-center justify-center'>{activosEnAlmacen.length}</span>
-            </button>
+            <button onClick={escanearQR} className='w-full p-6 rounded-xl shadow-sm bg-purple-600 text-white flex justify-between items-center active:bg-purple-700 mb-4'><div className='flex items-center gap-3'><ScanLine size={32} /><div className='text-left'><h3 className='text-lg font-bold'>Escanear Código (QR o Barras)</h3><p className='text-sm text-purple-200'>Ver ficha del equipo al instante</p></div></div></button>
+            <button onClick={() => { setCentroActual(null); setVista('almacen'); }} className='w-full p-6 rounded-xl shadow-sm bg-indigo-600 text-white flex justify-between items-center active:bg-indigo-700 mb-4'><div className='flex items-center gap-3'><Warehouse size={32} /><div className='text-left'><h3 className='text-lg font-bold'>Almacén Global</h3><p className='text-sm text-indigo-200'>Equipos sin asignar</p></div></div><span className='bg-white text-indigo-600 font-bold text-xl rounded-full w-10 h-10 flex items-center justify-center'>{activosEnAlmacen.length}</span></button>
             <div className='flex justify-between items-center mb-2'><div className='flex items-center gap-2 text-gray-600'><Building2 size={20} /><h2 className='text-xl font-bold text-gray-800'>Multicentros</h2></div><button onClick={agregarCentro} className='bg-blue-600 text-white px-3 py-2 rounded-lg flex items-center gap-1 text-sm font-bold'><Plus size={18} /> Agregar</button></div>
-            <div className='grid grid-cols-1 gap-4'>
-              {centros.map((c, index) => { const color = COLORES_CENTROS[index % COLORES_CENTROS.length]; return (
-                <button key={c.id} onClick={() => { setCentroActual(c.id); setVista('dashboard'); setPisoExpandido(null); setCategoriaVista('computo'); }} className={'p-6 rounded-xl shadow-sm border-l-4 ' + color.borde + ' ' + color.fondo + ' text-left active:bg-gray-200'}>
-                  <h3 className='text-lg font-bold text-gray-800'>{c.nombre}</h3><p className='text-sm text-gray-500 mt-1'>{activos.filter(a => a.centro === c.id && !a.enAlmacen).length} activos</p>
-                </button>
-              );})}
-            </div>
+            <div className='grid grid-cols-1 gap-4'>{centros.map((c, index) => { const color = COLORES_CENTROS[index % COLORES_CENTROS.length]; return (<button key={c.id} onClick={() => { setCentroActual(c.id); setVista('dashboard'); setPisoExpandido(null); setCategoriaVista('computo'); }} className={'p-6 rounded-xl shadow-sm border-l-4 ' + color.borde + ' ' + color.fondo + ' text-left active:bg-gray-200'}><h3 className='text-lg font-bold text-gray-800'>{c.nombre}</h3><p className='text-sm text-gray-500 mt-1'>{activos.filter(a => a.centro === c.id && !a.enAlmacen).length} activos</p></button>);})}</div>
           </div>
         )}
 
         {vista === 'almacen' && (
           <div>
-            <div className='flex gap-2 mb-4'>
-              <div className='flex-1 relative'><Search className='absolute left-3 top-3.5 text-gray-400' size={18} /><input placeholder='Buscar en almacén...' value={busqueda} onChange={e => setBusqueda(e.target.value)} className='w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-gray-200 shadow-sm' /></div>
-              <button onClick={limpiarFormulario} className='bg-blue-600 text-white px-4 rounded-xl flex items-center gap-2 shadow-sm'><Plus size={20} /> Nuevo</button>
-            </div>
-            <div className='space-y-3'>
-              {activosEnAlmacen.length === 0 ? <p className='text-center text-gray-500 mt-10'>El almacén está vacío.</p> : 
-              activosEnAlmacen.filter(a => (a.marca||'').toLowerCase().includes(busqueda.toLowerCase()) || (a.nombreEquipo||'').toLowerCase().includes(busqueda.toLowerCase())).map(a => (
-                <div key={a.id} onClick={() => { setEditando(a); setVista('detalles'); }} className='bg-white p-4 rounded-xl shadow-sm border-l-4 border-indigo-400 active:bg-gray-50'>
-                  <div className='flex justify-between items-start'><div><p className='text-xs text-indigo-600 font-bold'>Nro. {a.numero}</p><h3 className='font-bold text-gray-800'>{a.nombreEquipo || (a.marcaCPU || a.marca) + ' ' + (a.modeloCPU || a.modelo)}</h3><p className='text-sm text-gray-500'>{a.tipo} {a.subtipoImpresora ? '- '+a.subtipoImpresora : ''}</p></div>{a.centro && <span className='text-xs font-bold px-2 py-1 rounded-full bg-gray-100 text-gray-600'>{centros.find(c=>c.id===a.centro)?.nombre || 'N/A'}</span>}</div>
-                  <div className='mt-2 text-sm text-indigo-600 border-t pt-2 font-bold flex justify-end'><span>Toca para ver detalles</span></div>
-                </div>
-              ))}
-            </div>
+            <div className='flex gap-2 mb-4'><div className='flex-1 relative'><Search className='absolute left-3 top-3.5 text-gray-400' size={18} /><input placeholder='Buscar en almacén...' value={busqueda} onChange={e => setBusqueda(e.target.value)} className='w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-gray-200 shadow-sm' /></div><button onClick={limpiarFormulario} className='bg-blue-600 text-white px-4 rounded-xl flex items-center gap-2 shadow-sm'><Plus size={20} /> Nuevo</button></div>
+            <div className='space-y-3'>{activosEnAlmacen.length === 0 ? <p className='text-center text-gray-500 mt-10'>El almacén está vacío.</p> : activosEnAlmacen.filter(a => (a.marca||'').toLowerCase().includes(busqueda.toLowerCase()) || (a.nombreEquipo||'').toLowerCase().includes(busqueda.toLowerCase())).map(a => (<div key={a.id} onClick={() => { setEditando(a); setVista('detalles'); }} className='bg-white p-4 rounded-xl shadow-sm border-l-4 border-indigo-400 active:bg-gray-50'><div className='flex justify-between items-start'><div><p className='text-xs text-indigo-600 font-bold'>Nro. {a.numero}</p><h3 className='font-bold text-gray-800'>{a.nombreEquipo || (a.marcaCPU || a.marca) + ' ' + (a.modeloCPU || a.modelo)}</h3><p className='text-sm text-gray-500'>{a.tipo} {a.subtipoImpresora ? '- '+a.subtipoImpresora : ''}</p></div>{a.centro && <span className='text-xs font-bold px-2 py-1 rounded-full bg-gray-100 text-gray-600'>{centros.find(c=>c.id===a.centro)?.nombre || 'N/A'}</span>}</div><div className='mt-2 text-sm text-indigo-600 border-t pt-2 font-bold flex justify-end'><span>Toca para ver detalles</span></div></div>))}</div>
           </div>
         )}
 
@@ -445,55 +390,25 @@ export default function App() {
               <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro('En Mantenimiento'); setSubtipoFiltro('Todos'); setVista('lista'); }} className='bg-white p-4 rounded-xl shadow-sm border-l-4 border-yellow-500 text-left'><p className='text-gray-500 text-xs'>Mantenimiento</p><p className='text-2xl font-bold text-yellow-600'>{datosCentro.filter(a=>a.estado==='En Mantenimiento').length}</p></button>
             </div>
             <div className='flex justify-between items-center mt-4 mb-2'><h3 className='font-bold text-gray-700 flex items-center gap-2'><MapPin size={18} /> Oficinas por Piso</h3><button onClick={() => setVista('oficinas')} className='bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg flex items-center gap-1 text-sm font-bold'><Edit3 size={16} /> Gestionar</button></div>
-            {pisosOrdenados.length === 0 ? <p className='text-sm text-gray-500 bg-white p-4 rounded-lg text-center'>No hay oficinas asignadas a pisos. Ve a Gestionar.</p> : (
-              <div className='space-y-3'>
-                {pisosOrdenados.map(p => { const equiposEnPiso = datosCentro.filter(a => (a.piso ? a.piso : 'Sin Piso') === p).length; const oficinasEnPiso = oficinasAgrupadas[p]; return (
-                  <div key={p} className='bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden'>
-                    <button onClick={() => setPisoExpandido(pisoExpandido === p ? null : p)} className='w-full p-4 flex justify-between items-center active:bg-gray-50'><span className='font-bold text-gray-800'>Piso {p}</span><div className='flex items-center gap-3'><span className='text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full font-bold'>{equiposEnPiso} equipos</span><ChevronDown size={20} className={'text-gray-400 transition-transform ' + (pisoExpandido === p ? 'rotate-180' : '')} /></div></button>
-                    {pisoExpandido === p && (<div className='p-3 pt-0 grid grid-cols-2 gap-3'>{oficinasEnPiso.length === 0 ? <p className='col-span-2 text-center text-xs text-gray-400 py-2'>No hay oficinas.</p> : oficinasEnPiso.map(o => { const count = datosCentro.filter(a => a.oficina === o.nombre).length; return (<button key={o.id} onClick={() => { setOficinaFiltro(o.nombre); setPisoFiltro(p === 'Sin Piso' ? '' : p); setEstadoFiltro(null); setSubtipoFiltro('Todos'); setVista('lista'); setBusqueda(''); }} className='bg-gray-50 p-3 rounded-lg border border-gray-200 text-left active:bg-gray-100 hover:border-blue-400 transition'><h4 className='font-bold text-gray-800 text-sm'>{o.nombre}</h4><p className='text-xs text-gray-500 mt-1'>{count} equipos</p></button>); })}</div>)}
-                  </div>
-                );})}
-              </div>
-            )}
+            {pisosOrdenados.length === 0 ? <p className='text-sm text-gray-500 bg-white p-4 rounded-lg text-center'>No hay oficinas asignadas a pisos. Ve a Gestionar.</p> : (<div className='space-y-3'>{pisosOrdenados.map(p => { const equiposEnPiso = datosCentro.filter(a => (a.piso ? a.piso : 'Sin Piso') === p).length; const oficinasEnPiso = oficinasAgrupadas[p]; return (<div key={p} className='bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden'><button onClick={() => setPisoExpandido(pisoExpandido === p ? null : p)} className='w-full p-4 flex justify-between items-center active:bg-gray-50'><span className='font-bold text-gray-800'>Piso {p}</span><div className='flex items-center gap-3'><span className='text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full font-bold'>{equiposEnPiso} equipos</span><ChevronDown size={20} className={'text-gray-400 transition-transform ' + (pisoExpandido === p ? 'rotate-180' : '')} /></div></button>{pisoExpandido === p && (<div className='p-3 pt-0 grid grid-cols-2 gap-3'>{oficinasEnPiso.length === 0 ? <p className='col-span-2 text-center text-xs text-gray-400 py-2'>No hay oficinas.</p> : oficinasEnPiso.map(o => { const count = datosCentro.filter(a => a.oficina === o.nombre).length; return (<button key={o.id} onClick={() => { setOficinaFiltro(o.nombre); setPisoFiltro(p === 'Sin Piso' ? '' : p); setEstadoFiltro(null); setSubtipoFiltro('Todos'); setVista('lista'); setBusqueda(''); }} className='bg-gray-50 p-3 rounded-lg border border-gray-200 text-left active:bg-gray-100 hover:border-blue-400 transition'><h4 className='font-bold text-gray-800 text-sm'>{o.nombre}</h4><p className='text-xs text-gray-500 mt-1'>{count} equipos</p></button>); })}</div>)}</div>);})}</div>)}
           </div>
         )}
 
         {centroActual && vista === 'oficinas' && (
           <div>
             <button onClick={handleVolver} className='flex items-center text-blue-600 font-bold mb-4'><ArrowLeft size={20} /> Volver al Dashboard</button>
-            <div className='bg-white p-4 rounded-xl shadow-sm mb-4'>
-              <div className='flex justify-between items-center mb-4'><h2 className='font-bold text-lg text-gray-800 flex items-center gap-2'><Layers size={20} /> Pisos de {centros.find(c=>c.id===centroActual)?.nombre}</h2><button onClick={agregarPiso} className='bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-1 font-bold text-sm'><Plus size={18} /> Nuevo Piso</button></div>
-              {pisosCentroActual.length === 0 ? <p className='text-gray-500 text-center py-4 text-sm'>No hay pisos creados en este centro.</p> : (
-                <div className='flex flex-wrap gap-2'>{pisosCentroActual.map((p, index) => (<div key={index} className='flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-lg border border-gray-200'><span className='font-bold text-gray-700 text-sm'>Piso {p}</span><button onClick={() => { if (confirm('Eliminar el piso ' + p + '?')) { const np = pisosCentroActual.filter((_, i) => i !== index); guardarPisos({...pisos, [centroActual]: np}); const no = oficinasCentro.map(o => o.piso === p ? {...o, piso: ''} : o); guardarOficinas({...oficinas, [centroActual]: no}); setMsg('Piso eliminado'); setTimeout(()=>setMsg(''), 2000); } }} className='text-red-500'><Trash2 size={14} /></button></div>))}</div>
-              )}
-            </div>
-            <div className='bg-white p-4 rounded-xl shadow-sm'>
-              <div className='flex justify-between items-center mb-4'><h2 className='font-bold text-lg text-gray-800'>Oficinas de {centros.find(c=>c.id===centroActual)?.nombre}</h2><button onClick={agregarOficina} className='bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-1 font-bold text-sm'><Plus size={18} /> Nueva Oficina</button></div>
-              {oficinasCentro.length === 0 ? <p className='text-gray-500 text-center py-8 text-sm'>Aun no hay oficinas creadas.</p> : (
-                <div className='space-y-3'>{oficinasCentro.map((o, index) => (<div key={o.id} className='flex justify-between items-center bg-gray-50 p-4 rounded-lg border'><div><p className='font-bold text-gray-800'>{index + 1}. {o.nombre}</p><p className='text-xs text-gray-500'>{datosCentro.filter(a => a.oficina === o.nombre).length} equipos | Piso: {o.piso || 'No asignado'}</p></div><div className='flex gap-2'><button onClick={() => { const nuevo = prompt('Editar nombre:', o.nombre); if (nuevo && nuevo.trim()) { const act = oficinasCentro; act[index].nombre = nuevo.trim(); guardarOficinas({...oficinas, [centroActual]: act}); setMsg('Actualizado'); setTimeout(()=>setMsg(''), 2000); } }} className='bg-blue-100 text-blue-700 px-3 py-2 rounded-lg text-sm font-bold'>Editar</button><button onClick={() => { if (confirm('Eliminar ' + o.nombre + '?')) { const act = oficinasCentro; act.splice(index, 1); guardarOficinas({...oficinas, [centroActual]: act}); setMsg('Eliminada'); setTimeout(()=>setMsg(''), 2000); } }} className='bg-red-100 text-red-700 px-3 py-2 rounded-lg text-sm font-bold'>Borrar</button></div></div>))}</div>
-              )}
-            </div>
+            <div className='bg-white p-4 rounded-xl shadow-sm mb-4'><div className='flex justify-between items-center mb-4'><h2 className='font-bold text-lg text-gray-800 flex items-center gap-2'><Layers size={20} /> Pisos de {centros.find(c=>c.id===centroActual)?.nombre}</h2><button onClick={agregarPiso} className='bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-1 font-bold text-sm'><Plus size={18} /> Nuevo Piso</button></div>{pisosCentroActual.length === 0 ? <p className='text-gray-500 text-center py-4 text-sm'>No hay pisos creados en este centro.</p> : (<div className='flex flex-wrap gap-2'>{pisosCentroActual.map((p, index) => (<div key={index} className='flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-lg border border-gray-200'><span className='font-bold text-gray-700 text-sm'>Piso {p}</span><button onClick={() => { if (confirm('Eliminar el piso ' + p + '?')) { const np = pisosCentroActual.filter((_, i) => i !== index); guardarPisos({...pisos, [centroActual]: np}); const no = oficinasCentro.map(o => o.piso === p ? {...o, piso: ''} : o); guardarOficinas({...oficinas, [centroActual]: no}); setMsg('Piso eliminado'); setTimeout(()=>setMsg(''), 2000); } }} className='text-red-500'><Trash2 size={14} /></button></div>))}</div>)}</div>
+            <div className='bg-white p-4 rounded-xl shadow-sm'><div className='flex justify-between items-center mb-4'><h2 className='font-bold text-lg text-gray-800'>Oficinas de {centros.find(c=>c.id===centroActual)?.nombre}</h2><button onClick={agregarOficina} className='bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-1 font-bold text-sm'><Plus size={18} /> Nueva Oficina</button></div>{oficinasCentro.length === 0 ? <p className='text-gray-500 text-center py-8 text-sm'>Aun no hay oficinas creadas.</p> : (<div className='space-y-3'>{oficinasCentro.map((o, index) => (<div key={o.id} className='flex justify-between items-center bg-gray-50 p-4 rounded-lg border'><div><p className='font-bold text-gray-800'>{index + 1}. {o.nombre}</p><p className='text-xs text-gray-500'>{datosCentro.filter(a => a.oficina === o.nombre).length} equipos | Piso: {o.piso || 'No asignado'}</p></div><div className='flex gap-2'><button onClick={() => { const nuevo = prompt('Editar nombre:', o.nombre); if (nuevo && nuevo.trim()) { const act = oficinasCentro; act[index].nombre = nuevo.trim(); guardarOficinas({...oficinas, [centroActual]: act}); setMsg('Actualizado'); setTimeout(()=>setMsg(''), 2000); } }} className='bg-blue-100 text-blue-700 px-3 py-2 rounded-lg text-sm font-bold'>Editar</button><button onClick={() => { if (confirm('Eliminar ' + o.nombre + '?')) { const act = oficinasCentro; act.splice(index, 1); guardarOficinas({...oficinas, [centroActual]: act}); setMsg('Eliminada'); setTimeout(()=>setMsg(''), 2000); } }} className='bg-red-100 text-red-700 px-3 py-2 rounded-lg text-sm font-bold'>Borrar</button></div></div>))}</div>)}</div>
           </div>
         )}
 
         {centroActual && vista === 'lista' && (
           <div>
             {(estadoFiltro || oficinaFiltro) && (<div className='bg-blue-50 p-3 rounded-xl mb-4 flex justify-between items-center border border-blue-200'><div><p className='text-xs text-blue-600 font-bold'>FILTRANDO POR:</p><p className='text-sm font-bold text-gray-800'>{estadoFiltro ? 'Estado: ' + estadoFiltro : 'Oficina: ' + oficinaFiltro} {pisoFiltro && pisoFiltro !== 'Todos' ? '| Piso: ' + pisoFiltro : ''}</p></div><button onClick={() => { setEstadoFiltro(null); setOficinaFiltro(null); setPisoFiltro('Todos'); setBusqueda(''); setSubtipoFiltro('Todos'); }} className='text-red-500 font-bold text-sm'>LIMPIAR</button></div>)}
-            <div className='flex gap-2 mb-4 overflow-x-auto pb-2'>
-              <button onClick={() => setSubtipoFiltro('Todos')} className={'px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ' + (subtipoFiltro === 'Todos' ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border')}>Todos</button>
-              {categoriaVista === 'computo' ? (TIPOS_COMPUTO.map(s => (<button key={s} onClick={() => setSubtipoFiltro(s)} className={'px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ' + (subtipoFiltro === s ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border')}>{s}</button>))) : (TIPOS_RED.map(s => (<button key={s} onClick={() => setSubtipoFiltro(s)} className={'px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ' + (subtipoFiltro === s ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border')}>{s}</button>)))}
-            </div>
+            <div className='flex gap-2 mb-4 overflow-x-auto pb-2'><button onClick={() => setSubtipoFiltro('Todos')} className={'px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ' + (subtipoFiltro === 'Todos' ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border')}>Todos</button>{categoriaVista === 'computo' ? (TIPOS_COMPUTO.map(s => (<button key={s} onClick={() => setSubtipoFiltro(s)} className={'px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ' + (subtipoFiltro === s ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border')}>{s}</button>))) : (TIPOS_RED.map(s => (<button key={s} onClick={() => setSubtipoFiltro(s)} className={'px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ' + (subtipoFiltro === s ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border')}>{s}</button>)))}</div>
             {oficinaFiltro && pisosDisponibles.length > 0 && (<div className='flex gap-2 mb-4 overflow-x-auto pb-2'>{pisosDisponibles.map(p => (<button key={p} onClick={() => setPisoFiltro(p)} className={'px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap ' + (pisoFiltro === p ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border')}>{p === 'Todos' ? 'Todos' : 'Piso ' + p}</button>))}</div>)}
             <div className='flex gap-2 mb-4'><div className='flex-1 relative'><Search className='absolute left-3 top-3.5 text-gray-400' size={18} /><input placeholder='Buscar equipo...' value={busqueda} onChange={e => setBusqueda(e.target.value)} className='w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-gray-200 shadow-sm' /></div><button onClick={limpiarFormulario} className='bg-blue-600 text-white px-4 rounded-xl flex items-center gap-2 shadow-sm'><Plus size={20} /> Nuevo</button></div>
-            <div className='space-y-3'>
-              {activosFiltrados.length === 0 ? <p className='text-center text-gray-500 mt-10'>Sin activos.</p> : 
-              activosFiltrados.map(a => (
-                <div key={a.id} onClick={() => { setEditando(a); setVista('detalles'); }} className='bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-400 active:bg-gray-50'>
-                  <div className='flex justify-between items-start'><div><p className='text-xs text-blue-600 font-bold'>Nro. {a.numero}</p><h3 className='font-bold text-gray-800'>{a.nombreEquipo || (a.marcaCPU || a.marca) + ' ' + (a.modeloCPU || a.modelo)}</h3><p className='text-sm text-gray-500'>{a.tipo} {a.subtipoImpresora ? '- '+a.subtipoImpresora : ''}</p></div><div className='text-right'><span className={'text-xs font-bold px-2 py-1 rounded-full ' + (a.estado === 'Activo' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700')}>{a.estado}</span></div></div>
-                  <div className='mt-2 text-sm text-gray-600 border-t pt-2 flex justify-between'><span>{a.personaAsignada ? 'Asignado: ' + a.personaAsignada : 'En Stock'}</span><span>{a.oficina || '-'} {a.piso ? '- Piso ' + a.piso : ''}</span></div>
-                </div>
-              ))}
-            </div>
+            <div className='space-y-3'>{activosFiltrados.length === 0 ? <p className='text-center text-gray-500 mt-10'>Sin activos.</p> : activosFiltrados.map(a => (<div key={a.id} onClick={() => { setEditando(a); setVista('detalles'); }} className='bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-400 active:bg-gray-50'><div className='flex justify-between items-start'><div><p className='text-xs text-blue-600 font-bold'>Nro. {a.numero}</p><h3 className='font-bold text-gray-800'>{a.nombreEquipo || (a.marcaCPU || a.marca) + ' ' + (a.modeloCPU || a.modelo)}</h3><p className='text-sm text-gray-500'>{a.tipo} {a.subtipoImpresora ? '- '+a.subtipoImpresora : ''}</p></div><div className='text-right'><span className={'text-xs font-bold px-2 py-1 rounded-full ' + (a.estado === 'Activo' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700')}>{a.estado}</span></div></div><div className='mt-2 text-sm text-gray-600 border-t pt-2 flex justify-between'><span>{a.personaAsignada ? 'Asignado: ' + a.personaAsignada : 'En Stock'}</span><span>{a.oficina || '-'} {a.piso ? '- Piso ' + a.piso : ''}</span></div></div>))}</div>
           </div>
         )}
 
@@ -501,18 +416,12 @@ export default function App() {
           <div className='bg-white p-4 rounded-xl shadow-sm space-y-4'>
             <div className='flex justify-between items-center border-b pb-2'><h2 className='font-bold text-lg text-gray-800'>Ficha del Activo</h2><span className='text-xs font-bold px-2 py-1 rounded-full bg-blue-100 text-blue-800'>Nro. {editando.numero}</span></div>
             <div className='grid grid-cols-2 gap-3 text-sm'>
-              <div><p className='text-gray-400 text-xs'>Tipo</p><p className='font-bold text-gray-700'>{editando.tipo || '-'}</p></div>
-              <div><p className='text-gray-400 text-xs'>Nombre Equipo</p><p className='font-bold text-gray-700'>{editando.nombreEquipo || '-'}</p></div>
-              <div><p className='text-gray-400 text-xs'>Marca</p><p className='font-bold text-gray-700'>{editando.marca || editando.marcaCPU || '-'}</p></div>
-              <div><p className='text-gray-400 text-xs'>Modelo</p><p className='font-bold text-gray-700'>{editando.modelo || editando.modeloCPU || '-'}</p></div>
-              <div><p className='text-gray-400 text-xs'>Código AF</p><p className='font-bold text-gray-700'>{editando.codigoActivo || editando.codigoActivoCPU || '-'}</p></div>
-              <div><p className='text-gray-400 text-xs'>Serie</p><p className='font-bold text-gray-700'>{editando.numeroSerie || editando.numeroSerieCPU || '-'}</p></div>
-              <div><p className='text-gray-400 text-xs'>Procesador</p><p className='font-bold text-gray-700'>{editando.procesador || '-'} {editando.generacion ? '('+editando.generacion+')' : ''}</p></div>
-              <div><p className='text-gray-400 text-xs'>RAM</p><p className='font-bold text-gray-700'>{editando.ram || '-'}</p></div>
-              <div><p className='text-gray-400 text-xs'>Disco 1</p><p className='font-bold text-gray-700'>{editando.tipoDisco} {editando.capacidadDisco}</p></div>
-              <div><p className='text-gray-400 text-xs'>Disco 2</p><p className='font-bold text-gray-700'>{editando.tipoDisco2} {editando.capacidadDisco2}</p></div>
-              <div><p className='text-gray-400 text-xs'>Estado</p><p className='font-bold text-gray-700'>{editando.estado || '-'}</p></div>
-              <div><p className='text-gray-400 text-xs'>En Almacén</p><p className='font-bold text-gray-700'>{editando.enAlmacen ? 'SÍ' : 'NO'}</p></div>
+              <div><p className='text-gray-400 text-xs'>Tipo</p><p className='font-bold text-gray-700'>{editando.tipo || '-'}</p></div><div><p className='text-gray-400 text-xs'>Nombre Equipo</p><p className='font-bold text-gray-700'>{editando.nombreEquipo || '-'}</p></div>
+              <div><p className='text-gray-400 text-xs'>Marca</p><p className='font-bold text-gray-700'>{editando.marca || editando.marcaCPU || '-'}</p></div><div><p className='text-gray-400 text-xs'>Modelo</p><p className='font-bold text-gray-700'>{editando.modelo || editando.modeloCPU || '-'}</p></div>
+              <div><p className='text-gray-400 text-xs'>Código AF</p><p className='font-bold text-gray-700'>{editando.codigoActivo || editando.codigoActivoCPU || '-'}</p></div><div><p className='text-gray-400 text-xs'>Serie</p><p className='font-bold text-gray-700'>{editando.numeroSerie || editando.numeroSerieCPU || '-'}</p></div>
+              <div><p className='text-gray-400 text-xs'>Procesador</p><p className='font-bold text-gray-700'>{editando.procesador || '-'} {editando.generacion ? '('+editando.generacion+')' : ''}</p></div><div><p className='text-gray-400 text-xs'>RAM</p><p className='font-bold text-gray-700'>{editando.ram || '-'}</p></div>
+              <div><p className='text-gray-400 text-xs'>Disco 1</p><p className='font-bold text-gray-700'>{editando.tipoDisco} {editando.capacidadDisco}</p></div><div><p className='text-gray-400 text-xs'>Disco 2</p><p className='font-bold text-gray-700'>{editando.tipoDisco2} {editando.capacidadDisco2}</p></div>
+              <div><p className='text-gray-400 text-xs'>Estado</p><p className='font-bold text-gray-700'>{editando.estado || '-'}</p></div><div><p className='text-gray-400 text-xs'>En Almacén</p><p className='font-bold text-gray-700'>{editando.enAlmacen ? 'SÍ' : 'NO'}</p></div>
             </div>
             {!editando.enAlmacen && (<div className='bg-gray-50 p-3 rounded-lg space-y-1 text-sm'><h3 className='font-bold text-gray-700 border-b pb-1 mb-2'>Ubicación y Asignación</h3><p><span className='text-gray-400'>Oficina:</span> {editando.oficina || '-'} (Piso {editando.piso || '-'})</p><p><span className='text-gray-400'>Asignado a:</span> {editando.personaAsignada || '-'}</p><p><span className='text-gray-400'>Cargo:</span> {editando.cargo || '-'}</p><p><span className='text-gray-400'>Fecha:</span> {editando.fechaAsignacion || '-'}</p></div>)}
             {(editando.fotoEquipo || editando.fotoSerie) && (<div className='grid grid-cols-2 gap-4'>{editando.fotoEquipo && <div><p className='text-xs text-gray-400 mb-1'>Foto Equipo</p><img src={editando.fotoEquipo} className='w-full h-32 object-cover rounded-lg border' /></div>}{editando.fotoSerie && <div><p className='text-xs text-gray-400 mb-1'>Foto Serie</p><img src={editando.fotoSerie} className='w-full h-32 object-cover rounded-lg border' /></div>}</div>)}
@@ -524,34 +433,43 @@ export default function App() {
         {centroActual && vista === 'reporte' && (
           <div className='space-y-4'>
             <div className='bg-white p-4 rounded-xl shadow-sm'><h2 className='font-bold text-gray-800 mb-3'>1. Selecciona Equipos a Incluir:</h2><div className='grid grid-cols-2 gap-2'>{SUBTIPOS_REPORTE.map(cat => (<label key={cat} className={'flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-sm ' + (catsReporte.includes(cat) ? 'bg-indigo-50 border-indigo-500 text-indigo-800 font-medium' : 'bg-gray-50 border-gray-200')}><input type='checkbox' checked={catsReporte.includes(cat)} onChange={() => handleCatReporte(cat)} className='accent-indigo-600' />{cat}</label>))}</div></div>
-            <div className='bg-white p-4 rounded-xl shadow-sm'>
-              <div className='flex justify-between items-center mb-3'><h2 className='font-bold text-gray-800'>2. Selecciona Columnas (y Orden):</h2><div className='flex gap-2'><button onClick={seleccionarTodosCampos} className='flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-lg font-bold'><CheckSquare size={14} /> Todos</button><button onClick={limpiarCampos} className='flex items-center gap-1 text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-lg font-bold'><Square size={14} /> Limpiar</button></div></div>
-              <div className='grid grid-cols-2 gap-2'>
-                {CAMPOS.map((c, index) => { const isSelected = camposSeleccionados.includes(c.key); const colorClass = COLORES_CHECKS[index % COLORES_CHECKS.length]; return (
-                  <label key={c.key} className={'flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-sm transition-all ' + (isSelected ? `bg-gray-50 border-gray-300 font-bold ${colorClass}` : 'bg-gray-50 border-gray-200 text-gray-500')}>
-                    <input type='checkbox' checked={isSelected} onChange={() => handleCheck(c.key)} className='w-4 h-4 accent-blue-600' />
-                    <span className='flex-1 truncate'>{c.label}</span>
-                    {isSelected && <span className='ml-auto text-xs font-bold bg-gray-800 text-white px-1.5 py-0.5 rounded-full'>{ordenCols[c.key]}</span>}
-                  </label>
-                );})}
-              </div>
-            </div>
-            {camposSeleccionados.length > 0 && catsReporte.length > 0 && (
-              <div className='bg-white p-4 rounded-xl shadow-sm overflow-x-auto'>
-                <h3 className='font-bold text-gray-800 mb-3 text-sm'>Vista Previa del Reporte:</h3>
-                {catsReporte.map(cat => { const datosCat = activos.filter(a => a.centro === centroActual && !a.enAlmacen && getSubtipo(a) === cat); if (datosCat.length === 0) return null; return (
-                  <div key={cat} className='mb-6'>
-                    <h4 className='font-bold text-blue-800 text-sm mb-2 border-b pb-1'>{cat} ({datosCat.length})</h4>
-                    <table className='w-full text-xs text-left border-collapse'>
-                      <thead><tr className='bg-blue-800 text-white'>{[...camposSeleccionados].sort((a, b) => (ordenCols[a] || 0) - (ordenCols[b] || 0)).map(k => <th key={k} className='p-2 border border-blue-700 whitespace-nowrap'>{CAMPOS.find(c=>c.key===k)?.label || k}</th>)}</tr></thead>
-                      <tbody>{datosCat.slice(0, 3).map((a, i) => (<tr key={a.id} className={i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>{[...camposSeleccionados].sort((a, b) => (ordenCols[a] || 0) - (ordenCols[b] || 0)).map(k => <td key={k} className='p-2 border border-gray-200 whitespace-nowrap'>{getValor(a, k)}</td>)}</tr>))}</tbody>
-                    </table>
-                    {datosCat.length > 3 && <p className='text-center text-xs text-gray-400 mt-1'>+ {datosCat.length - 3} registros más...</p>}
+            
+            <div className='bg-white p-4 rounded-xl shadow-sm space-y-4'>
+              <h2 className='font-bold text-gray-800'>2. Selecciona Columnas por Dispositivo:</h2>
+              {catsReporte.length === 0 ? <p className='text-sm text-gray-500 text-center py-4'>Primero selecciona un tipo de equipo arriba.</p> : catsReporte.map(cat => {
+                const cols = reporteCols[cat] || [];
+                return (
+                  <div key={cat} className='border border-gray-100 rounded-lg p-3 bg-gray-50'>
+                    <div className='flex justify-between items-center mb-2'>
+                      <h3 className='font-bold text-sm text-gray-700'>{cat}</h3>
+                      <div className='flex gap-1'>
+                        <button type='button' onClick={() => selectAllCols(cat)} className='text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold'>Todos</button>
+                        <button type='button' onClick={() => clearCols(cat)} className='text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded font-bold'>Limpiar</button>
+                      </div>
+                    </div>
+                    <div className='grid grid-cols-2 gap-1'>
+                      {CAMPOS.map(c => {
+                        const isCheck = cols.includes(c.key);
+                        return (
+                          <label key={c.key} className={'flex items-center gap-1 p-1.5 rounded border cursor-pointer text-xs ' + (isCheck ? 'bg-white border-blue-400 text-blue-700 font-medium' : 'bg-gray-100 border-gray-200 text-gray-500')}>
+                            <input type='checkbox' checked={isCheck} onChange={() => handleCheckCol(cat, c.key)} className='w-3 h-3 accent-blue-600' />
+                            {c.label}
+                          </label>
+                        );
+                      })}
+                    </div>
                   </div>
-                );})}
+                );
+              })}
+            </div>
+
+            {catsReporte.length > 0 && catsReporte.some(cat => (reporteCols[cat] || []).length > 0) && (
+              <div className='grid grid-cols-2 gap-4'>
+                <button onClick={exportarCSV} disabled={cargando} className='bg-green-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50'><Download size={20} /> Excel</button>
+                <button onClick={exportarPDF} disabled={cargando} className='bg-red-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50'><FileText size={20} /> PDF</button>
               </div>
             )}
-            <div className='grid grid-cols-2 gap-4'><button onClick={exportarCSV} disabled={cargando || camposSeleccionados.length === 0 || catsReporte.length === 0} className='bg-green-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50'><Download size={20} /> Excel</button><button onClick={exportarPDF} disabled={cargando || camposSeleccionados.length === 0 || catsReporte.length === 0} className='bg-red-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50'><FileText size={20} /> PDF</button></div>
+            <p className='text-xs text-gray-500 text-center bg-gray-100 p-2 rounded-lg'>El reporte generará tablas separadas por cada tipo de equipo, mostrando solo las columnas que elegiste para cada uno.</p>
           </div>
         )}
 
@@ -614,19 +532,9 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
     if (!procesador) return '';
     const limpio = procesador.toLowerCase().replace(/\s+/g, '');
     const matchIntel = limpio.match(/i\d+-(\d{3,5})/);
-    if (matchIntel) {
-      const numStr = matchIntel[1]; const firstTwo = parseInt(numStr.substring(0, 2)); let genNum;
-      if (firstTwo >= 10 && firstTwo <= 14) genNum = firstTwo; else genNum = parseInt(numStr[0]);
-      const ordinales = ['', '1ra', '2da', '3ra', '4ta', '5ta', '6ta', '7ma', '8va', '9na', '10ma', '11va', '12va', '13va', '14va'];
-      return ordinales[genNum] || `${genNum}va`;
-    }
+    if (matchIntel) { const numStr = matchIntel[1]; const firstTwo = parseInt(numStr.substring(0, 2)); let genNum; if (firstTwo >= 10 && firstTwo <= 14) genNum = firstTwo; else genNum = parseInt(numStr[0]); const ordinales = ['', '1ra', '2da', '3ra', '4ta', '5ta', '6ta', '7ma', '8va', '9na', '10ma', '11va', '12va', '13va', '14va']; return ordinales[genNum] || `${genNum}va`; }
     const matchRyzen = limpio.match(/ryzen\d*(\d{4})/);
-    if (matchRyzen) {
-      const numStr = matchRyzen[1]; const firstTwo = parseInt(numStr.substring(0, 2)); let genNum;
-      if (firstTwo >= 10 && firstTwo <= 14) genNum = firstTwo; else genNum = parseInt(numStr[0]);
-      const ordinales = ['', '1ra', '2da', '3ra', '4ta', '5ta', '6ta', '7ma', '8va', '9na', '10ma', '11va', '12va', '13va', '14va'];
-      return ordinales[genNum] || `${genNum}va`;
-    }
+    if (matchRyzen) { const numStr = matchRyzen[1]; const firstTwo = parseInt(numStr.substring(0, 2)); let genNum; if (firstTwo >= 10 && firstTwo <= 14) genNum = firstTwo; else genNum = parseInt(numStr[0]); const ordinales = ['', '1ra', '2da', '3ra', '4ta', '5ta', '6ta', '7ma', '8va', '9na', '10ma', '11va', '12va', '13va', '14va']; return ordinales[genNum] || `${genNum}va`; }
     return '';
   };
 
