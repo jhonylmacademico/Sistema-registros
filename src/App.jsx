@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Monitor, Printer, Network, Laptop, LogOut, Plus, Search, FileText, ShieldCheck, Save, Trash2, ArrowLeft, Download, Key, Building2, Warehouse, Edit3, MapPin, CheckCircle, Upload, ChevronDown, Image as ImageIcon, CheckSquare, Square, Layers, History, Camera as CameraIcon, X, ScanLine, QrCode, Share2 } from 'lucide-react';
+import { Monitor, Printer, Network, Laptop, LogOut, Plus, Search, FileText, ShieldCheck, Save, Trash2, ArrowLeft, Download, Key, Building2, Warehouse, Edit3, MapPin, CheckCircle, Upload, ChevronDown, Image as ImageIcon, CheckSquare, Square, Layers, History, Camera as CameraIcon, X, ScanLine, QrCode, Share2, Eye, Barcode } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Filesystem, Directory } from '@capacitor/filesystem';
@@ -31,8 +31,18 @@ const TIPOS_COMPUTO = ['Laptop', 'Computadora de Escritorio', 'Computadora All i
 const TIPOS_RED = ['Impresora', 'Impresora Multifuncional', 'Scanner', 'Switch'];
 const SUBTIPOS_REPORTE = ['Laptop', 'Computadora de Escritorio', 'Computadora All in One', 'Impresora', 'Impresora Multifuncional', 'Scanner', 'Switch'];
 
+// Ampliado con TODOS los campos para los reportes
 const CAMPOS = [
-  { key: 'numero', label: 'Nro. Registro' }, { key: 'tipo', label: 'Tipo Equipo' }, { key: 'nombreEquipo', label: 'Nombre Equipo' }, { key: 'marca', label: 'Marca' }, { key: 'marcaCPU', label: 'Marca CPU' }, { key: 'procesador', label: 'Procesador' }, { key: 'ram', label: 'RAM' }, { key: 'numeroSerie', label: 'Nro. Serie' }, { key: 'estado', label: 'Estado' }, { key: 'enAlmacen', label: 'En Almacen' }, { key: 'oficina', label: 'Oficina' }, { key: 'piso', label: 'Piso' }, { key: 'personaAsignada', label: 'Persona Asignada' }, { key: 'numeroEmpleado', label: 'Nro. Empleado' }, { key: 'historial', label: 'Historial / Bitácora' }
+  { key: 'numero', label: 'Nro. Registro' }, { key: 'tipo', label: 'Tipo Equipo' }, { key: 'nombreEquipo', label: 'Nombre Equipo' }, 
+  { key: 'marca', label: 'Marca' }, { key: 'modelo', label: 'Modelo' }, { key: 'codigoActivo', label: 'Código AF' }, 
+  { key: 'numeroSerie', label: 'Nro. Serie' }, { key: 'procesador', label: 'Procesador' }, { key: 'generacion', label: 'Generación' }, 
+  { key: 'ram', label: 'RAM' }, { key: 'tipoDisco', label: 'Disco 1 (Tipo)' }, { key: 'capacidadDisco', label: 'Disco 1 (Cap.)' }, 
+  { key: 'tipoDisco2', label: 'Disco 2 (Tipo)' }, { key: 'capacidadDisco2', label: 'Disco 2 (Cap.)' }, 
+  { key: 'sistemaOperativo', label: 'Sistema Operativo' }, { key: 'mac', label: 'MAC' }, { key: 'ip', label: 'IP' }, 
+  { key: 'estado', label: 'Estado' }, { key: 'enAlmacen', label: 'En Almacén' }, { key: 'centro', label: 'Centro' }, 
+  { key: 'oficina', label: 'Oficina' }, { key: 'piso', label: 'Piso' }, { key: 'personaAsignada', label: 'Persona Asignada' }, 
+  { key: 'numeroEmpleado', label: 'Nro. Empleado' }, { key: 'cargo', label: 'Cargo' }, { key: 'nombreResponsable', label: 'Responsable' }, 
+  { key: 'fechaAsignacion', label: 'Fecha Asignación' }, { key: 'notas', label: 'Notas' }, { key: 'historial', label: 'Historial' }
 ];
 
 const datosIniciales = [
@@ -124,6 +134,7 @@ export default function App() {
       if (!a.historial || a.historial.length === 0) return 'Sin registros';
       return a.historial.map(h => `[${h.fecha}] ${h.nota}`).join(' \n ');
     }
+    if (key === 'centro') return centros.find(c => c.id === a.centro)?.nombre || '-';
     return a[key] || '-'; 
   };
   
@@ -142,7 +153,7 @@ export default function App() {
   const handleCatReporte = (cat) => { setCatsReporte(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]); };
 
   const handleVolver = () => {
-    if (vista === 'formulario') {
+    if (vista === 'formulario' || vista === 'detalles') {
       if ((editando && editando.enAlmacen) || !centroActual) setVista('almacen');
       else setVista('lista');
     } else if (vista === 'lista' || vista === 'reporte' || vista === 'oficinas') {
@@ -192,14 +203,23 @@ export default function App() {
     guardarArchivoNativo(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), 'Reporte_Activos.csv');
   };
 
+  // Colores para diferenciar categorías en el PDF
+  const COLORES_PDF = {
+    'Laptop': [30, 58, 95], // Azul
+    'Computadora de Escritorio': [22, 163, 74], // Verde
+    'Computadora All in One': [217, 119, 6], // Naranja
+    'Impresora': [220, 38, 38], // Rojo
+    'Impresora Multifuncional': [147, 51, 234], // Morado
+    'Scanner': [14, 165, 233], // Celeste
+    'Switch': [120, 53, 15] // Cafe
+  };
+
   const exportarPDF = () => {
     const datosCentro = activos.filter(a => a.centro === centroActual && !a.enAlmacen);
     const headers = camposSeleccionados.map(k => CAMPOS.find(c=>c.key===k)?.label || k);
     const doc = new jsPDF('l', 'mm', 'a4'); 
     
-    if (logo) {
-      try { doc.addImage(logo, 'PNG', 14, 10, 30, 15); } catch (e) { console.error('Error al agregar logo', e); }
-    }
+    if (logo) { try { doc.addImage(logo, 'PNG', 14, 10, 30, 15); } catch (e) {} }
     
     doc.setFontSize(18); doc.setTextColor(30, 58, 95); doc.text('Reporte de Activos Fijos', 50, 18);
     doc.setFontSize(10); doc.setTextColor(100); 
@@ -219,13 +239,15 @@ export default function App() {
         doc.text(cat + ' (' + datosCat.length + ' equipos)', 14, currentY);
         currentY += 4;
         
+        const color = COLORES_PDF[cat] || [30, 58, 95]; // Color por defecto si no encuentra
+        
         doc.autoTable({ 
           startY: currentY, 
           head: [headers], 
           body: rows, 
           styles: { fontSize: 7, cellPadding: 2, textColor: [50, 50, 50], valign: 'top' }, 
-          headStyles: { fillColor: [30, 58, 95], textColor: 255, fontStyle: 'bold' }, 
-          alternateRowStyles: { fillColor: [240, 245, 250] },
+          headStyles: { fillColor: color, textColor: 255, fontStyle: 'bold' }, 
+          alternateRowStyles: { fillColor: [245, 245, 245] },
           margin: { left: 14, right: 14 } 
         });
         
@@ -244,56 +266,97 @@ export default function App() {
     guardarArchivoNativo(pdfBlob, 'Reporte_Activos.pdf');
   };
 
+  // Escaner principal (Busca por ID interno o por Codigo de Barras / Serie)
   const escanearQR = async () => {
     try {
       setMsg('Abriendo cámara...');
-      const image = await Camera.getPhoto({
-        quality: 60,
-        allowEditing: false,
-        resultType: CameraResultType.Base64,
-        source: CameraSource.Camera
-      });
-
-      setMsg('Leyendo código QR...');
+      const image = await Camera.getPhoto({ quality: 60, allowEditing: false, resultType: CameraResultType.Base64, source: CameraSource.Camera });
+      setMsg('Leyendo código...');
       const img = new Image();
-      img.onload = () => {
+      img.onload = async () => {
         const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = img.width;
-        tempCanvas.height = img.height;
+        tempCanvas.width = img.width; tempCanvas.height = img.height;
         const ctx = tempCanvas.getContext('2d');
         ctx.drawImage(img, 0, 0);
-        const imageData = ctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
         
-        const code = jsQR(imageData.data, imageData.width, imageData.height);
-        if (code) {
-          const match = code.data.match(/ID_APP:(.*)/);
+        let detectedCode = null;
+        
+        // Intentar con BarcodeDetector nativo (lee codigos de barras y QR)
+        if ('BarcodeDetector' in window) {
+          try {
+            const detector = new BarcodeDetector({ formats: ['code_39', 'code_128', 'ean_13', 'qr_code'] });
+            const codes = await detector.detect(tempCanvas);
+            if (codes.length > 0) detectedCode = codes[0].rawValue;
+          } catch(e) { console.log('BarcodeDetector error', e); }
+        }
+        
+        // Si no funcionó, intentar con jsQR (solo QR)
+        if (!detectedCode) {
+          const imageData = ctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+          const code = jsQR(imageData.data, imageData.width, imageData.height);
+          if (code) detectedCode = code.data;
+        }
+
+        if (detectedCode) {
+          // 1. Es el QR de la app?
+          const match = detectedCode.match(/ID_APP:(.*)/);
           if (match && match[1]) {
-            const idEscaneado = match[1].trim();
-            const equipo = activos.find(a => a.id === idEscaneado);
-            if (equipo) {
-              setMsg('Equipo encontrado!');
-              setTimeout(() => setMsg(''), 2000);
-              setCentroActual(equipo.centro);
-              setEditando(equipo);
-              setVista('formulario');
-            } else {
-              alert('El código pertenece a un equipo, pero no está en este dispositivo.');
-              setMsg('');
-            }
-          } else {
-            alert('Código QR leído:\n\n' + code.data);
-            setMsg('');
+            const equipo = activos.find(a => a.id === match[1].trim());
+            if (equipo) { setCentroActual(equipo.centro); setEditando(equipo); setVista('detalles'); setMsg(''); return; }
           }
+          
+          // 2. Es un codigo de barras (Codigo AF o Serie)?
+          const equipo = activos.find(a => a.codigoActivo === detectedCode || a.numeroSerie === detectedCode || a.numeroSerieCPU === detectedCode);
+          if (equipo) { setCentroActual(equipo.centro); setEditando(equipo); setVista('detalles'); setMsg(''); return; }
+
+          alert('Código leído: ' + detectedCode + '\n\nPero no se encontró ningún equipo con este código.');
+          setMsg('');
         } else {
-          alert('No se detectó ningún código QR en la foto. Intenta acercar más la cámara.');
+          alert('No se detectó ningún código. Intenta acercar más la cámara.');
           setMsg('');
         }
       };
       img.src = 'data:image/jpeg;base64,' + image.base64String;
-    } catch (e) {
-      setMsg('Escaneo cancelado.');
-      setTimeout(() => setMsg(''), 2000);
-    }
+    } catch (e) { setMsg('Escaneo cancelado.'); setTimeout(() => setMsg(''), 2000); }
+  };
+
+  // Escaner para el formulario (Solo escribe el texto en el campo)
+  const escanearParaCampo = async (campo) => {
+    try {
+      setMsg('Abriendo cámara para escanear...');
+      const image = await Camera.getPhoto({ quality: 60, allowEditing: false, resultType: CameraResultType.Base64, source: CameraSource.Camera });
+      const img = new Image();
+      img.onload = async () => {
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = img.width; tempCanvas.height = img.height;
+        const ctx = tempCanvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        
+        let detectedCode = null;
+        if ('BarcodeDetector' in window) {
+          try {
+            const detector = new BarcodeDetector({ formats: ['code_39', 'code_128', 'ean_13', 'qr_code'] });
+            const codes = await detector.detect(tempCanvas);
+            if (codes.length > 0) detectedCode = codes[0].rawValue;
+          } catch(e) {}
+        }
+        if (!detectedCode) {
+          const imageData = ctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+          const code = jsQR(imageData.data, imageData.width, imageData.height);
+          if (code) detectedCode = code.data;
+        }
+
+        if (detectedCode) {
+          const val = detectedCode.match(/ID_APP:(.*)/) ? detectedCode.match(/ID_APP:(.*)/)[1] : detectedCode;
+          setForm(prev => ({ ...prev, [campo]: val }));
+          setMsg('Código capturado'); setTimeout(()=>setMsg(''), 2000);
+        } else {
+          alert('No se detectó ningún código.');
+          setMsg('');
+        }
+      };
+      img.src = 'data:image/jpeg;base64,' + image.base64String;
+    } catch (e) { setMsg('Cancelado'); setTimeout(() => setMsg(''), 2000); }
   };
 
   if (!isLoggedIn) {
@@ -339,14 +402,8 @@ export default function App() {
   const activosEnAlmacen = activos.filter(a => a.enAlmacen);
   
   const oficinasAgrupadas = {};
-  oficinasCentro.forEach(o => {
-    const p = o.piso || 'Sin Piso';
-    if (!oficinasAgrupadas[p]) oficinasAgrupadas[p] = [];
-    oficinasAgrupadas[p].push(o);
-  });
-  const pisosOrdenados = Object.keys(oficinasAgrupadas).sort((a, b) => {
-    if (a === 'Sin Piso') return 1; if (b === 'Sin Piso') return -1; return a.localeCompare(b);
-  });
+  oficinasCentro.forEach(o => { const p = o.piso || 'Sin Piso'; if (!oficinasAgrupadas[p]) oficinasAgrupadas[p] = []; oficinasAgrupadas[p].push(o); });
+  const pisosOrdenados = Object.keys(oficinasAgrupadas).sort((a, b) => { if (a === 'Sin Piso') return 1; if (b === 'Sin Piso') return -1; return a.localeCompare(b); });
 
   return (
     <div className='min-h-screen bg-gray-100 pb-20'>
@@ -363,13 +420,12 @@ export default function App() {
       <div className='p-4'>
         {vista === 'hub' && (
           <div className='space-y-4'>
-            
             <button onClick={escanearQR} className='w-full p-6 rounded-xl shadow-sm bg-purple-600 text-white flex justify-between items-center active:bg-purple-700 mb-4'>
               <div className='flex items-center gap-3'>
                 <ScanLine size={32} />
                 <div className='text-left'>
-                  <h3 className='text-lg font-bold'>Escanear Código QR</h3>
-                  <p className='text-sm text-purple-200'>Buscar equipo con la cámara</p>
+                  <h3 className='text-lg font-bold'>Escanear Código (QR o Barras)</h3>
+                  <p className='text-sm text-purple-200'>Ver ficha del equipo al instante</p>
                 </div>
               </div>
             </button>
@@ -416,7 +472,7 @@ export default function App() {
             <div className='space-y-3'>
               {activosEnAlmacen.length === 0 ? <p className='text-center text-gray-500 mt-10'>El almacén está vacío.</p> : 
               activosEnAlmacen.filter(a => (a.marca||'').toLowerCase().includes(busqueda.toLowerCase()) || (a.nombreEquipo||'').toLowerCase().includes(busqueda.toLowerCase())).map(a => (
-                <div key={a.id} onClick={() => { setEditando(a); setVista('formulario'); }} className='bg-white p-4 rounded-xl shadow-sm border-l-4 border-indigo-400 active:bg-gray-50'>
+                <div key={a.id} onClick={() => { setEditando(a); setVista('detalles'); }} className='bg-white p-4 rounded-xl shadow-sm border-l-4 border-indigo-400 active:bg-gray-50'>
                   <div className='flex justify-between items-start'>
                     <div>
                       <p className='text-xs text-indigo-600 font-bold'>Nro. {a.numero}</p>
@@ -426,7 +482,7 @@ export default function App() {
                     {a.centro && <span className='text-xs font-bold px-2 py-1 rounded-full bg-gray-100 text-gray-600'>{centros.find(c=>c.id===a.centro)?.nombre || 'N/A'}</span>}
                   </div>
                   <div className='mt-2 text-sm text-indigo-600 border-t pt-2 font-bold flex justify-end'>
-                    <span>Toca para ASIGNAR</span>
+                    <span>Toca para ver detalles</span>
                   </div>
                 </div>
               ))}
@@ -508,7 +564,7 @@ export default function App() {
                   {pisosCentroActual.map((p, index) => (
                     <div key={index} className='flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-lg border border-gray-200'>
                       <span className='font-bold text-gray-700 text-sm'>Piso {p}</span>
-                      <button onClick={() => { if (confirm('Eliminar el piso ' + p + '? Las oficinas aquí perderán su piso asignado.')) { const np = pisosCentroActual.filter((_, i) => i !== index); guardarPisos({...pisos, [centroActual]: np}); const no = oficinasCentro.map(o => o.piso === p ? {...o, piso: ''} : o); guardarOficinas({...oficinas, [centroActual]: no}); setMsg('Piso eliminado'); setTimeout(()=>setMsg(''), 2000); } }} className='text-red-500'><Trash2 size={14} /></button>
+                      <button onClick={() => { if (confirm('Eliminar el piso ' + p + '?')) { const np = pisosCentroActual.filter((_, i) => i !== index); guardarPisos({...pisos, [centroActual]: np}); const no = oficinasCentro.map(o => o.piso === p ? {...o, piso: ''} : o); guardarOficinas({...oficinas, [centroActual]: no}); setMsg('Piso eliminado'); setTimeout(()=>setMsg(''), 2000); } }} className='text-red-500'><Trash2 size={14} /></button>
                     </div>
                   ))}
                 </div>
@@ -584,7 +640,7 @@ export default function App() {
             <div className='space-y-3'>
               {activosFiltrados.length === 0 ? <p className='text-center text-gray-500 mt-10'>Sin activos.</p> : 
               activosFiltrados.map(a => (
-                <div key={a.id} onClick={() => { setEditando(a); setVista('formulario'); }} className='bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-400 active:bg-gray-50'>
+                <div key={a.id} onClick={() => { setEditando(a); setVista('detalles'); }} className='bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-400 active:bg-gray-50'>
                   <div className='flex justify-between items-start'>
                     <div>
                       <p className='text-xs text-blue-600 font-bold'>Nro. {a.numero}</p>
@@ -601,6 +657,66 @@ export default function App() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* VISTA DE DETALLES (SOLO LECTURA) */}
+        {vista === 'detalles' && editando && (
+          <div className='bg-white p-4 rounded-xl shadow-sm space-y-4'>
+            <div className='flex justify-between items-center border-b pb-2'>
+              <h2 className='font-bold text-lg text-gray-800'>Ficha del Activo</h2>
+              <span className='text-xs font-bold px-2 py-1 rounded-full bg-blue-100 text-blue-800'>Nro. {editando.numero}</span>
+            </div>
+            
+            <div className='grid grid-cols-2 gap-3 text-sm'>
+              <div><p className='text-gray-400 text-xs'>Tipo</p><p className='font-bold text-gray-700'>{editando.tipo || '-'}</p></div>
+              <div><p className='text-gray-400 text-xs'>Nombre Equipo</p><p className='font-bold text-gray-700'>{editando.nombreEquipo || '-'}</p></div>
+              <div><p className='text-gray-400 text-xs'>Marca</p><p className='font-bold text-gray-700'>{editando.marca || editando.marcaCPU || '-'}</p></div>
+              <div><p className='text-gray-400 text-xs'>Modelo</p><p className='font-bold text-gray-700'>{editando.modelo || editando.modeloCPU || '-'}</p></div>
+              <div><p className='text-gray-400 text-xs'>Código AF</p><p className='font-bold text-gray-700'>{editando.codigoActivo || '-'}</p></div>
+              <div><p className='text-gray-400 text-xs'>Serie</p><p className='font-bold text-gray-700'>{editando.numeroSerie || editando.numeroSerieCPU || '-'}</p></div>
+              <div><p className='text-gray-400 text-xs'>Procesador</p><p className='font-bold text-gray-700'>{editando.procesador || '-'} {editando.generacion ? '('+editando.generacion+')' : ''}</p></div>
+              <div><p className='text-gray-400 text-xs'>RAM</p><p className='font-bold text-gray-700'>{editando.ram || '-'}</p></div>
+              <div><p className='text-gray-400 text-xs'>Disco 1</p><p className='font-bold text-gray-700'>{editando.tipoDisco} {editando.capacidadDisco}</p></div>
+              <div><p className='text-gray-400 text-xs'>Disco 2</p><p className='font-bold text-gray-700'>{editando.tipoDisco2} {editando.capacidadDisco2}</p></div>
+              <div><p className='text-gray-400 text-xs'>Estado</p><p className='font-bold text-gray-700'>{editando.estado || '-'}</p></div>
+              <div><p className='text-gray-400 text-xs'>En Almacén</p><p className='font-bold text-gray-700'>{editando.enAlmacen ? 'SÍ' : 'NO'}</p></div>
+            </div>
+
+            {!editando.enAlmacen && (
+              <div className='bg-gray-50 p-3 rounded-lg space-y-1 text-sm'>
+                <h3 className='font-bold text-gray-700 border-b pb-1 mb-2'>Ubicación y Asignación</h3>
+                <p><span className='text-gray-400'>Oficina:</span> {editando.oficina || '-'} (Piso {editando.piso || '-'})</p>
+                <p><span className='text-gray-400'>Asignado a:</span> {editando.personaAsignada || '-'}</p>
+                <p><span className='text-gray-400'>Cargo:</span> {editando.cargo || '-'}</p>
+                <p><span className='text-gray-400'>Fecha:</span> {editando.fechaAsignacion || '-'}</p>
+              </div>
+            )}
+
+            {(editando.fotoEquipo || editando.fotoSerie) && (
+              <div className='grid grid-cols-2 gap-4'>
+                {editando.fotoEquipo && <div><p className='text-xs text-gray-400 mb-1'>Foto Equipo</p><img src={editando.fotoEquipo} className='w-full h-32 object-cover rounded-lg border' /></div>}
+                {editando.fotoSerie && <div><p className='text-xs text-gray-400 mb-1'>Foto Serie</p><img src={editando.fotoSerie} className='w-full h-32 object-cover rounded-lg border' /></div>}
+              </div>
+            )}
+
+            <div className='bg-gray-50 p-3 rounded-lg'>
+              <h3 className='font-bold text-gray-700 border-b pb-1 mb-2 text-sm'>Bitácora / Historial</h3>
+              <div className='space-y-2 max-h-40 overflow-y-auto'>
+                {(editando.historial || []).length === 0 ? <p className='text-xs text-gray-400 text-center py-2'>Sin movimientos.</p> :
+                (editando.historial || []).slice().reverse().map((h, i) => (
+                  <div key={i} className='text-xs bg-white p-2 rounded border-l-4 border-blue-400 shadow-sm'>
+                    <p className='font-bold text-gray-500'>[{h.fecha}]</p>
+                    <p className='text-gray-700 mt-1'>{h.nota}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className='flex gap-3 pt-2'>
+              <button onClick={() => setVista('formulario')} className='flex-1 bg-blue-600 text-white p-3 rounded-lg font-bold flex items-center justify-center gap-2'><Edit3 size={20} /> Editar Equipo</button>
+              <button onClick={handleVolver} className='bg-gray-200 text-gray-600 px-4 rounded-lg font-bold'><ArrowLeft size={20} /></button>
             </div>
           </div>
         )}
@@ -670,15 +786,15 @@ export default function App() {
               <button onClick={exportarCSV} disabled={cargando || camposSeleccionados.length === 0 || catsReporte.length === 0} className='bg-green-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50'><Download size={20} /> Excel</button>
               <button onClick={exportarPDF} disabled={cargando || camposSeleccionados.length === 0 || catsReporte.length === 0} className='bg-red-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50'><FileText size={20} /> PDF</button>
             </div>
-            <p className='text-xs text-gray-500 text-center bg-gray-100 p-2 rounded-lg'>El reporte generará tablas separadas por cada tipo de equipo seleccionado.</p>
+            <p className='text-xs text-gray-500 text-center bg-gray-100 p-2 rounded-lg'>El reporte generará tablas separadas por cada tipo de equipo seleccionado con colores distintos.</p>
           </div>
         )}
 
-        {vista === 'formulario' && <FormularioActivo activo={editando} guardarDatos={guardarDatos} setVista={setVista} handleVolver={handleVolver} getNextNumber={getNextNumber} centroActual={centroActual} oficinas={oficinas} centros={centros} setMsg={setMsg} guardarArchivoNativo={guardarArchivoNativo} />}
+        {vista === 'formulario' && <FormularioActivo activo={editando} guardarDatos={guardarDatos} setVista={setVista} handleVolver={handleVolver} getNextNumber={getNextNumber} centroActual={centroActual} oficinas={oficinas} centros={centros} setMsg={setMsg} guardarArchivoNativo={guardarArchivoNativo} escanearParaCampo={escanearParaCampo} />}
         {vista === 'config' && <ConfigVista setVista={setVista} setMsg={setMsg} setActivos={setActivos} setCentros={setCentros} setOficinas={setOficinas} setPisos={setPisos} setCustomPass={setCustomPass} setLogo={setLogo} guardarArchivoNativo={guardarArchivoNativo} />}
       </div>
 
-      {centroActual && vista !== 'formulario' && (
+      {centroActual && vista !== 'formulario' && vista !== 'detalles' && (
         <div className='fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]'>
           <button onClick={() => setVista('dashboard')} className={'flex flex-col items-center text-xs ' + (vista === 'dashboard' ? 'text-blue-600' : 'text-gray-400')}><FileText size={24} /><span>Inicio</span></button>
           <button onClick={() => {setVista('lista'); setEstadoFiltro(null); setOficinaFiltro(null); setPisoFiltro('Todos'); setSubtipoFiltro('Todos');}} className={'flex flex-col items-center text-xs ' + (vista === 'lista' ? 'text-blue-600' : 'text-gray-400')}><Search size={24} /><span>Inventario</span></button>
@@ -703,30 +819,15 @@ function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, se
   };
 
   const handleLogo = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target.result;
-      localStorage.setItem('logo_empresa_v74', base64);
-      setLogo(base64);
-      setMsg('Logo de empresa actualizado'); 
-      setTimeout(() => setMsg(''), 3000);
-    };
+    reader.onload = (event) => { const base64 = event.target.result; localStorage.setItem('logo_empresa_v74', base64); setLogo(base64); setMsg('Logo actualizado'); setTimeout(() => setMsg(''), 3000); };
     reader.readAsDataURL(file);
   };
 
   const exportarRespaldo = () => {
-    const respaldo = { 
-      activos: JSON.parse(localStorage.getItem('activos_fijos_v74') || '[]'), 
-      centros: JSON.parse(localStorage.getItem('mis_centros_v74') || '[]'), 
-      oficinas: JSON.parse(localStorage.getItem('mis_oficinas_v74') || '{}'), 
-      pisos: JSON.parse(localStorage.getItem('mis_pisos_v74') || '{}'), 
-      pass: localStorage.getItem('app_pass_v74'), 
-      logo: localStorage.getItem('logo_empresa_v74') 
-    };
-    const json = JSON.stringify(respaldo, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
+    const respaldo = { activos: JSON.parse(localStorage.getItem('activos_fijos_v74') || '[]'), centros: JSON.parse(localStorage.getItem('mis_centros_v74') || '[]'), oficinas: JSON.parse(localStorage.getItem('mis_oficinas_v74') || '{}'), pisos: JSON.parse(localStorage.getItem('mis_pisos_v74') || '{}'), pass: localStorage.getItem('app_pass_v74'), logo: localStorage.getItem('logo_empresa_v74') };
+    const blob = new Blob([JSON.stringify(respaldo, null, 2)], { type: 'application/json' });
     guardarArchivoNativo(blob, 'respaldo_activos.json');
   };
 
@@ -742,8 +843,8 @@ function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, se
         if (data.pisos) { localStorage.setItem('mis_pisos_v74', JSON.stringify(data.pisos)); setPisos(data.pisos); }
         if (data.pass) { localStorage.setItem('app_pass_v74', data.pass); setCustomPass(data.pass); }
         if (data.logo) { localStorage.setItem('logo_empresa_v74', data.logo); setLogo(data.logo); }
-        setMsg('Respaldo restaurado exitosamente'); setTimeout(()=>setMsg(''), 3000); setVista('hub');
-      } catch (err) { alert('Error: El archivo seleccionado no es un respaldo valido.'); }
+        setMsg('Respaldo restaurado'); setTimeout(()=>setMsg(''), 3000); setVista('hub');
+      } catch (err) { alert('Error: Archivo invalido.'); }
     };
     reader.readAsText(file);
   };
@@ -751,41 +852,28 @@ function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, se
   return (
     <div className='bg-white p-6 rounded-xl shadow-sm space-y-6'>
       <button onClick={() => setVista('hub')} className='flex items-center text-blue-600 font-bold mb-2'><ArrowLeft size={20} /> Volver</button>
-      
       <div className='border-b pb-6'>
         <h2 className='text-xl font-bold text-gray-800 mb-4 flex items-center gap-2'><ImageIcon size={24} /> Logo de Empresa</h2>
-        <p className='text-sm text-gray-500 mb-4'>Sube una imagen (preferentemente PNG cuadrada). Se mostrara en el Login y en los Reportes PDF.</p>
         <label className='bg-blue-50 text-blue-700 border-2 border-dashed border-blue-200 p-6 rounded-xl font-bold flex flex-col items-center gap-2 cursor-pointer'>
-          <Upload size={32} />
-          <span>Seleccionar Logo</span>
-          <input type='file' accept='image/*' onChange={handleLogo} className='hidden' />
+          <Upload size={32} /><span>Seleccionar Logo</span><input type='file' accept='image/*' onChange={handleLogo} className='hidden' />
         </label>
       </div>
-
       <div>
         <h2 className='text-xl font-bold text-gray-800 mb-4 flex items-center gap-2'><Key size={24} /> Cambiar Contrasena</h2>
-        <form onSubmit={h} className='space-y-4'>
-          <input type='password' value={nueva} onChange={e => setNueva(e.target.value)} required className='w-full p-3 border border-gray-300 rounded-lg bg-gray-50' placeholder='Nueva contrasena' />
-          <button type='submit' className='w-full bg-blue-600 text-white p-3 rounded-lg font-bold'>Guardar Contrasena</button>
-        </form>
+        <form onSubmit={h} className='space-y-4'><input type='password' value={nueva} onChange={e => setNueva(e.target.value)} required className='w-full p-3 border border-gray-300 rounded-lg bg-gray-50' placeholder='Nueva contrasena' /><button type='submit' className='w-full bg-blue-600 text-white p-3 rounded-lg font-bold'>Guardar</button></form>
       </div>
-
       <div className='border-t pt-6'>
         <h2 className='text-xl font-bold text-gray-800 mb-4 flex items-center gap-2'><Save size={24} /> Respaldo de Datos</h2>
-        <p className='text-sm text-gray-500 mb-4'>Exporta toda tu base de datos. Al tocar, elige "Guardar en archivos" (para guardarlo en Descargas) o compártelo por WhatsApp/Email.</p>
         <div className='grid grid-cols-2 gap-4'>
           <button onClick={exportarRespaldo} className='bg-green-600 text-white p-4 rounded-xl font-bold flex flex-col items-center gap-2'><Download size={24} /> Exportar</button>
-          <label className='bg-yellow-500 text-white p-4 rounded-xl font-bold flex flex-col items-center gap-2 cursor-pointer'>
-            <Upload size={24} /> Importar
-            <input type='file' accept='.json' onChange={importarRespaldo} className='hidden' />
-          </label>
+          <label className='bg-yellow-500 text-white p-4 rounded-xl font-bold flex flex-col items-center gap-2 cursor-pointer'><Upload size={24} /> Importar<input type='file' accept='.json' onChange={importarRespaldo} className='hidden' /></label>
         </div>
       </div>
     </div>
   );
 }
 
-function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNextNumber, centroActual, oficinas, centros, setMsg, guardarArchivoNativo }) {
+function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNextNumber, centroActual, oficinas, centros, setMsg, guardarArchivoNativo, escanearParaCampo }) {
   const esAlmacen = !centroActual; 
   const [form, setForm] = useState(activo || { id: Date.now().toString(), centro: centroActual, numero: getNextNumber(), tipo: 'Laptop', subtipoImpresora: 'Impresora Normal', nombreEquipo: '', marca: '', modelo: '', codigoActivo: '', numeroSerie: '', procesador: '', generacion: '', ram: '', tipoDisco: 'SSD M.2', capacidadDisco: '', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: '', mac: '', ip: '', estado: 'Activo', enAlmacen: esAlmacen, oficina: '', piso: '', cargo: '', numeroEmpleado: '', personaAsignada: '', nombreResponsable: '', fechaAsignacion: '', marcaCPU: '', modeloCPU: '', codigoActivoCPU: '', numeroSerieCPU: '', marcaMonitor: '', modeloMonitor: '', codigoActivoMonitor: '', conexionImpresora: 'En Red', notas: '', fotoEquipo: '', fotoSerie: '', historial: [] });
   const [verBitacora, setVerBitacora] = useState(false);
@@ -795,173 +883,86 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
   const h = (e) => {
     const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     let newForm = { ...form, [e.target.name]: val };
-    
-    if (e.target.name === 'oficina') {
-      const oficinaSeleccionada = oficinasDestino.find(o => o.nombre === val);
-      if (oficinaSeleccionada) {
-        newForm.piso = oficinaSeleccionada.piso || '';
-      }
-    }
-
-    if (e.target.name === 'enAlmacen' && val === true) {
-      newForm = { ...newForm, personaAsignada: '', cargo: '', numeroEmpleado: '', nombreResponsable: '', oficina: '', piso: '', fechaAsignacion: '' };
-      setMsg('Equipo enviado a Almacén. Datos de asignación limpiados.'); setTimeout(()=>setMsg(''), 3000);
-    }
+    if (e.target.name === 'oficina') { const o = oficinasDestino.find(o => o.nombre === val); if (o) newForm.piso = o.piso || ''; }
+    if (e.target.name === 'enAlmacen' && val === true) { newForm = { ...newForm, personaAsignada: '', cargo: '', numeroEmpleado: '', nombreResponsable: '', oficina: '', piso: '', fechaAsignacion: '' }; setMsg('Enviado a Almacén.'); setTimeout(()=>setMsg(''), 3000); }
     setForm(newForm);
   };
 
-  // LÓGICA DE AUTOCOMPLETADO INTELIGENTE
+  // LÓGICA INTELIGENTE DE GENERACIÓN (CORREGIDA PARA 11VA, 12VA, etc)
   const parseGeneracion = (procesador) => {
     if (!procesador) return '';
-    const match = procesador.match(/[-\s](\d{1,2})\d{3}/); // Busca el primer dígito antes de 3 dígitos (ej: i7-9700 -> 9, Ryzen 5 5600 -> 5)
-    if (match && match[1]) {
-      const genNum = parseInt(match[1]);
+    const match = procesador.match(/\b(\d{4,5})\b/); // Busca números de 4 o 5 dígitos (ej: 9700, 1165G7 -> 1165)
+    if (match) {
+      const numStr = match[0];
+      let genNum;
+      if (numStr.length === 4) genNum = parseInt(numStr[0]); // 9700 -> 9
+      else if (numStr.length === 5) genNum = parseInt(numStr.substring(0, 2)); // 11650 -> 11
       const ordinales = ['', '1ra', '2da', '3ra', '4ta', '5ta', '6ta', '7ma', '8va', '9na', '10ma', '11va', '12va', '13va', '14va'];
       return ordinales[genNum] || `${genNum}va`;
     }
     return '';
   };
 
-  const handleProcesador = (e) => {
-    const val = e.target.value;
-    setForm({ ...form, procesador: val, generacion: parseGeneracion(val) });
-  };
+  const handleProcesador = (e) => setForm({ ...form, procesador: e.target.value, generacion: parseGeneracion(e.target.value) });
 
   const formatMemory = (campo) => {
-    let val = (form[campo] || '').toString().trim();
-    if (!val) return;
+    let val = (form[campo] || '').toString().trim(); if (!val) return;
     const num = parseFloat(val.replace(/[^0-9.]/g, ''));
     if (!isNaN(num) && num > 0) {
-      if (num >= 1000) {
-        const tb = (num / 1000).toFixed(1).replace('.0', '');
-        setForm({ ...form, [campo]: `${tb} TB` });
-      } else {
-        setForm({ ...form, [campo]: `${num} GB` });
-      }
+      if (num >= 1000) setForm({ ...form, [campo]: `${(num / 1000).toFixed(1).replace('.0', '')} TB` });
+      else setForm({ ...form, [campo]: `${num} GB` });
     }
   };
 
   const tomarFoto = async (campo) => {
-    try {
-      const image = await Camera.getPhoto({
-        quality: 30,
-        allowEditing: false,
-        resultType: CameraResultType.Base64,
-        source: CameraSource.Camera
-      });
-      const base64String = 'data:image/jpeg;base64,' + image.base64String;
-      setForm({ ...form, [campo]: base64String });
-      setMsg('Foto capturada correctamente'); setTimeout(()=>setMsg(''), 2000);
-    } catch (e) {
-      setMsg('Captura cancelada o error.'); setTimeout(()=>setMsg(''), 2000);
-    }
+    try { const image = await Camera.getPhoto({ quality: 30, allowEditing: false, resultType: CameraResultType.Base64, source: CameraSource.Camera }); setForm({ ...form, [campo]: 'data:image/jpeg;base64,' + image.base64String }); setMsg('Foto capturada'); setTimeout(()=>setMsg(''), 2000); } catch (e) { setMsg('Cancelado'); setTimeout(()=>setMsg(''), 2000); }
   };
-
-  const eliminarFoto = (campo) => {
-    setForm({ ...form, [campo]: '' });
-    setMsg('Foto eliminada'); setTimeout(()=>setMsg(''), 1500);
-  };
+  const eliminarFoto = (campo) => { setForm({ ...form, [campo]: '' }); setMsg('Foto eliminada'); setTimeout(()=>setMsg(''), 1500); };
 
   const generarDatosQR = (f) => {
-    let texto = '=== ACTIVO FIJO ===\n';
-    texto += `Nro: ${f.numero}\n`;
-    texto += `Tipo: ${f.tipo}\n`;
-    if (f.nombreEquipo) texto += `Nombre: ${f.nombreEquipo}\n`;
-    if (f.marca) texto += `Marca: ${f.marca}\n`;
-    if (f.modelo) texto += `Modelo: ${f.modelo}\n`;
-    if (f.numeroSerie) texto += `Serie: ${f.numeroSerie}\n`;
-    if (f.codigoActivo) texto += `Cod AF: ${f.codigoActivo}\n`;
-    texto += `Estado: ${f.estado}\n`;
-    if (f.enAlmacen) {
-      texto += 'Ubicacion: EN ALMACEN\n';
-    } else {
-      if (f.personaAsignada) texto += `Asignado a: ${f.personaAsignada}\n`;
-      if (f.cargo) texto += `Cargo: ${f.cargo}\n`;
-      if (f.oficina) texto += `Oficina: ${f.oficina} (Piso ${f.piso || '-'})\n`;
-    }
-    texto += `Fecha: ${f.fechaAsignacion || 'N/A'}\n`;
-    texto += '===================\n';
-    texto += `ID_APP:${f.id}`;
-    return texto;
+    let t = '=== ACTIVO FIJO ===\nNro: ' + f.numero + '\nTipo: ' + f.tipo + '\n';
+    if (f.nombreEquipo) t += 'Nombre: ' + f.nombreEquipo + '\n';
+    if (f.marca) t += 'Marca: ' + f.marca + '\n';
+    if (f.numeroSerie) t += 'Serie: ' + f.numeroSerie + '\n';
+    if (f.codigoActivo) t += 'Cod AF: ' + f.codigoActivo + '\n';
+    t += 'Estado: ' + f.estado + '\n';
+    if (f.enAlmacen) t += 'Ubicacion: ALMACEN\n'; else { if (f.personaAsignada) t += 'Asignado a: ' + f.personaAsignada + '\n'; if (f.oficina) t += 'Oficina: ' + f.oficina + '\n'; }
+    return t + '===================\nID_APP:' + f.id;
   };
 
   const compartirQR = async () => {
     try {
-      const canvas = document.querySelector('#qr-canvas-container canvas');
-      if (!canvas) return;
-      
-      setMsg('Preparando QR para compartir...');
-      
-      const dataUrl = canvas.toDataURL('image/png');
-      const base64 = dataUrl.split(',')[1];
-      const nombreArchivo = `QR_Activo_${form.numero}.png`;
-      
-      await Filesystem.writeFile({
-        path: nombreArchivo,
-        data: base64,
-        directory: Directory.Cache
-      });
-      
-      const uriResult = await Filesystem.getUri({ path: nombreArchivo, directory: Directory.Cache });
-      
-      await Share.share({
-        url: uriResult.uri,
-        dialogTitle: 'Compartir Código QR'
-      });
-      
-      setMsg('Listo. Elige por dónde compartir o guardar.');
-      setTimeout(() => setMsg(''), 3000);
-    } catch (e) {
-      setMsg('Error al compartir. Intente de nuevo.');
-      setTimeout(() => setMsg(''), 3000);
-    }
+      const canvas = document.querySelector('#qr-canvas-container canvas'); if (!canvas) return;
+      setMsg('Preparando QR...');
+      const base64 = canvas.toDataURL('image/png').split(',')[1];
+      await Filesystem.writeFile({ path: `QR_${form.numero}.png`, data: base64, directory: Directory.Cache });
+      const uriResult = await Filesystem.getUri({ path: `QR_${form.numero}.png`, directory: Directory.Cache });
+      await Share.share({ url: uriResult.uri, dialogTitle: 'Compartir Código QR' });
+      setMsg('Listo.'); setTimeout(() => setMsg(''), 3000);
+    } catch (e) { setMsg('Error.'); setTimeout(() => setMsg(''), 3000); }
   };
 
   const handleSubmit = (e) => { 
-    e.preventDefault(); 
-    const datos = JSON.parse(localStorage.getItem('activos_fijos_v74') || '[]'); 
-    
-    let formFinal = { ...form };
-    const hoy = new Date().toLocaleDateString();
-
+    e.preventDefault(); const datos = JSON.parse(localStorage.getItem('activos_fijos_v74') || '[]'); 
+    let f = { ...form }; const hoy = new Date().toLocaleDateString();
     if (activo) {
       let logs = [];
-      if (activo.personaAsignada !== formFinal.personaAsignada && formFinal.personaAsignada) logs.push('Asignado a ' + formFinal.personaAsignada);
-      if (activo.estado !== formFinal.estado) logs.push('Estado cambiado a: ' + formFinal.estado);
-      if (activo.oficina !== formFinal.oficina && formFinal.oficina) logs.push('Movido a oficina: ' + formFinal.oficina);
-      if (activo.enAlmacen !== formFinal.enAlmacen) {
-        logs.push(formFinal.enAlmacen ? 'Enviado a Almacén Global' : 'Sacado de Almacén y asignado');
-      }
-
-      if (logs.length > 0) {
-        const historialPrevio = activo.historial || [];
-        formFinal.historial = [...historialPrevio, ...logs.map(nota => ({ fecha: hoy, nota }))];
-      }
-      guardarDatos(datos.map(a => a.id === activo.id ? formFinal : a));
-    } else {
-      formFinal.historial = [{ fecha: hoy, nota: 'Equipo registrado en el sistema' }];
-      guardarDatos([...datos, formFinal]);
-    }
+      if (activo.personaAsignada !== f.personaAsignada && f.personaAsignada) logs.push('Asignado a ' + f.personaAsignada);
+      if (activo.estado !== f.estado) logs.push('Estado: ' + f.estado);
+      if (activo.oficina !== f.oficina && f.oficina) logs.push('Oficina: ' + f.oficina);
+      if (activo.enAlmacen !== f.enAlmacen) logs.push(f.enAlmacen ? 'Enviado a Almacén' : 'Sacado de Almacén');
+      if (logs.length > 0) f.historial = [...(activo.historial || []), ...logs.map(n => ({ fecha: hoy, nota: n }))];
+      guardarDatos(datos.map(a => a.id === activo.id ? f : a));
+    } else { f.historial = [{ fecha: hoy, nota: 'Equipo registrado' }]; guardarDatos([...datos, f]); }
     handleVolver(); 
   };
-  
-  const handleEliminar = () => { if (confirm('Eliminar?')) { const datos = JSON.parse(localStorage.getItem('activos_fijos_v74') || '[]'); guardarDatos(datos.filter(a => a.id !== form.id)); handleVolver(); } };
+  const handleEliminar = () => { if (confirm('Eliminar?')) { const d = JSON.parse(localStorage.getItem('activos_fijos_v74') || '[]'); guardarDatos(d.filter(a => a.id !== form.id)); handleVolver(); } };
 
-  const OficinaSelect = ({ etiqueta, req }) => (
-    <div>
-      <label className='block text-xs font-medium text-gray-700 mb-1'>{etiqueta}</label>
-      <select name='oficina' value={form.oficina||''} onChange={h} required={req} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'>
-        <option value='' disabled>Seleccionar...</option>
-        {oficinasDestino.map(o => <option key={o.id} value={o.nombre}>{o.nombre} (Piso {o.piso || '?'})</option>)}
-      </select>
-    </div>
+  const OficinaSelect = ({ req }) => (
+    <div><label className='block text-xs font-medium text-gray-700 mb-1'>Oficina</label><select name='oficina' value={form.oficina||''} onChange={h} required={req} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option value='' disabled>Seleccionar...</option>{oficinasDestino.map(o => <option key={o.id} value={o.nombre}>{o.nombre}</option>)}</select></div>
   );
-
   const PisoInput = ({ req }) => (
-    <div>
-      <label className='block text-xs font-medium text-gray-700 mb-1'>Piso (Autocompletado)</label>
-      <input name='piso' value={form.piso||''} onChange={h} required={req} readOnly className='w-full p-2.5 border border-gray-300 rounded-lg bg-gray-100 text-sm cursor-not-allowed' placeholder='Selecciona una oficina' />
-    </div>
+    <div><label className='block text-xs font-medium text-gray-700 mb-1'>Piso</label><input name='piso' value={form.piso||''} readOnly className='w-full p-2.5 border border-gray-300 rounded-lg bg-gray-100 text-sm' /></div>
   );
 
   const esTipoRed = ['Impresora', 'Impresora Multifuncional', 'Scanner', 'Switch'].includes(form.tipo);
@@ -976,26 +977,13 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
         {esAlmacen && !form.enAlmacen && (
           <div className='bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400'>
             <label className='block text-xs font-bold text-blue-600 mb-1'>ASIGNAR A MULTICENTRO</label>
-            <select name='centro' value={form.centro||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'>
-              <option value='' disabled>Seleccionar destino...</option>
-              {centros.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-            </select>
+            <select name='centro' value={form.centro||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option value='' disabled>Seleccionar...</option>{centros.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}</select>
           </div>
         )}
 
         <div className='grid grid-cols-2 gap-4'>
           <div><label className='block text-xs font-bold text-gray-500 mb-1'>Nro. REGISTRO</label><input name='numero' value={form.numero} readOnly className='w-full p-3 border border-gray-200 rounded-lg bg-blue-50 text-blue-800 font-bold' /></div>
-          <div><label className='block text-xs font-bold text-gray-500 mb-1'>TIPO EQUIPO</label>
-            <select name='tipo' value={form.tipo} onChange={h} className='w-full p-3 border border-gray-300 rounded-lg bg-gray-50'>
-              <option>Laptop</option>
-              <option>Computadora de Escritorio</option>
-              <option>Computadora All in One</option>
-              <option>Impresora</option>
-              <option>Impresora Multifuncional</option>
-              <option>Scanner</option>
-              <option>Switch</option>
-            </select>
-          </div>
+          <div><label className='block text-xs font-bold text-gray-500 mb-1'>TIPO EQUIPO</label><select name='tipo' value={form.tipo} onChange={h} className='w-full p-3 border border-gray-300 rounded-lg bg-gray-50'><option>Laptop</option><option>Computadora de Escritorio</option><option>Computadora All in One</option><option>Impresora</option><option>Impresora Multifuncional</option><option>Scanner</option><option>Switch</option></select></div>
         </div>
 
         {esTipoUnificado && (
@@ -1006,25 +994,50 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
               <div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Nombre Maquina</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
               <div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca</label><input name='marca' value={form.marca||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
               <div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
-              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF</label><input name='codigoActivo' value={form.codigoActivo||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
-              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Numero de Serie</label><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+              {/* Codigo AF con escaner */}
+              <div className='relative'>
+                <label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF</label>
+                <div className='flex gap-1'>
+                  <input name='codigoActivo' value={form.codigoActivo||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' />
+                  <button type='button' onClick={() => escanearParaCampo('codigoActivo')} className='bg-gray-200 p-2.5 rounded-lg'><Barcode size={18} className='text-gray-700' /></button>
+                </div>
+              </div>
+              <div>
+                <label className='block text-xs font-medium text-gray-700 mb-1'>Numero de Serie</label>
+                <div className='flex gap-1'>
+                  <input name='numeroSerie' value={form.numeroSerie||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' />
+                  <button type='button' onClick={() => escanearParaCampo('numeroSerie')} className='bg-gray-200 p-2.5 rounded-lg'><Barcode size={18} className='text-gray-700' /></button>
+                </div>
+              </div>
             </div>
           </div>
           <CamposSpecs form={form} setForm={setForm} handleProcesador={handleProcesador} formatMemory={formatMemory} />
-          <CamposUbicacion form={form} h={h} setForm={setForm} OficinaSelect={OficinaSelect} PisoInput={PisoInput} />
+          <CamposUbicacion form={form} h={h} OficinaSelect={OficinaSelect} PisoInput={PisoInput} />
           </>
         )}
 
         {form.tipo === 'Computadora de Escritorio' && (
           <>
           <div className='bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400 space-y-3'>
-            <p className='text-xs font-bold text-blue-600'>DATOS CPU / GABINETE</p>
+            <p className='text-xs font-bold text-blue-600'>DATOS CPU</p>
             <div className='grid grid-cols-2 gap-3'>
               <div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Nombre Equipo</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
               <div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca CPU</label><input name='marcaCPU' value={form.marcaCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
               <div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo CPU</label><input name='modeloCPU' value={form.modeloCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
-              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF CPU</label><input name='codigoActivoCPU' value={form.codigoActivoCPU||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
-              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Serie CPU</label><input name='numeroSerieCPU' value={form.numeroSerieCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+              <div className='relative'>
+                <label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF CPU</label>
+                <div className='flex gap-1'>
+                  <input name='codigoActivoCPU' value={form.codigoActivoCPU||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' />
+                  <button type='button' onClick={() => escanearParaCampo('codigoActivoCPU')} className='bg-gray-200 p-2.5 rounded-lg'><Barcode size={18} className='text-gray-700' /></button>
+                </div>
+              </div>
+              <div>
+                <label className='block text-xs font-medium text-gray-700 mb-1'>Serie CPU</label>
+                <div className='flex gap-1'>
+                  <input name='numeroSerieCPU' value={form.numeroSerieCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' />
+                  <button type='button' onClick={() => escanearParaCampo('numeroSerieCPU')} className='bg-gray-200 p-2.5 rounded-lg'><Barcode size={18} className='text-gray-700' /></button>
+                </div>
+              </div>
             </div>
           </div>
           <div className='bg-yellow-50 p-3 rounded-lg border-l-4 border-yellow-400 space-y-3'>
@@ -1036,7 +1049,7 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
             </div>
           </div>
           <CamposSpecs form={form} setForm={setForm} handleProcesador={handleProcesador} formatMemory={formatMemory} />
-          <CamposUbicacion form={form} h={h} setForm={setForm} OficinaSelect={OficinaSelect} PisoInput={PisoInput} />
+          <CamposUbicacion form={form} h={h} OficinaSelect={OficinaSelect} PisoInput={PisoInput} />
           </>
         )}
 
@@ -1048,98 +1061,47 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
               <div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca</label><input name='marca' value={form.marca||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
               <div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
               <div><label className='block text-xs font-medium text-gray-700 mb-1'>Serie</label><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
-              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF</label><input name='codigoActivo' value={form.codigoActivo||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
-              
-              {form.tipo !== 'Switch' && (
-                <div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Conexion</label><select name='conexionImpresora' value={form.conexionImpresora||'En Red'} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option>En Red</option><option>Por USB</option></select></div>
-              )}
-              
-              {(form.tipo === 'Switch' || form.conexionImpresora === 'En Red') && (
-                <>
-                  <div><label className='block text-xs font-medium text-gray-700 mb-1'>MAC</label><input name='mac' value={form.mac||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
-                  <div><label className='block text-xs font-medium text-gray-700 mb-1'>IP</label><input name='ip' value={form.ip||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
-                </>
-              )}
-              <OficinaSelect etiqueta='Oficina / Area' req={true} />
-              <PisoInput req={true} />
-              <div className='col-span-2'>
-                <label className='block text-xs font-medium text-gray-700 mb-1'>Fecha Asignacion</label>
-                <div className='flex gap-2'>
-                  <input type='date' name='fechaAsignacion' value={form.fechaAsignacion||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' />
-                  <button type='button' onClick={() => setForm({...form, fechaAsignacion: '1999-01-01'})} className='bg-gray-200 text-gray-600 px-3 rounded-lg text-xs font-bold whitespace-nowrap'>Histórico</button>
+              <div className='relative'>
+                <label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF</label>
+                <div className='flex gap-1'>
+                  <input name='codigoActivo' value={form.codigoActivo||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' />
+                  <button type='button' onClick={() => escanearParaCampo('codigoActivo')} className='bg-gray-200 p-2.5 rounded-lg'><Barcode size={18} className='text-gray-700' /></button>
                 </div>
               </div>
+              {form.tipo !== 'Switch' && <div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Conexion</label><select name='conexionImpresora' value={form.conexionImpresora||'En Red'} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option>En Red</option><option>Por USB</option></select></div>}
+              {(form.tipo === 'Switch' || form.conexionImpresora === 'En Red') && (<><div><label className='block text-xs font-medium text-gray-700 mb-1'>MAC</label><input name='mac' value={form.mac||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>IP</label><input name='ip' value={form.ip||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></>)}
+              <OficinaSelect req={true} /><PisoInput req={true} />
+              <div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Fecha Asignacion</label><input type='date' name='fechaAsignacion' value={form.fechaAsignacion||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
             </div>
           </div>
         )}
 
         <div><label className='block text-xs font-medium text-gray-700 mb-1'>Notas</label><textarea name='notas' value={form.notas||''} onChange={h} rows='2' className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' placeholder='Observaciones...'></textarea></div>
 
-        {/* SECCIÓN CÓDIGO QR */}
         {activo && (
           <div className='bg-white p-4 rounded-xl shadow-sm flex flex-col items-center gap-3 border border-gray-200'>
             <h3 className='font-bold text-gray-700 flex items-center gap-2'><QrCode size={20} /> Código QR del Activo</h3>
-            <div id='qr-canvas-container' className='p-4 bg-white border-2 border-gray-100 rounded-lg'>
-              <QRCodeCanvas value={generarDatosQR(form)} size={180} level='M' />
-            </div>
-            <p className='text-xs text-gray-400 text-center'>Si escaneas este código con cualquier app de QR, verás los datos del equipo. Si lo escaneas con esta app, abrirá esta ficha.</p>
-            <button type='button' onClick={compartirQR} className='w-full bg-blue-600 text-white px-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 text-sm'>
-              <Share2 size={18} /> Compartir QR
-            </button>
+            <div id='qr-canvas-container' className='p-4 bg-white border-2 border-gray-100 rounded-lg'><QRCodeCanvas value={generarDatosQR(form)} size={180} level='M' /></div>
+            <button type='button' onClick={compartirQR} className='w-full bg-blue-600 text-white px-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 text-sm'><Share2 size={18} /> Compartir QR</button>
           </div>
         )}
 
-        {/* SECCIÓN EVIDENCIA FOTOGRÁFICA */}
         <div className='bg-gray-50 p-3 rounded-lg border border-gray-200 space-y-3'>
           <p className='text-xs font-bold text-gray-600'>EVIDENCIA FOTOGRÁFICA (OPCIONAL)</p>
           <div className='grid grid-cols-2 gap-4'>
             <div className='text-center'>
-              {form.fotoEquipo ? (
-                <div className='relative'>
-                  <img src={form.fotoEquipo} alt='Foto Equipo' className='w-full h-32 object-cover rounded-lg border' />
-                  <button type='button' onClick={() => eliminarFoto('fotoEquipo')} className='absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 shadow-md'><X size={14} /></button>
-                </div>
-              ) : (
-                <button type='button' onClick={() => tomarFoto('fotoEquipo')} className='w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 active:bg-gray-100'>
-                  <CameraIcon size={24} />
-                  <span className='text-xs mt-1 font-bold'>Foto del Equipo</span>
-                </button>
-              )}
+              {form.fotoEquipo ? (<div className='relative'><img src={form.fotoEquipo} alt='Foto Equipo' className='w-full h-32 object-cover rounded-lg border' /><button type='button' onClick={() => eliminarFoto('fotoEquipo')} className='absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 shadow-md'><X size={14} /></button></div>) : (<button type='button' onClick={() => tomarFoto('fotoEquipo')} className='w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 active:bg-gray-100'><CameraIcon size={24} /><span className='text-xs mt-1 font-bold'>Foto del Equipo</span></button>)}
             </div>
             <div className='text-center'>
-              {form.fotoSerie ? (
-                <div className='relative'>
-                  <img src={form.fotoSerie} alt='Foto Serie' className='w-full h-32 object-cover rounded-lg border' />
-                  <button type='button' onClick={() => eliminarFoto('fotoSerie')} className='absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 shadow-md'><X size={14} /></button>
-                </div>
-              ) : (
-                <button type='button' onClick={() => tomarFoto('fotoSerie')} className='w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 active:bg-gray-100'>
-                  <CameraIcon size={24} />
-                  <span className='text-xs mt-1 font-bold'>Foto N° de Serie</span>
-                </button>
-              )}
+              {form.fotoSerie ? (<div className='relative'><img src={form.fotoSerie} alt='Foto Serie' className='w-full h-32 object-cover rounded-lg border' /><button type='button' onClick={() => eliminarFoto('fotoSerie')} className='absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 shadow-md'><X size={14} /></button></div>) : (<button type='button' onClick={() => tomarFoto('fotoSerie')} className='w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 active:bg-gray-100'><CameraIcon size={24} /><span className='text-xs mt-1 font-bold'>Foto N° de Serie</span></button>)}
             </div>
           </div>
         </div>
 
-        {/* SECCIÓN BITÁCORA / HISTORIAL */}
         {activo && (
           <div className='bg-gray-50 p-3 rounded-lg border border-gray-200'>
-            <button type='button' onClick={() => setVerBitacora(!verBitacora)} className='w-full flex justify-between items-center font-bold text-gray-700'>
-              <span className='flex items-center gap-2'><History size={18} /> Ver Bitácora / Historial ({(form.historial || []).length})</span>
-              <ChevronDown size={18} className={verBitacora ? 'rotate-180 transition-transform' : 'transition-transform'} />
-            </button>
-            {verBitacora && (
-              <div className='mt-3 space-y-2 max-h-48 overflow-y-auto'>
-                {(form.historial || []).length === 0 ? <p className='text-xs text-gray-400 text-center py-2'>Sin movimientos registrados.</p> :
-                (form.historial || []).slice().reverse().map((h, i) => (
-                  <div key={i} className='text-xs bg-white p-2 rounded border-l-4 border-blue-400 shadow-sm'>
-                    <p className='font-bold text-gray-500'>[{h.fecha}]</p>
-                    <p className='text-gray-700 mt-1'>{h.nota}</p>
-                  </div>
-                ))}
-              </div>
-            )}
+            <button type='button' onClick={() => setVerBitacora(!verBitacora)} className='w-full flex justify-between items-center font-bold text-gray-700'><span className='flex items-center gap-2'><History size={18} /> Ver Bitácora ({(form.historial || []).length})</span><ChevronDown size={18} className={verBitacora ? 'rotate-180 transition-transform' : 'transition-transform'} /></button>
+            {verBitacora && (<div className='mt-3 space-y-2 max-h-48 overflow-y-auto'>{(form.historial || []).length === 0 ? <p className='text-xs text-gray-400 text-center py-2'>Sin movimientos.</p> : (form.historial || []).slice().reverse().map((h, i) => (<div key={i} className='text-xs bg-white p-2 rounded border-l-4 border-blue-400 shadow-sm'><p className='font-bold text-gray-500'>[{h.fecha}]</p><p className='text-gray-700 mt-1'>{h.nota}</p></div>))}</div>)}
           </div>
         )}
 
@@ -1159,7 +1121,7 @@ function CamposSpecs({ form, setForm, handleProcesador, formatMemory }) {
       <p className='text-xs font-bold text-purple-600'>ESPECIFICACIONES</p>
       <div className='grid grid-cols-2 gap-3'>
         <div><label className='block text-xs font-medium text-gray-700 mb-1'>Procesador</label><input name='procesador' value={form.procesador||''} onChange={handleProcesador} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
-        <div><label className='block text-xs font-medium text-gray-700 mb-1'>Generacion</label><input name='generacion' value={form.generacion||''} onChange={h} placeholder='Se autocompleta' className='w-full p-2.5 border border-gray-300 rounded-lg bg-gray-50 text-sm' /></div>
+        <div><label className='block text-xs font-medium text-gray-700 mb-1'>Generacion</label><input name='generacion' value={form.generacion||''} readOnly className='w-full p-2.5 border border-gray-300 rounded-lg bg-gray-100 text-sm' /></div>
         <div><label className='block text-xs font-medium text-gray-700 mb-1'>RAM</label><input name='ram' value={form.ram||''} onChange={h} onBlur={() => formatMemory('ram')} placeholder='Ej: 8' className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
         <div><label className='block text-xs font-medium text-gray-700 mb-1'>S.O.</label><input name='sistemaOperativo' value={form.sistemaOperativo||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
         <div><label className='block text-xs font-medium text-gray-700 mb-1'>MAC</label><input name='mac' value={form.mac||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
@@ -1173,34 +1135,23 @@ function CamposSpecs({ form, setForm, handleProcesador, formatMemory }) {
   );
 }
 
-function CamposUbicacion({ form, h, setForm, OficinaSelect, PisoInput }) {
+function CamposUbicacion({ form, h, OficinaSelect, PisoInput }) {
   return (
     <div className='bg-green-50 p-3 rounded-lg border-l-4 border-green-400 space-y-3'>
       <p className='text-xs font-bold text-green-700'>UBICACION Y ASIGNACION</p>
       <label className='flex items-center gap-3 p-3 bg-white rounded-lg border-2 border-indigo-200 cursor-pointer'>
         <input type='checkbox' name='enAlmacen' checked={form.enAlmacen || false} onChange={h} className='w-5 h-5 accent-indigo-600' />
-        <div>
-          <span className='font-bold text-indigo-700'>Marcar como 'En Almacen'</span>
-          <p className='text-xs text-gray-500'>Quita la asignacion del equipo y lo envia al Almacen Global.</p>
-        </div>
+        <div><span className='font-bold text-indigo-700'>Marcar como 'En Almacen'</span><p className='text-xs text-gray-500'>Quita la asignacion del equipo.</p></div>
       </label>
-
       {!form.enAlmacen ? (
         <div className='grid grid-cols-2 gap-3'>
           <div><label className='block text-xs font-medium text-gray-700 mb-1'>Estado</label><select name='estado' value={form.estado} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option>Activo</option><option>En Mantenimiento</option><option>Danado</option></select></div>
-          <PisoInput req={true} />
-          <OficinaSelect etiqueta='Oficina / Area' req={true} />
+          <PisoInput req={true} /><OficinaSelect req={true} />
           <div><label className='block text-xs font-medium text-gray-700 mb-1'>Nro. Empleado</label><input name='numeroEmpleado' value={form.numeroEmpleado||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
-          <div><label className='block text-xs font-medium text-gray-700 mb-1'>Cargo que Ocupa</label><input name='cargo' value={form.cargo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+          <div><label className='block text-xs font-medium text-gray-700 mb-1'>Cargo</label><input name='cargo' value={form.cargo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
           <div><label className='block text-xs font-medium text-gray-700 mb-1'>Persona Asignada</label><input name='personaAsignada' value={form.personaAsignada||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
-          <div><label className='block text-xs font-medium text-gray-700 mb-1'>Nombre Responsable</label><input name='nombreResponsable' value={form.nombreResponsable||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
-          <div className='col-span-2'>
-            <label className='block text-xs font-medium text-gray-700 mb-1'>Fecha Asignacion</label>
-            <div className='flex gap-2'>
-              <input type='date' name='fechaAsignacion' value={form.fechaAsignacion||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' />
-              <button type='button' onClick={() => setForm({...form, fechaAsignacion: '1999-01-01'})} className='bg-gray-200 text-gray-600 px-3 rounded-lg text-xs font-bold whitespace-nowrap'>Histórico</button>
-            </div>
-          </div>
+          <div><label className='block text-xs font-medium text-gray-700 mb-1'>Responsable</label><input name='nombreResponsable' value={form.nombreResponsable||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+          <div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Fecha Asignacion</label><input type='date' name='fechaAsignacion' value={form.fechaAsignacion||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
         </div>
       ) : (
         <div className='grid grid-cols-2 gap-3'>
