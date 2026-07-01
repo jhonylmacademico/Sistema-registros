@@ -27,6 +27,13 @@ const COLORES_CENTROS = [
   { borde: 'border-teal-500', fondo: 'bg-teal-50', texto: 'text-teal-800' }
 ];
 
+const COLORES_CHECKS = [
+  'text-blue-600', 'text-green-600', 'text-amber-600', 'text-pink-600', 
+  'text-purple-600', 'text-red-600', 'text-indigo-600', 'text-teal-600',
+  'text-orange-600', 'text-cyan-600', 'text-lime-600', 'text-fuchsia-600',
+  'text-rose-600', 'text-emerald-600', 'text-violet-600', 'text-sky-600'
+];
+
 const TIPOS_COMPUTO = ['Laptop', 'Computadora de Escritorio', 'Computadora All in One'];
 const TIPOS_RED = ['Impresora', 'Impresora Multifuncional', 'Scanner', 'Switch'];
 const SUBTIPOS_REPORTE = ['Laptop', 'Computadora de Escritorio', 'Computadora All in One', 'Impresora', 'Impresora Multifuncional', 'Scanner', 'Switch'];
@@ -41,8 +48,22 @@ const CAMPOS = [
   { key: 'estado', label: 'Estado' }, { key: 'enAlmacen', label: 'En Almacén' }, { key: 'centro', label: 'Centro' }, 
   { key: 'oficina', label: 'Oficina' }, { key: 'piso', label: 'Piso' }, { key: 'personaAsignada', label: 'Persona Asignada' }, 
   { key: 'numeroEmpleado', label: 'Nro. Empleado' }, { key: 'cargo', label: 'Cargo' }, { key: 'nombreResponsable', label: 'Responsable' }, 
-  { key: 'fechaAsignacion', label: 'Fecha Asignación' }, { key: 'notas', label: 'Notas' }, { key: 'historial', label: 'Historial' }
+  { key: 'fechaAsignacion', label: 'Fecha Asignación' }, { key: 'notas', label: 'Notas' }, { key: 'historial', label: 'Historial' },
+  { key: 'marcaCPU', label: 'Marca CPU' }, { key: 'modeloCPU', label: 'Modelo CPU' }, { key: 'codigoActivoCPU', label: 'Cód. AF CPU' }, { key: 'numeroSerieCPU', label: 'Serie CPU' },
+  { key: 'marcaMonitor', label: 'Marca Monitor' }, { key: 'modeloMonitor', label: 'Modelo Monitor' }, { key: 'codigoActivoMonitor', label: 'Cód. AF Monitor' }, { key: 'numeroSerieMonitor', label: 'Serie Monitor' },
+  { key: 'conexionImpresora', label: 'Conexión' }
 ];
+
+// Mapeo inteligente: Qué campos pertenecen a qué dispositivo
+const CAMPOS_POR_TIPO = {
+  'Laptop': ['numero', 'nombreEquipo', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'procesador', 'generacion', 'ram', 'sistemaOperativo', 'mac', 'ip', 'tipoDisco', 'capacidadDisco', 'tipoDisco2', 'capacidadDisco2', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
+  'Computadora All in One': ['numero', 'nombreEquipo', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'procesador', 'generacion', 'ram', 'sistemaOperativo', 'mac', 'ip', 'tipoDisco', 'capacidadDisco', 'tipoDisco2', 'capacidadDisco2', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
+  'Computadora de Escritorio': ['numero', 'nombreEquipo', 'marcaCPU', 'modeloCPU', 'codigoActivoCPU', 'numeroSerieCPU', 'procesador', 'generacion', 'ram', 'sistemaOperativo', 'mac', 'ip', 'tipoDisco', 'capacidadDisco', 'tipoDisco2', 'capacidadDisco2', 'marcaMonitor', 'modeloMonitor', 'codigoActivoMonitor', 'numeroSerieMonitor', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
+  'Impresora': ['numero', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'conexionImpresora', 'mac', 'ip', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
+  'Impresora Multifuncional': ['numero', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'conexionImpresora', 'mac', 'ip', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
+  'Scanner': ['numero', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'conexionImpresora', 'mac', 'ip', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
+  'Switch': ['numero', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'mac', 'ip', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial']
+};
 
 const datosIniciales = [
   { id: '1', centro: 'sucre', numero: '0001', tipo: 'Laptop', nombreEquipo: 'LAP-JPEREZ', marca: 'Lenovo', modelo: 'T14', codigoActivo: 'AF-001', numeroSerie: 'LP-001', procesador: 'Intel i5', generacion: '10ma', ram: '8 GB', tipoDisco: 'SSD M.2', capacidadDisco: '256 GB', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: 'Win 11', mac: 'AA:BB:CC:DD:EE:01', ip: '192.168.1.10', estado: 'Activo', enAlmacen: false, oficina: 'Contabilidad', piso: '2', cargo: 'Contador', numeroEmpleado: 'EMP-001', personaAsignada: 'Juan Perez', nombreResponsable: 'Juan Perez', fechaAsignacion: '2024-01-15', notas: '', fotoEquipo: '', fotoSerie: '', historial: [{ fecha: '15/01/2024', nota: 'Equipo registrado en el sistema' }] },
@@ -148,7 +169,7 @@ export default function App() {
       return { ...prev, [tipo]: newCols };
     });
   };
-  const selectAllCols = (tipo) => setReporteCols(prev => ({ ...prev, [tipo]: CAMPOS.map(c => c.key) }));
+  const selectAllCols = (tipo) => setReporteCols(prev => ({ ...prev, [tipo]: [...CAMPOS_POR_TIPO[tipo]] }));
   const clearCols = (tipo) => setReporteCols(prev => { const n = {...prev}; delete n[tipo]; return n; });
 
   const handleCatReporte = (cat) => { setCatsReporte(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]); };
@@ -260,7 +281,6 @@ export default function App() {
           const ctx = tempCanvas.getContext('2d');
           ctx.drawImage(img, 0, 0);
           let detectedCode = null;
-          
           if ('BarcodeDetector' in window) {
             try { const detector = new BarcodeDetector({ formats: ['code_39', 'code_128', 'ean_13', 'qr_code'] }); const codes = await detector.detect(tempCanvas); if (codes.length > 0) detectedCode = codes[0].rawValue; } catch(e) {}
           }
@@ -269,14 +289,13 @@ export default function App() {
             const code = jsQR(imageData.data, imageData.width, imageData.height);
             if (code) detectedCode = code.data;
           }
-
           if (detectedCode) {
             const match = detectedCode.match(/ID_APP:(.*)/);
             if (match && match[1]) { const equipo = activos.find(a => a.id === match[1].trim()); if (equipo) { setCentroActual(equipo.centro); setEditando(equipo); setVista('detalles'); setMsg(''); return; } }
             const equipo = activos.find(a => a.codigoActivo === detectedCode || a.numeroSerie === detectedCode || a.numeroSerieCPU === detectedCode);
             if (equipo) { setCentroActual(equipo.centro); setEditando(equipo); setVista('detalles'); setMsg(''); return; }
             alert('Código leído: ' + detectedCode + '\n\nPero no se encontró ningún equipo con este código.'); setMsg('');
-          } else { alert('No se detectó ningún código. Intenta acercar más la cámara o mejorar la luz.'); setMsg(''); }
+          } else { alert('No se detectó código. Si es de barras, asegúrate de tener buena luz. Tu celular podría no soportarlo.'); setMsg(''); }
         } catch (err) { alert('Error al procesar la imagen.'); setMsg(''); }
       };
       img.src = 'data:image/jpeg;base64,' + image.base64String;
@@ -307,8 +326,8 @@ export default function App() {
           if (detectedCode) {
             const val = detectedCode.match(/ID_APP:(.*)/) ? detectedCode.match(/ID_APP:(.*)/)[1] : detectedCode;
             setForm(prev => ({ ...prev, [campo]: val }));
-            setMsg('Código capturado'); setTimeout(()=>setMsg(''), 2000);
-          } else { alert('No se detectó código. Si es de barras, asegúrate de que la foto sea nítida y con buena luz. Si tu celular no lo lee, puedes escribirlo manualmente.'); setMsg(''); }
+            setMsg('Código capturado: ' + val); setTimeout(()=>setMsg(''), 3000);
+          } else { alert('No se detectó código. Si es de barras, tu celular podría no soportarlo. Inténtalo de nuevo o escríbelo manualmente.'); setMsg(''); }
         } catch (err) { alert('Error al analizar la foto.'); setMsg(''); }
       };
       img.src = 'data:image/jpeg;base64,' + image.base64String;
@@ -438,22 +457,27 @@ export default function App() {
               <h2 className='font-bold text-gray-800'>2. Selecciona Columnas por Dispositivo:</h2>
               {catsReporte.length === 0 ? <p className='text-sm text-gray-500 text-center py-4'>Primero selecciona un tipo de equipo arriba.</p> : catsReporte.map(cat => {
                 const cols = reporteCols[cat] || [];
+                const camposDisponibles = CAMPOS_POR_TIPO[cat] || [];
                 return (
-                  <div key={cat} className='border border-gray-100 rounded-lg p-3 bg-gray-50'>
-                    <div className='flex justify-between items-center mb-2'>
+                  <div key={cat} className='border border-gray-100 rounded-xl p-3 bg-gray-50'>
+                    <div className='flex justify-between items-center mb-3'>
                       <h3 className='font-bold text-sm text-gray-700'>{cat}</h3>
                       <div className='flex gap-1'>
                         <button type='button' onClick={() => selectAllCols(cat)} className='text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold'>Todos</button>
                         <button type='button' onClick={() => clearCols(cat)} className='text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded font-bold'>Limpiar</button>
                       </div>
                     </div>
-                    <div className='grid grid-cols-2 gap-1'>
-                      {CAMPOS.map(c => {
-                        const isCheck = cols.includes(c.key);
+                    <div className='grid grid-cols-2 gap-2'>
+                      {camposDisponibles.map((key, idx) => {
+                        const isSelected = cols.includes(key);
+                        const label = CAMPOS.find(c => c.key === key)?.label || key;
+                        const colorClass = COLORES_CHECKS[idx % COLORES_CHECKS.length];
+                        const order = cols.indexOf(key) + 1;
                         return (
-                          <label key={c.key} className={'flex items-center gap-1 p-1.5 rounded border cursor-pointer text-xs ' + (isCheck ? 'bg-white border-blue-400 text-blue-700 font-medium' : 'bg-gray-100 border-gray-200 text-gray-500')}>
-                            <input type='checkbox' checked={isCheck} onChange={() => handleCheckCol(cat, c.key)} className='w-3 h-3 accent-blue-600' />
-                            {c.label}
+                          <label key={key} className={'flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-sm transition-all ' + (isSelected ? `bg-white border-gray-300 font-bold ${colorClass}` : 'bg-gray-50 border-gray-200 text-gray-500')}>
+                            <input type='checkbox' checked={isSelected} onChange={() => handleCheckCol(cat, key)} className='w-4 h-4 accent-blue-600' />
+                            <span className='flex-1 truncate'>{label}</span>
+                            {isSelected && <span className='ml-auto text-xs font-bold bg-gray-800 text-white px-1.5 py-0.5 rounded-full'>{order}</span>}
                           </label>
                         );
                       })}
@@ -464,11 +488,28 @@ export default function App() {
             </div>
 
             {catsReporte.length > 0 && catsReporte.some(cat => (reporteCols[cat] || []).length > 0) && (
-              <div className='grid grid-cols-2 gap-4'>
-                <button onClick={exportarCSV} disabled={cargando} className='bg-green-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50'><Download size={20} /> Excel</button>
-                <button onClick={exportarPDF} disabled={cargando} className='bg-red-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50'><FileText size={20} /> PDF</button>
+              <div className='bg-white p-4 rounded-xl shadow-sm overflow-x-auto'>
+                <h3 className='font-bold text-gray-800 mb-3 text-sm'>Vista Previa del Reporte:</h3>
+                {catsReporte.map(cat => { 
+                  const datosCat = activos.filter(a => a.centro === centroActual && !a.enAlmacen && getSubtipo(a) === cat); 
+                  const cols = reporteCols[cat] || [];
+                  if (datosCat.length === 0 || cols.length === 0) return null; return (
+                  <div key={cat} className='mb-6'>
+                    <h4 className='font-bold text-blue-800 text-sm mb-2 border-b pb-1'>{cat} ({datosCat.length})</h4>
+                    <table className='w-full text-xs text-left border-collapse'>
+                      <thead><tr className='bg-blue-800 text-white'>{cols.map(k => <th key={k} className='p-2 border border-blue-700 whitespace-nowrap'>{CAMPOS.find(c=>c.key===k)?.label || k}</th>)}</tr></thead>
+                      <tbody>{datosCat.slice(0, 3).map((a, i) => (<tr key={a.id} className={i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>{cols.map(k => <td key={k} className='p-2 border border-gray-200 whitespace-nowrap'>{getValor(a, k)}</td>)}</tr>))}</tbody>
+                    </table>
+                    {datosCat.length > 3 && <p className='text-center text-xs text-gray-400 mt-1'>+ {datosCat.length - 3} registros más...</p>}
+                  </div>
+                );})}
               </div>
             )}
+
+            <div className='grid grid-cols-2 gap-4'>
+              <button onClick={exportarCSV} disabled={cargando || catsReporte.length === 0} className='bg-green-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50'><Download size={20} /> Excel</button>
+              <button onClick={exportarPDF} disabled={cargando || catsReporte.length === 0} className='bg-red-600 text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50'><FileText size={20} /> PDF</button>
+            </div>
             <p className='text-xs text-gray-500 text-center bg-gray-100 p-2 rounded-lg'>El reporte generará tablas separadas por cada tipo de equipo, mostrando solo las columnas que elegiste para cada uno.</p>
           </div>
         )}
