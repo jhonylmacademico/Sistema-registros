@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LogOut, Plus, Search, FileText, ShieldCheck, Save, Trash2, ArrowLeft, Download, Key, Building2, Warehouse, Edit3, MapPin, Upload, ChevronDown, Image as ImageIcon, CheckSquare, Square, Layers, History, Camera as CameraIcon, X, ScanLine, QrCode, Share2, Barcode, Sun, Moon } from 'lucide-react';
+import { Monitor, Printer, Network, Laptop, LogOut, Plus, Search, FileText, ShieldCheck, Save, Trash2, ArrowLeft, Download, Key, Building2, Warehouse, Edit3, MapPin, CheckCircle, Upload, ChevronDown, Image as ImageIcon, CheckSquare, Square, Layers, History, Camera as CameraIcon, X, ScanLine, QrCode, Share2, Barcode, Sun, Moon } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Filesystem, Directory } from '@capacitor/filesystem';
@@ -70,13 +70,7 @@ export default function App() {
   const [reporteCols, setReporteCols] = useState({}); 
   const [catsReporte, setCatsReporte] = useState([...SUBTIPOS_REPORTE]);
   const [reporteExpandido, setReporteExpandido] = useState(null); 
-  const [tema, setTema] = useState(localStorage.getItem('tema_app') || 'claro');
-
-  const T = tema === 'oscuro' ? {
-    app: 'bg-black text-cyan-200 min-h-screen pb-20', hdr: 'bg-black border-b border-fuchsia-500 shadow-[0_0_15px_rgba(217,70,239,0.3)]', hdrBtn: 'bg-fuchsia-900/50 text-fuchsia-300 hover:bg-fuchsia-800/50', card: 'bg-gray-900/80 border border-fuchsia-500/30 shadow-[0_0_15px_rgba(217,70,239,0.1)]', txt: 'text-cyan-200', txtM: 'text-gray-400', txtD: 'text-fuchsia-400', in: 'bg-black border border-cyan-500/50 text-cyan-200 focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 placeholder-gray-600', btnP: 'bg-fuchsia-600 hover:bg-fuchsia-500 text-white shadow-[0_0_15px_#d946ef]', btnS: 'bg-cyan-600 hover:bg-cyan-500 text-black shadow-[0_0_15px_#22d3ee]', btnD: 'bg-red-900/50 text-red-400 border border-red-500 hover:bg-red-800/50', chip: 'bg-black border border-cyan-500 text-cyan-300', chipA: 'bg-fuchsia-600 text-white shadow-[0_0_10px_#d946ef]', secBg: 'bg-black'
-  } : {
-    app: 'bg-gray-100 text-gray-800 min-h-screen pb-20', hdr: 'bg-blue-700 text-white shadow-lg', hdrBtn: 'bg-blue-800 hover:bg-blue-900 text-white', card: 'bg-white border border-gray-200 shadow-sm', txt: 'text-gray-800', txtM: 'text-gray-500', txtD: 'text-blue-600', in: 'bg-white border border-gray-300 text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder-gray-400', btnP: 'bg-blue-600 hover:bg-blue-700 text-white', btnS: 'bg-indigo-600 hover:bg-indigo-700 text-white', btnD: 'bg-red-100 text-red-600 hover:bg-red-200', chip: 'bg-white border border-gray-300 text-gray-600', chipA: 'bg-blue-600 text-white', secBg: 'bg-gray-50'
-  };
+  const [darkMode, setDarkMode] = useState(localStorage.getItem('dark_mode') === 'true');
 
   useEffect(() => {
     const c = localStorage.getItem('mis_centros_v74'); if (c) setCentros(JSON.parse(c)); else { setCentros(CENTROS_DEFAULT); localStorage.setItem('mis_centros_v74', JSON.stringify(CENTROS_DEFAULT)); }
@@ -92,7 +86,7 @@ export default function App() {
   const guardarPisos = (n) => { setPisos(n); localStorage.setItem('mis_pisos_v74', JSON.stringify(n)); };
   const guardarCentros = (n) => { setCentros(n); localStorage.setItem('mis_centros_v74', JSON.stringify(n)); };
   const handleLogin = (e) => { e.preventDefault(); if (user === 'admin' && pass === customPass) setIsLoggedIn(true); };
-  const getNextNumber = () => { const d = JSON.parse(localStorage.getItem('activos_fijos_v74') || '[]'); return (d.reduce((m, a) => Math.max(m, parseInt(a?.numero || '0')), 0) + 1).toString().padStart(4, '0'); };
+  const getNextNumber = () => { const d = JSON.parse(localStorage.getItem('activos_fijos_v74') || '[]'); return (d.reduce((m, a) => Math.max(m, parseInt(a.numero || '0')), 0) + 1).toString().padStart(4, '0'); };
   
   const agregarCentro = () => { const n = prompt('Nombre del nuevo Multicentro:'); if (n && n.trim()) { const id = n.trim().toLowerCase().replace(/\s+/g, '_') + '_' + Date.now().toString().slice(-4); guardarCentros([...centros, { id, nombre: n.trim() }]); } };
   const editarCentro = (id, viejoNombre) => { const n = prompt('Editar nombre:', viejoNombre); if (n && n.trim() && n !== viejoNombre) { guardarCentros(centros.map(c => c.id === id ? { ...c, nombre: n.trim() } : c)); } };
@@ -108,8 +102,8 @@ export default function App() {
 
   const limpiarFormulario = () => { setEditando({ _template: true, oficina: oficinaFiltro || '', piso: pisoFiltro || '' }); setVista('formulario'); };
   
-  const getValor = (a, key) => { if (key === 'enAlmacen') return a?.enAlmacen ? 'SI' : 'NO'; if (key === 'historial') { if (!a?.historial || a.historial.length === 0) return 'Sin registros'; return a.historial.map(h => `[${h?.fecha}] ${h?.nota}`).join(' \n '); } if (key === 'centro') return centros.find(c => c.id === a?.centro)?.nombre || '-'; return a?.[key] || '-'; };
-  const getSubtipo = (a) => (a?.tipo === 'Impresora' && a?.subtipoImpresora === 'Multifuncional') ? 'Impresora Multifuncional' : (a?.tipo === 'Impresora' && a?.subtipoImpresora === 'Scanner') ? 'Scanner' : a?.tipo;
+  const getValor = (a, key) => { if (key === 'enAlmacen') return a.enAlmacen ? 'SI' : 'NO'; if (key === 'historial') { if (!a.historial || a.historial.length === 0) return 'Sin registros'; return a.historial.map(h => `[${h.fecha}] ${h.nota}`).join(' \n '); } if (key === 'centro') return centros.find(c => c.id === a.centro)?.nombre || '-'; return a[key] || '-'; };
+  const getSubtipo = (a) => (a.tipo === 'Impresora' && a.subtipoImpresora === 'Multifuncional') ? 'Impresora Multifuncional' : (a.tipo === 'Impresora' && a.subtipoImpresora === 'Scanner') ? 'Scanner' : a.tipo;
 
   const handleCheckCol = (tipo, key) => setReporteCols(prev => { const c = prev[tipo] || []; return { ...prev, [tipo]: c.includes(key) ? c.filter(k => k !== key) : [...c, key] }; });
   const selectAllCols = (tipo) => setReporteCols(prev => ({ ...prev, [tipo]: [...CAMPOS_POR_TIPO[tipo]] }));
@@ -139,7 +133,7 @@ export default function App() {
   };
 
   const exportarCSV = () => {
-    const datosCentro = activos.filter(a => a?.centro === centroActual && !a?.enAlmacen);
+    const datosCentro = activos.filter(a => a.centro === centroActual && !a.enAlmacen);
     let csv = '\uFEFF' + 'REPORTE DE ACTIVOS FIJOS\nCentro: ' + (centros.find(c=>c.id===centroActual)?.nombre || '') + '\n---------------------------------------------------\n';
     catsReporte.forEach(cat => {
       const datosCat = datosCentro.filter(a => getSubtipo(a) === cat);
@@ -156,7 +150,7 @@ export default function App() {
   const COLORES_PDF = { 'Laptop': [30, 58, 95], 'Computadora de Escritorio': [22, 163, 74], 'Computadora All in One': [217, 119, 6], 'Impresora': [220, 38, 38], 'Impresora Multifuncional': [147, 51, 234], 'Scanner': [14, 165, 233], 'Switch': [120, 53, 15] };
 
   const exportarPDF = () => {
-    const datosCentro = activos.filter(a => a?.centro === centroActual && !a?.enAlmacen);
+    const datosCentro = activos.filter(a => a.centro === centroActual && !a.enAlmacen);
     const doc = new jsPDF('l', 'mm', 'a4'); 
     if (logo) { try { doc.addImage(logo, 'PNG', 14, 10, 30, 15); } catch (e) {} }
     doc.setFontSize(18); doc.setTextColor(30, 58, 95); doc.text('Reporte de Activos Fijos', 50, 18);
@@ -178,8 +172,31 @@ export default function App() {
     guardarArchivoNativo(doc.output('blob'), 'Reporte_Activos.pdf');
   };
 
-  const generarDatosQR = (f) => { if (!f) return ''; let t = '=== ACTIVO FIJO ===\nNro: ' + f.numero + '\nTipo: ' + f.tipo + '\n'; if (f.nombreEquipo) t += 'Nombre: ' + f.nombreEquipo + '\n'; if (f.marca) t += 'Marca: ' + f.marca + '\n'; if (f.numeroSerie) t += 'Serie: ' + f.numeroSerie + '\n'; if (f.codigoActivo) t += 'Cod AF: ' + f.codigoActivo + '\n'; t += 'Estado: ' + f.estado + '\n'; if (f.enAlmacen) t += 'Ubicacion: ALMACEN\n'; else { if (f.personaAsignada) t += 'Asignado a: ' + f.personaAsignada + '\n'; if (f.oficina) t += 'Oficina: ' + f.oficina + '\n'; } return t + '===================\nID_APP:' + f.id; };
-  const compartirQR = async (f) => { try { const canvas = document.querySelector('#qr-canvas-container-detalles canvas'); if (!canvas) return; setMsg('Preparando QR...'); const base64 = canvas.toDataURL('image/png').split(',')[1]; await Filesystem.writeFile({ path: `QR_${f.numero}.png`, data: base64, directory: Directory.Cache }); const uriResult = await Filesystem.getUri({ path: `QR_${f.numero}.png`, directory: Directory.Cache }); await Share.share({ url: uriResult.uri, dialogTitle: 'Compartir Código QR' }); setMsg('Listo.'); setTimeout(() => setMsg(''), 3000); } catch (e) { setMsg('Error.'); setTimeout(() => setMsg(''), 3000); } };
+  const generarDatosQR = (f) => { 
+    if (!f) return ''; 
+    let t = '=== ACTIVO FIJO ===\nNro: ' + f.numero + '\nTipo: ' + f.tipo + '\n'; 
+    if (f.nombreEquipo) t += 'Nombre: ' + f.nombreEquipo + '\n'; 
+    if (f.marca) t += 'Marca: ' + f.marca + '\n'; 
+    if (f.numeroSerie) t += 'Serie: ' + f.numeroSerie + '\n'; 
+    if (f.codigoActivo) t += 'Cod AF: ' + f.codigoActivo + '\n'; 
+    t += 'Estado: ' + f.estado + '\n'; 
+    if (f.enAlmacen) t += 'Ubicacion: ALMACEN\n'; 
+    else { if (f.personaAsignada) t += 'Asignado a: ' + f.personaAsignada + '\n'; if (f.oficina) t += 'Oficina: ' + f.oficina + '\n'; } 
+    return t + '===================\nID_APP:' + f.id; 
+  };
+  
+  const compartirQR = async (f) => { 
+    try { 
+      const canvas = document.querySelector('#qr-detalles-canvas canvas'); 
+      if (!canvas) return; 
+      setMsg('Preparando QR...'); 
+      const base64 = canvas.toDataURL('image/png').split(',')[1]; 
+      await Filesystem.writeFile({ path: `QR_${f.numero}.png`, data: base64, directory: Directory.Cache }); 
+      const uriResult = await Filesystem.getUri({ path: `QR_${f.numero}.png`, directory: Directory.Cache }); 
+      await Share.share({ url: uriResult.uri, dialogTitle: 'Compartir Código QR' }); 
+      setMsg('Listo.'); setTimeout(() => setMsg(''), 3000); 
+    } catch (e) { setMsg('Error.'); setTimeout(() => setMsg(''), 3000); } 
+  };
 
   const escanearQR = async () => {
     try {
@@ -231,63 +248,74 @@ export default function App() {
 
   if (!isLoggedIn) {
     return (
-      <div className={`min-h-screen flex items-center justify-center p-4 ${tema==='oscuro'?'bg-black':'bg-gradient-to-br from-gray-900 via-blue-900 to-gray-800'}`}>
-        <div className={`p-8 rounded-3xl shadow-2xl w-full max-w-sm border ${T.card}`}>
-          <div className='flex justify-center mb-6'>{logo ? <img src={logo} alt='Logo' className='h-24 object-contain' /> : <ShieldCheck size={64} className={T.txtD} />}</div>
-          <h1 className={`text-2xl font-bold text-center mb-1 ${T.txt}`}>Control de Activos</h1>
-          <p className={`text-center text-sm mb-6 font-medium ${T.txtM}`}>Ingrese sus credenciales</p>
+      <div className={`min-h-screen flex items-center justify-center p-4 ${darkMode ? 'bg-black' : 'bg-gradient-to-br from-gray-900 via-blue-900 to-gray-800'}`}>
+        <div className={`p-8 rounded-3xl shadow-2xl w-full max-w-sm border ${darkMode ? 'bg-gray-900 border-fuchsia-500' : 'bg-white border-gray-100'}`}>
+          <div className='flex justify-center mb-6'>{logo ? <img src={logo} alt='Logo' className='h-24 object-contain' /> : <ShieldCheck size={64} className={darkMode ? 'text-fuchsia-500' : 'text-blue-600'} />}</div>
+          <h1 className={`text-2xl font-bold text-center mb-1 ${darkMode ? 'text-cyan-200' : 'text-gray-800'}`}>Control de Activos</h1>
+          <p className={`text-center text-sm mb-6 font-medium ${darkMode ? 'text-gray-400' : 'text-gray-400'}`}>Ingrese sus credenciales</p>
           <form onSubmit={handleLogin} className='space-y-4'>
-            <div><label className={`block text-xs font-bold mb-1 ${T.txtM}`}>USUARIO</label><input type='text' placeholder='admin' value={user} onChange={e => setUser(e.target.value)} className={`w-full p-3 rounded-xl ${T.in}`} /></div>
-            <div><label className={`block text-xs font-bold mb-1 ${T.txtM}`}>CONTRASENA</label><input type='password' placeholder='********' value={pass} onChange={e => setPass(e.target.value)} className={`w-full p-3 rounded-xl ${T.in}`} /></div>
-            <button type='submit' className={`w-full p-3 rounded-xl font-bold shadow-lg ${T.btnP}`}>INGRESAR</button>
+            <div><label className={`block text-xs font-bold mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>USUARIO</label><input type='text' placeholder='admin' value={user} onChange={e => setUser(e.target.value)} className={`w-full p-3 rounded-xl ${darkMode ? 'bg-black border-cyan-500 text-cyan-200' : 'bg-gray-50 border-gray-200 text-gray-800'}`} /></div>
+            <div><label className={`block text-xs font-bold mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>CONTRASENA</label><input type='password' placeholder='********' value={pass} onChange={e => setPass(e.target.value)} className={`w-full p-3 rounded-xl ${darkMode ? 'bg-black border-cyan-500 text-cyan-200' : 'bg-gray-50 border-gray-200 text-gray-800'}`} /></div>
+            <button type='submit' className={`w-full p-3 rounded-xl font-bold shadow-lg ${darkMode ? 'bg-fuchsia-600 text-white' : 'bg-blue-600 text-white'}`}>INGRESAR</button>
           </form>
         </div>
       </div>
     );
   }
 
-  const datosCentro = centroActual ? activos.filter(a => a?.centro === centroActual && !a?.enAlmacen && (categoriaVista === 'computo' ? TIPOS_COMPUTO.includes(getSubtipo(a)) : TIPOS_RED.includes(getSubtipo(a)))) : [];
+  const datosCentro = centroActual ? activos.filter(a => a.centro === centroActual && !a.enAlmacen && (categoriaVista === 'computo' ? TIPOS_COMPUTO.includes(getSubtipo(a)) : TIPOS_RED.includes(getSubtipo(a)))) : [];
   const oficinasCentro = oficinas[centroActual] || [];
   const pisosCentroActual = pisos[centroActual] || [];
   let datosFinales = datosCentro;
-  if (estadoFiltro) datosFinales = datosFinales.filter(a => a?.estado === estadoFiltro);
-  else if (oficinaFiltro) { datosFinales = datosFinales.filter(a => a?.oficina === oficinaFiltro); if (pisoFiltro !== 'Todos') datosFinales = datosFinales.filter(a => a?.piso === pisoFiltro); }
+  if (estadoFiltro) datosFinales = datosFinales.filter(a => a.estado === estadoFiltro);
+  else if (oficinaFiltro) { datosFinales = datosFinales.filter(a => a.oficina === oficinaFiltro); if (pisoFiltro !== 'Todos') datosFinales = datosFinales.filter(a => a.piso === pisoFiltro); }
   if (subtipoFiltro !== 'Todos') datosFinales = datosFinales.filter(a => getSubtipo(a) === subtipoFiltro);
-  const activosFiltrados = datosFinales.filter(a => (a?.marca||'').toLowerCase().includes(busqueda.toLowerCase()) || (a?.nombreEquipo||'').toLowerCase().includes(busqueda.toLowerCase()) || (a?.numero||'').includes(busqueda));
-  const activosEnAlmacen = activos.filter(a => a?.enAlmacen);
+  const activosFiltrados = datosFinales.filter(a => (a.marca||'').toLowerCase().includes(busqueda.toLowerCase()) || (a.nombreEquipo||'').toLowerCase().includes(busqueda.toLowerCase()) || (a.numero||'').includes(busqueda));
+  const activosEnAlmacen = activos.filter(a => a.enAlmacen);
   const oficinasAgrupadas = {};
-  oficinasCentro.forEach(o => { const p = o?.piso || 'Sin Piso'; if (!oficinasAgrupadas[p]) oficinasAgrupadas[p] = []; oficinasAgrupadas[p].push(o); });
+  oficinasCentro.forEach(o => { const p = o.piso || 'Sin Piso'; if (!oficinasAgrupadas[p]) oficinasAgrupadas[p] = []; oficinasAgrupadas[p].push(o); });
   const pisosOrdenados = Object.keys(oficinasAgrupadas).sort((a, b) => { if (a === 'Sin Piso') return 1; if (b === 'Sin Piso') return -1; return a.localeCompare(b); });
 
+  const appBg = darkMode ? 'bg-black text-cyan-200' : 'bg-gray-100 text-gray-800';
+  const hdrBg = darkMode ? 'bg-black border-b border-fuchsia-500' : 'bg-blue-700';
+  const cardBg = darkMode ? 'bg-gray-900 border border-fuchsia-500/30' : 'bg-white border border-gray-200';
+  const txtMain = darkMode ? 'text-cyan-200' : 'text-gray-800';
+  const txtMuted = darkMode ? 'text-gray-400' : 'text-gray-500';
+  const txtDark = darkMode ? 'text-fuchsia-400' : 'text-blue-600';
+  const btnPrimary = darkMode ? 'bg-fuchsia-600 text-white' : 'bg-blue-600 text-white';
+  const btnSecondary = darkMode ? 'bg-cyan-600 text-black' : 'bg-indigo-600 text-white';
+  const btnDanger = darkMode ? 'bg-red-900/50 text-red-400 border border-red-500' : 'bg-red-100 text-red-600';
+  const inputClass = darkMode ? 'bg-black border border-cyan-500 text-cyan-200' : 'bg-white border border-gray-300 text-gray-800';
+
   return (
-    <div className={T.app}>
-      {msg && <div className={`text-white text-center p-2 font-bold fixed top-0 left-0 right-0 z-50 ${tema==='oscuro'?'bg-fuchsia-600':'bg-green-500'}`}>{cargando ? 'Generando archivo...' : msg}</div>}
-      <div className={`${T.hdr} p-4 flex justify-between items-center sticky top-0 z-10`}>
+    <div className={`min-h-screen pb-20 ${appBg}`}>
+      {msg && <div className={`text-white text-center p-2 font-bold fixed top-0 left-0 right-0 z-50 ${darkMode ? 'bg-fuchsia-600' : 'bg-green-500'}`}>{cargando ? 'Generando archivo...' : msg}</div>}
+      <div className={`${hdrBg} ${darkMode ? 'text-fuchsia-300' : 'text-white'} p-4 shadow-lg flex justify-between items-center sticky top-0 z-10`}>
         <div className='flex gap-3 items-center'>
-          {vista !== 'hub' && <button onClick={handleVolver} className={`p-2 rounded-lg ${T.hdrBtn}`}><ArrowLeft size={20} /></button>}
-          {vista === 'hub' && <button onClick={() => setVista('config')} className={`p-2 rounded-lg ${T.hdrBtn}`}><Key size={20} /></button>}
+          {vista !== 'hub' && <button onClick={handleVolver} className={`p-2 rounded-lg ${darkMode ? 'bg-fuchsia-900/50' : 'bg-blue-800'}`}><ArrowLeft size={20} /></button>}
+          {vista === 'hub' && <button onClick={() => setVista('config')} className={`p-2 rounded-lg ${darkMode ? 'bg-fuchsia-900/50' : 'bg-blue-800'}`}><Key size={20} /></button>}
           <h1 className='text-lg font-bold'>{vista === 'almacen' ? 'Almacén Global' : (vista === 'gestion_centros' ? 'Gestión Multicentros' : (centroActual ? centros.find(c => c.id === centroActual)?.nombre : 'Multicentros'))}</h1>
         </div>
         <div className='flex gap-2'>
-          <button onClick={() => { const nt = tema === 'oscuro' ? 'claro' : 'oscuro'; setTema(nt); localStorage.setItem('tema_app', nt); }} className={`p-2 rounded-lg ${T.hdrBtn}`}>{tema === 'oscuro' ? <Sun size={20} /> : <Moon size={20} />}</button>
-          <button onClick={() => setIsLoggedIn(false)} className={`p-2 rounded-lg ${T.hdrBtn}`}><LogOut size={20} /></button>
+          <button onClick={() => { const n = !darkMode; setDarkMode(n); localStorage.setItem('dark_mode', n); }} className={`p-2 rounded-lg ${darkMode ? 'bg-fuchsia-900/50' : 'bg-blue-800'}`}>{darkMode ? <Sun size={20} /> : <Moon size={20} />}</button>
+          <button onClick={() => setIsLoggedIn(false)} className={`p-2 rounded-lg ${darkMode ? 'bg-fuchsia-900/50' : 'bg-blue-800'}`}><LogOut size={20} /></button>
         </div>
       </div>
 
       <div className='p-4'>
         {vista === 'hub' && (
           <div className='space-y-4'>
-            <button onClick={escanearQR} className={`w-full p-6 rounded-xl flex justify-between items-center active:opacity-80 mb-4 ${tema==='oscuro'?'bg-fuchsia-900/30 border border-fuchsia-500 text-fuchsia-300':'bg-purple-600 text-white'}`}><div className='flex items-center gap-3'><ScanLine size={32} /><div className='text-left'><h3 className='text-lg font-bold'>Escanear Código</h3><p className='text-sm opacity-80'>Ver ficha del equipo</p></div></div></button>
-            <button onClick={() => { setCentroActual(null); setVista('almacen'); }} className={`w-full p-6 rounded-xl flex justify-between items-center active:opacity-80 mb-4 ${tema==='oscuro'?'bg-cyan-900/30 border border-cyan-500 text-cyan-300':'bg-indigo-600 text-white'}`}><div className='flex items-center gap-3'><Warehouse size={32} /><div className='text-left'><h3 className='text-lg font-bold'>Almacén Global</h3><p className='text-sm opacity-80'>Equipos sin asignar</p></div></div><span className={`font-bold text-xl rounded-full w-10 h-10 flex items-center justify-center ${tema==='oscuro'?'bg-cyan-500 text-black':'bg-white text-indigo-600'}`}>{activosEnAlmacen.length}</span></button>
+            <button onClick={escanearQR} className={`w-full p-6 rounded-xl flex justify-between items-center active:opacity-80 mb-4 ${darkMode ? 'bg-fuchsia-900/30 border border-fuchsia-500 text-fuchsia-300' : 'bg-purple-600 text-white'}`}><div className='flex items-center gap-3'><ScanLine size={32} /><div className='text-left'><h3 className='text-lg font-bold'>Escanear Código</h3><p className='text-sm opacity-80'>Ver ficha del equipo</p></div></div></button>
+            <button onClick={() => { setCentroActual(null); setVista('almacen'); }} className={`w-full p-6 rounded-xl flex justify-between items-center active:opacity-80 mb-4 ${darkMode ? 'bg-cyan-900/30 border border-cyan-500 text-cyan-300' : 'bg-indigo-600 text-white'}`}><div className='flex items-center gap-3'><Warehouse size={32} /><div className='text-left'><h3 className='text-lg font-bold'>Almacén Global</h3><p className='text-sm opacity-80'>Equipos sin asignar</p></div></div><span className={`font-bold text-xl rounded-full w-10 h-10 flex items-center justify-center ${darkMode ? 'bg-cyan-500 text-black' : 'bg-white text-indigo-600'}`}>{activosEnAlmacen.length}</span></button>
             
             <div className='flex justify-between items-center mb-2'>
-              <div className={`flex items-center gap-2 ${T.txtM}`}><Building2 size={20} /><h2 className='text-xl font-bold'>Multicentros</h2></div>
-              <button onClick={() => setVista('gestion_centros')} className={`px-3 py-2 rounded-lg flex items-center gap-1 text-sm font-bold ${tema==='oscuro'?'bg-fuchsia-900/50 text-fuchsia-300':'bg-indigo-100 text-indigo-700'}`}><Edit3 size={16} /> Gestionar</button>
+              <div className={`flex items-center gap-2 ${txtMuted}`}><Building2 size={20} /><h2 className='text-xl font-bold'>Multicentros</h2></div>
+              <button onClick={() => setVista('gestion_centros')} className={`px-3 py-2 rounded-lg flex items-center gap-1 text-sm font-bold ${darkMode ? 'bg-fuchsia-900/50 text-fuchsia-300' : 'bg-indigo-100 text-indigo-700'}`}><Edit3 size={16} /> Gestionar</button>
             </div>
             <div className='grid grid-cols-1 gap-4'>
               {centros.map((c, index) => { 
                 const color = COLORES_ITEMS[index % COLORES_ITEMS.length]; 
-                const cClass = tema === 'oscuro' ? `${color.bordeN} ${color.fondoN} ${color.textoN}` : `${color.borde} ${color.fondo} text-gray-800`; 
+                const cClass = darkMode ? `${color.bordeN} ${color.fondoN} ${color.textoN}` : `${color.borde} ${color.fondo} text-gray-800`; 
                 return (
                   <button key={c.id} onClick={() => { setCentroActual(c.id); setVista('dashboard'); setPisoExpandido(null); setCategoriaVista('computo'); }} className={`p-6 rounded-xl shadow-sm border-l-4 text-left active:opacity-80 ${cClass}`}>
                     <h3 className='text-lg font-bold'>{c.nombre}</h3>
@@ -301,20 +329,20 @@ export default function App() {
 
         {vista === 'gestion_centros' && (
           <div>
-            <button onClick={handleVolver} className={`flex items-center font-bold mb-4 ${T.txtD}`}><ArrowLeft size={20} /> Volver al Menú</button>
-            <div className={`p-4 rounded-xl ${T.card}`}>
+            <button onClick={handleVolver} className={`flex items-center font-bold mb-4 ${txtDark}`}><ArrowLeft size={20} /> Volver al Menú</button>
+            <div className={`p-4 rounded-xl shadow-sm ${cardBg}`}>
               <div className='flex justify-between items-center mb-4'>
-                <h2 className={`font-bold text-lg ${T.txt}`}>Administrar Multicentros</h2>
-                <button onClick={agregarCentro} className={`px-4 py-2 rounded-lg flex items-center gap-1 font-bold text-sm ${T.btnP}`}><Plus size={18} /> Nuevo</button>
+                <h2 className={`font-bold text-lg ${txtMain}`}>Administrar Multicentros</h2>
+                <button onClick={agregarCentro} className={`px-4 py-2 rounded-lg flex items-center gap-1 font-bold text-sm ${btnPrimary}`}><Plus size={18} /> Nuevo</button>
               </div>
               <div className='space-y-3'>
                 {centros.map((c, index) => { 
                   const color = COLORES_ITEMS[index % COLORES_ITEMS.length]; 
-                  const cClass = tema === 'oscuro' ? `${color.bordeN} ${color.fondoN}` : `${color.borde} ${color.fondo}`; 
+                  const cClass = darkMode ? `${color.bordeN} ${color.fondoN}` : `${color.borde} ${color.fondo}`; 
                   return (
                     <div key={c.id} className={`flex justify-between items-center p-4 rounded-lg border ${cClass}`}>
-                      <div><p className={`font-bold ${T.txt}`}>{c.nombre}</p><p className={`text-xs ${T.txtM}`}>{activos.filter(a => a.centro === c.id).length} equipos totales</p></div>
-                      <div className='flex gap-2'><button onClick={() => editarCentro(c.id, c.nombre)} className={`px-3 py-2 rounded-lg text-sm font-bold ${T.btnS}`}>Editar</button><button onClick={() => eliminarCentro(c.id)} className={`px-3 py-2 rounded-lg text-sm font-bold ${T.btnD}`}>Borrar</button></div>
+                      <div><p className={`font-bold ${txtMain}`}>{c.nombre}</p><p className={`text-xs ${txtMuted}`}>{activos.filter(a => a.centro === c.id).length} equipos totales</p></div>
+                      <div className='flex gap-2'><button onClick={() => editarCentro(c.id, c.nombre)} className={`px-3 py-2 rounded-lg text-sm font-bold ${btnSecondary}`}>Editar</button><button onClick={() => eliminarCentro(c.id)} className={`px-3 py-2 rounded-lg text-sm font-bold ${btnDanger}`}>Borrar</button></div>
                     </div>
                   );
                 })}
@@ -327,22 +355,22 @@ export default function App() {
           <div>
             <div className='flex gap-2 mb-4'>
               <div className='flex-1 relative'>
-                <Search className={`absolute left-3 top-3.5 ${T.txtM}`} size={18} />
-                <input placeholder='Buscar en almacén...' value={busqueda} onChange={e => setBusqueda(e.target.value)} className={`w-full pl-10 pr-4 py-3 rounded-xl ${T.in}`} />
+                <Search className={`absolute left-3 top-3.5 ${txtMuted}`} size={18} />
+                <input placeholder='Buscar en almacén...' value={busqueda} onChange={e => setBusqueda(e.target.value)} className={`w-full pl-10 pr-4 py-3 rounded-xl shadow-sm ${inputClass}`} />
               </div>
-              <button onClick={limpiarFormulario} className={`px-4 rounded-xl flex items-center gap-2 ${T.btnP}`}><Plus size={20} /> Nuevo</button>
+              <button onClick={limpiarFormulario} className={`px-4 rounded-xl flex items-center gap-2 shadow-sm ${btnPrimary}`}><Plus size={20} /> Nuevo</button>
             </div>
             <div className='space-y-3'>
-              {activosEnAlmacen.length === 0 ? <p className={`text-center mt-10 ${T.txtM}`}>El almacén está vacío.</p> : 
-              activosEnAlmacen.filter(a => (a?.marca||'').toLowerCase().includes(busqueda.toLowerCase()) || (a?.nombreEquipo||'').toLowerCase().includes(busqueda.toLowerCase())).map(a => (
-                <div key={a.id} onClick={() => { setEditando(a); setVista('detalles'); }} className={`p-4 rounded-xl border-l-4 border-indigo-400 active:opacity-80 ${T.card}`}>
+              {activosEnAlmacen.length === 0 ? <p className={`text-center mt-10 ${txtMuted}`}>El almacén está vacío.</p> : 
+              activosEnAlmacen.filter(a => (a.marca||'').toLowerCase().includes(busqueda.toLowerCase()) || (a.nombreEquipo||'').toLowerCase().includes(busqueda.toLowerCase())).map(a => (
+                <div key={a.id} onClick={() => { setEditando(a); setVista('detalles'); }} className={`p-4 rounded-xl shadow-sm border-l-4 border-indigo-400 active:opacity-80 ${cardBg}`}>
                   <div className='flex justify-between items-start'>
                     <div>
                       <p className='text-xs text-indigo-600 font-bold'>Nro. {a.numero}</p>
-                      <h3 className={`font-bold ${T.txt}`}>{a.nombreEquipo || (a.marcaCPU || a.marca) + ' ' + (a.modeloCPU || a.modelo)}</h3>
-                      <p className={`text-sm ${T.txtM}`}>{a.tipo} {a.subtipoImpresora ? '- '+a.subtipoImpresora : ''}</p>
+                      <h3 className={`font-bold ${txtMain}`}>{a.nombreEquipo || (a.marcaCPU || a.marca) + ' ' + (a.modeloCPU || a.modelo)}</h3>
+                      <p className={`text-sm ${txtMuted}`}>{a.tipo} {a.subtipoImpresora ? '- '+a.subtipoImpresora : ''}</p>
                     </div>
-                    {a.centro && <span className={`text-xs font-bold px-2 py-1 rounded-full ${tema==='oscuro'?'bg-black':'bg-gray-100 text-gray-600'}`}>{centros.find(c=>c.id===a.centro)?.nombre || 'N/A'}</span>}
+                    {a.centro && <span className={`text-xs font-bold px-2 py-1 rounded-full ${darkMode ? 'bg-black' : 'bg-gray-100 text-gray-600'}`}>{centros.find(c=>c.id===a.centro)?.nombre || 'N/A'}</span>}
                   </div>
                 </div>
               ))}
@@ -352,52 +380,52 @@ export default function App() {
 
         {centroActual && vista === 'dashboard' && (
           <div className='space-y-4'>
-            <div className={`flex p-1 rounded-xl ${tema==='oscuro'?'bg-black border border-fuchsia-500':'bg-gray-200'}`}>
-              <button onClick={() => { setCategoriaVista('computo'); setEstadoFiltro(null); setOficinaFiltro(null); setSubtipoFiltro('Todos'); }} className={`flex-1 p-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 ${categoriaVista === 'computo' ? (tema==='oscuro'?'bg-gray-900 text-fuchsia-400 shadow-[0_0_10px_#d946ef]':'bg-white text-blue-600 shadow') : T.txtM}`}>
+            <div className={`flex p-1 rounded-xl ${darkMode ? 'bg-black border border-fuchsia-500' : 'bg-gray-200'}`}>
+              <button onClick={() => { setCategoriaVista('computo'); setEstadoFiltro(null); setOficinaFiltro(null); setSubtipoFiltro('Todos'); }} className={`flex-1 p-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 ${categoriaVista === 'computo' ? (darkMode ? 'bg-gray-900 text-fuchsia-400' : 'bg-white text-blue-600 shadow') : txtMuted}`}>
                 <Laptop size={18} /> Cómputo ({activos.filter(a => a.centro === centroActual && !a.enAlmacen && TIPOS_COMPUTO.includes(getSubtipo(a))).length})
               </button>
-              <button onClick={() => { setCategoriaVista('red'); setEstadoFiltro(null); setOficinaFiltro(null); setSubtipoFiltro('Todos'); }} className={`flex-1 p-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 ${categoriaVista === 'red' ? (tema==='oscuro'?'bg-gray-900 text-cyan-400 shadow-[0_0_10px_#22d3ee]':'bg-white text-blue-600 shadow') : T.txtM}`}>
+              <button onClick={() => { setCategoriaVista('red'); setEstadoFiltro(null); setOficinaFiltro(null); setSubtipoFiltro('Todos'); }} className={`flex-1 p-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 ${categoriaVista === 'red' ? (darkMode ? 'bg-gray-900 text-cyan-400' : 'bg-white text-blue-600 shadow') : txtMuted}`}>
                 <Printer size={18} /> Red ({activos.filter(a => a.centro === centroActual && !a.enAlmacen && TIPOS_RED.includes(getSubtipo(a))).length})
               </button>
             </div>
-            <h2 className={`text-xl font-bold mb-2 ${T.txt}`}>Resumen General</h2>
+            <h2 className={`text-xl font-bold mb-2 ${txtMain}`}>Resumen General</h2>
             <div className='grid grid-cols-2 gap-3'>
-              <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro(null); setSubtipoFiltro('Todos'); setVista('lista'); }} className={`p-4 rounded-xl border-l-4 border-gray-500 text-left ${T.card}`}><p className={`text-xs ${T.txtM}`}>Total Equipos</p><p className={`text-2xl font-bold ${T.txt}`}>{datosCentro.length}</p></button>
-              <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro('Activo'); setSubtipoFiltro('Todos'); setVista('lista'); }} className={`p-4 rounded-xl border-l-4 border-green-500 text-left ${T.card}`}><p className={`text-xs ${T.txtM}`}>Activos</p><p className='text-2xl font-bold text-green-500'>{datosCentro.filter(a=>a.estado==='Activo').length}</p></button>
-              <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro('Danado'); setSubtipoFiltro('Todos'); setVista('lista'); }} className={`p-4 rounded-xl border-l-4 border-red-500 text-left ${T.card}`}><p className={`text-xs ${T.txtM}`}>Dañados</p><p className='text-2xl font-bold text-red-500'>{datosCentro.filter(a=>a.estado==='Danado').length}</p></button>
-              <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro('En Mantenimiento'); setSubtipoFiltro('Todos'); setVista('lista'); }} className={`p-4 rounded-xl border-l-4 border-yellow-500 text-left ${T.card}`}><p className={`text-xs ${T.txtM}`}>Mantenimiento</p><p className='text-2xl font-bold text-yellow-500'>{datosCentro.filter(a=>a.estado==='En Mantenimiento').length}</p></button>
+              <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro(null); setSubtipoFiltro('Todos'); setVista('lista'); }} className={`p-4 rounded-xl shadow-sm border-l-4 border-gray-500 text-left ${cardBg}`}><p className={`text-xs ${txtMuted}`}>Total Equipos</p><p className={`text-2xl font-bold ${txtMain}`}>{datosCentro.length}</p></button>
+              <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro('Activo'); setSubtipoFiltro('Todos'); setVista('lista'); }} className={`p-4 rounded-xl shadow-sm border-l-4 border-green-500 text-left ${cardBg}`}><p className={`text-xs ${txtMuted}`}>Activos</p><p className='text-2xl font-bold text-green-500'>{datosCentro.filter(a=>a.estado==='Activo').length}</p></button>
+              <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro('Danado'); setSubtipoFiltro('Todos'); setVista('lista'); }} className={`p-4 rounded-xl shadow-sm border-l-4 border-red-500 text-left ${cardBg}`}><p className={`text-xs ${txtMuted}`}>Dañados</p><p className='text-2xl font-bold text-red-500'>{datosCentro.filter(a=>a.estado==='Danado').length}</p></button>
+              <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro('En Mantenimiento'); setSubtipoFiltro('Todos'); setVista('lista'); }} className={`p-4 rounded-xl shadow-sm border-l-4 border-yellow-500 text-left ${cardBg}`}><p className={`text-xs ${txtMuted}`}>Mantenimiento</p><p className='text-2xl font-bold text-yellow-500'>{datosCentro.filter(a=>a.estado==='En Mantenimiento').length}</p></button>
             </div>
             <div className='flex justify-between items-center mt-4 mb-2'>
-              <h3 className={`font-bold flex items-center gap-2 ${T.txt}`}><MapPin size={18} /> Oficinas por Piso</h3>
-              <button onClick={() => setVista('oficinas')} className={`px-3 py-1.5 rounded-lg flex items-center gap-1 text-sm font-bold ${tema==='oscuro'?'bg-fuchsia-900/50 text-fuchsia-300':'bg-indigo-100 text-indigo-700'}`}><Edit3 size={16} /> Gestionar</button>
+              <h3 className={`font-bold flex items-center gap-2 ${txtMain}`}><MapPin size={18} /> Oficinas por Piso</h3>
+              <button onClick={() => setVista('oficinas')} className={`px-3 py-1.5 rounded-lg flex items-center gap-1 text-sm font-bold ${darkMode ? 'bg-fuchsia-900/50 text-fuchsia-300' : 'bg-indigo-100 text-indigo-700'}`}><Edit3 size={16} /> Gestionar</button>
             </div>
-            {pisosOrdenados.length === 0 ? <p className={`text-sm p-4 rounded-lg text-center ${T.card} ${T.txtM}`}>No hay oficinas asignadas a pisos. Ve a Gestionar.</p> : (
+            {pisosOrdenados.length === 0 ? <p className={`text-sm p-4 rounded-lg text-center ${cardBg} ${txtMuted}`}>No hay oficinas asignadas a pisos. Ve a Gestionar.</p> : (
               <div className='space-y-3'>
                 {pisosOrdenados.map((p, pIdx) => { 
                   const colorPiso = COLORES_ITEMS[pIdx % COLORES_ITEMS.length]; 
-                  const cClass = tema === 'oscuro' ? `${colorPiso.bordeN} ${colorPiso.fondoN}` : `${colorPiso.borde} ${colorPiso.fondo}`;
-                  const equiposEnPiso = datosCentro.filter(a => (a?.piso || 'Sin Piso') === p).length; 
+                  const cClass = darkMode ? `${colorPiso.bordeN} ${colorPiso.fondoN}` : `${colorPiso.borde} ${colorPiso.fondo}`;
+                  const equiposEnPiso = datosCentro.filter(a => (a.piso || 'Sin Piso') === p).length; 
                   const oficinasEnPiso = oficinasAgrupadas[p]; 
                   return (
-                    <div key={p} className={`rounded-xl overflow-hidden border ${T.card} ${tema==='oscuro'?colorPiso.bordeN:''}`}>
+                    <div key={p} className={`rounded-xl shadow-sm overflow-hidden border ${cardBg} ${darkMode ? colorPiso.bordeN : ''}`}>
                       <button onClick={() => setPisoExpandido(pisoExpandido === p ? null : p)} className='w-full p-4 flex justify-between items-center active:opacity-80'>
-                        <span className={`font-bold ${T.txt}`}>Piso {p}</span>
+                        <span className={`font-bold ${txtMain}`}>Piso {p}</span>
                         <div className='flex items-center gap-3'>
-                          <span className={`text-xs px-2 py-1 rounded-full font-bold ${tema==='oscuro'?'bg-black text-fuchsia-300':'bg-gray-100 text-gray-600'}`}>{equiposEnPiso} equipos</span>
-                          <ChevronDown size={20} className={`${T.txtM} transition-transform ${pisoExpandido === p ? 'rotate-180' : ''}`} />
+                          <span className={`text-xs px-2 py-1 rounded-full font-bold ${darkMode ? 'bg-black text-fuchsia-300' : 'bg-gray-100 text-gray-600'}`}>{equiposEnPiso} equipos</span>
+                          <ChevronDown size={20} className={`${txtMuted} transition-transform ${pisoExpandido === p ? 'rotate-180' : ''}`} />
                         </div>
                       </button>
                       {pisoExpandido === p && (
                         <div className='p-3 pt-0 grid grid-cols-2 gap-3'>
-                          {oficinasEnPiso.length === 0 ? <p className={`col-span-2 text-center text-xs py-2 ${T.txtM}`}>No hay oficinas.</p> : 
+                          {oficinasEnPiso.length === 0 ? <p className={`col-span-2 text-center text-xs py-2 ${txtMuted}`}>No hay oficinas.</p> : 
                           oficinasEnPiso.map((o, oIdx) => { 
                             const colorOficina = COLORES_ITEMS[(pIdx + oIdx) % COLORES_ITEMS.length]; 
-                            const oClass = tema === 'oscuro' ? `${colorOficina.fondoN} ${colorOficina.bordeN}` : `${colorOficina.fondo} ${colorOficina.borde}`;
-                            const count = datosCentro.filter(a => a?.oficina === o.nombre).length; 
+                            const oClass = darkMode ? `${colorOficina.fondoN} ${colorOficina.bordeN}` : `${colorOficina.fondo} ${colorOficina.borde}`;
+                            const count = datosCentro.filter(a => a.oficina === o.nombre).length; 
                             return (
                               <button key={o.id} onClick={() => { setOficinaFiltro(o.nombre); setPisoFiltro(p === 'Sin Piso' ? '' : p); setEstadoFiltro(null); setSubtipoFiltro('Todos'); setVista('lista'); setBusqueda(''); }} className={`p-3 rounded-lg border text-left active:opacity-80 ${oClass}`}>
-                                <h4 className={`font-bold text-sm ${T.txt}`}>{o.nombre}</h4>
-                                <p className={`text-xs mt-1 ${T.txtM}`}>{count} equipos</p>
+                                <h4 className={`font-bold text-sm ${txtMain}`}>{o.nombre}</h4>
+                                <p className={`text-xs mt-1 ${txtMuted}`}>{count} equipos</p>
                               </button>
                             ); 
                           })}
@@ -413,21 +441,21 @@ export default function App() {
 
         {centroActual && vista === 'oficinas' && (
           <div>
-            <button onClick={handleVolver} className={`flex items-center font-bold mb-4 ${T.txtD}`}><ArrowLeft size={20} /> Volver al Dashboard</button>
-            <div className={`p-4 rounded-xl mb-4 ${T.card}`}>
+            <button onClick={handleVolver} className={`flex items-center font-bold mb-4 ${txtDark}`}><ArrowLeft size={20} /> Volver al Dashboard</button>
+            <div className={`p-4 rounded-xl mb-4 ${cardBg}`}>
               <div className='flex justify-between items-center mb-4'>
-                <h2 className={`font-bold text-lg flex items-center gap-2 ${T.txt}`}><Layers size={20} /> Pisos de {centros.find(c=>c.id===centroActual)?.nombre}</h2>
-                <button onClick={agregarPiso} className={`px-4 py-2 rounded-lg flex items-center gap-1 font-bold text-sm ${T.btnP}`}><Plus size={18} /> Nuevo Piso</button>
+                <h2 className={`font-bold text-lg flex items-center gap-2 ${txtMain}`}><Layers size={20} /> Pisos de {centros.find(c=>c.id===centroActual)?.nombre}</h2>
+                <button onClick={agregarPiso} className={`px-4 py-2 rounded-lg flex items-center gap-1 font-bold text-sm ${btnPrimary}`}><Plus size={18} /> Nuevo Piso</button>
               </div>
-              {pisosCentroActual.length === 0 ? <p className={`text-center py-4 text-sm ${T.txtM}`}>No hay pisos creados.</p> : (
+              {pisosCentroActual.length === 0 ? <p className={`text-center py-4 text-sm ${txtMuted}`}>No hay pisos creados.</p> : (
                 <div className='flex flex-wrap gap-2'>
                   {pisosCentroActual.map((p, index) => { 
                     const colorPiso = COLORES_ITEMS[index % COLORES_ITEMS.length]; 
-                    const cClass = tema === 'oscuro' ? `${colorPiso.bordeN} ${colorPiso.fondoN}` : `${colorPiso.borde} ${colorPiso.fondo}`; 
+                    const cClass = darkMode ? `${colorPiso.bordeN} ${colorPiso.fondoN}` : `${colorPiso.borde} ${colorPiso.fondo}`; 
                     return (
                       <div key={index} className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${cClass}`}>
-                        <span className={`font-bold text-sm ${tema==='oscuro'?colorPiso.textoN:'text-gray-700'}`}>Piso {p}</span>
-                        <button onClick={() => editarPiso(p)} className={T.txtD}><Edit3 size={14} /></button>
+                        <span className={`font-bold text-sm ${darkMode ? colorPiso.textoN : 'text-gray-700'}`}>Piso {p}</span>
+                        <button onClick={() => editarPiso(p)} className={txtDark}><Edit3 size={14} /></button>
                         <button onClick={() => eliminarPiso(p)} className='text-red-500'><Trash2 size={14} /></button>
                       </div>
                     );
@@ -435,25 +463,25 @@ export default function App() {
                 </div>
               )}
             </div>
-            <div className={`p-4 rounded-xl ${T.card}`}>
+            <div className={`p-4 rounded-xl ${cardBg}`}>
               <div className='flex justify-between items-center mb-4'>
-                <h2 className={`font-bold text-lg ${T.txt}`}>Oficinas de {centros.find(c=>c.id===centroActual)?.nombre}</h2>
-                <button onClick={agregarOficina} className={`px-4 py-2 rounded-lg flex items-center gap-1 font-bold text-sm ${T.btnP}`}><Plus size={18} /> Nueva Oficina</button>
+                <h2 className={`font-bold text-lg ${txtMain}`}>Oficinas de {centros.find(c=>c.id===centroActual)?.nombre}</h2>
+                <button onClick={agregarOficina} className={`px-4 py-2 rounded-lg flex items-center gap-1 font-bold text-sm ${btnPrimary}`}><Plus size={18} /> Nueva Oficina</button>
               </div>
-              {oficinasCentro.length === 0 ? <p className={`text-center py-8 text-sm ${T.txtM}`}>Aun no hay oficinas creadas.</p> : (
+              {oficinasCentro.length === 0 ? <p className={`text-center py-8 text-sm ${txtMuted}`}>Aun no hay oficinas creadas.</p> : (
                 <div className='space-y-3'>
                   {oficinasCentro.map((o, index) => { 
                     const colorOficina = COLORES_ITEMS[index % COLORES_ITEMS.length]; 
-                    const cClass = tema === 'oscuro' ? `${colorOficina.bordeN} ${colorOficina.fondoN}` : `${colorOficina.borde} ${colorOficina.fondo}`; 
+                    const cClass = darkMode ? `${colorOficina.bordeN} ${colorOficina.fondoN}` : `${colorOficina.borde} ${colorOficina.fondo}`; 
                     return (
                       <div key={o.id} className={`flex justify-between items-center p-4 rounded-lg border ${cClass}`}>
                         <div>
-                          <p className={`font-bold ${T.txt}`}>{index + 1}. {o.nombre}</p>
-                          <p className={`text-xs ${T.txtM}`}>{datosCentro.filter(a => a.oficina === o.nombre).length} equipos | Piso: {o.piso || 'N/A'}</p>
+                          <p className={`font-bold ${txtMain}`}>{index + 1}. {o.nombre}</p>
+                          <p className={`text-xs ${txtMuted}`}>{datosCentro.filter(a => a.oficina === o.nombre).length} equipos | Piso: {o.piso || 'N/A'}</p>
                         </div>
                         <div className='flex gap-2'>
-                          <button onClick={() => editarOficina(o.id, o.nombre)} className={`px-3 py-2 rounded-lg text-sm font-bold ${T.btnS}`}>Editar</button>
-                          <button onClick={() => eliminarOficina(o.id, o.nombre)} className={`px-3 py-2 rounded-lg text-sm font-bold ${T.btnD}`}>Borrar</button>
+                          <button onClick={() => editarOficina(o.id, o.nombre)} className={`px-3 py-2 rounded-lg text-sm font-bold ${btnSecondary}`}>Editar</button>
+                          <button onClick={() => eliminarOficina(o.id, o.nombre)} className={`px-3 py-2 rounded-lg text-sm font-bold ${btnDanger}`}>Borrar</button>
                         </div>
                       </div>
                     );
@@ -467,40 +495,40 @@ export default function App() {
         {centroActual && vista === 'lista' && (
           <div>
             {(estadoFiltro || oficinaFiltro) && (
-              <div className={`p-3 rounded-xl mb-4 flex justify-between items-center border ${tema==='oscuro'?'bg-fuchsia-950/50 border-fuchsia-500':'bg-blue-50 border-blue-200'}`}>
+              <div className={`p-3 rounded-xl mb-4 flex justify-between items-center border ${darkMode ? 'bg-fuchsia-950/50 border-fuchsia-500' : 'bg-blue-50 border-blue-200'}`}>
                 <div>
-                  <p className={`text-xs font-bold ${tema==='oscuro'?'text-fuchsia-400':'text-blue-600'}`}>FILTRANDO POR:</p>
-                  <p className={`text-sm font-bold ${T.txt}`}>{estadoFiltro ? 'Estado: ' + estadoFiltro : 'Oficina: ' + oficinaFiltro} {pisoFiltro && pisoFiltro !== 'Todos' ? '| Piso: ' + pisoFiltro : ''}</p>
+                  <p className={`text-xs font-bold ${darkMode ? 'text-fuchsia-400' : 'text-blue-600'}`}>FILTRANDO POR:</p>
+                  <p className={`text-sm font-bold ${txtMain}`}>{estadoFiltro ? 'Estado: ' + estadoFiltro : 'Oficina: ' + oficinaFiltro} {pisoFiltro && pisoFiltro !== 'Todos' ? '| Piso: ' + pisoFiltro : ''}</p>
                 </div>
-                <button onClick={() => { setEstadoFiltro(null); setOficinaFiltro(null); setPisoFiltro('Todos'); setBusqueda(''); setSubtipoFiltro('Todos'); }} className={`font-bold text-sm ${T.btnD}`}>LIMPIAR</button>
+                <button onClick={() => { setEstadoFiltro(null); setOficinaFiltro(null); setPisoFiltro('Todos'); setBusqueda(''); setSubtipoFiltro('Todos'); }} className={`font-bold text-sm ${btnDanger}`}>LIMPIAR</button>
               </div>
             )}
             <div className='flex gap-2 mb-4 overflow-x-auto pb-2'>
-              <button onClick={() => setSubtipoFiltro('Todos')} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ${subtipoFiltro === 'Todos' ? (tema==='oscuro'?'bg-fuchsia-600 text-white':'bg-gray-800 text-white') : T.chip}`}>Todos</button>
-              {categoriaVista === 'computo' ? (TIPOS_COMPUTO.map(s => (<button key={s} onClick={() => setSubtipoFiltro(s)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ${subtipoFiltro === s ? T.chipA : T.chip}`}>{s}</button>))) : (TIPOS_RED.map(s => (<button key={s} onClick={() => setSubtipoFiltro(s)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ${subtipoFiltro === s ? T.chipA : T.chip}`}>{s}</button>)))}
+              <button onClick={() => setSubtipoFiltro('Todos')} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ${subtipoFiltro === 'Todos' ? (darkMode ? 'bg-fuchsia-600 text-white' : 'bg-gray-800 text-white') : (darkMode ? 'bg-black border border-cyan-500 text-cyan-300' : 'bg-white border border-gray-300 text-gray-600')}`}>Todos</button>
+              {categoriaVista === 'computo' ? (TIPOS_COMPUTO.map(s => (<button key={s} onClick={() => setSubtipoFiltro(s)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ${subtipoFiltro === s ? (darkMode ? 'bg-fuchsia-600 text-white' : 'bg-blue-600 text-white') : (darkMode ? 'bg-black border border-cyan-500 text-cyan-300' : 'bg-white border border-gray-300 text-gray-600')}`}>{s}</button>))) : (TIPOS_RED.map(s => (<button key={s} onClick={() => setSubtipoFiltro(s)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ${subtipoFiltro === s ? (darkMode ? 'bg-fuchsia-600 text-white' : 'bg-blue-600 text-white') : (darkMode ? 'bg-black border border-cyan-500 text-cyan-300' : 'bg-white border border-gray-300 text-gray-600')}`}>{s}</button>)))}
             </div>
             <div className='flex gap-2 mb-4'>
               <div className='flex-1 relative'>
-                <Search className={`absolute left-3 top-3.5 ${T.txtM}`} size={18} />
-                <input placeholder='Buscar equipo...' value={busqueda} onChange={e => setBusqueda(e.target.value)} className={`w-full pl-10 pr-4 py-3 rounded-xl ${T.in}`} />
+                <Search className={`absolute left-3 top-3.5 ${txtMuted}`} size={18} />
+                <input placeholder='Buscar equipo...' value={busqueda} onChange={e => setBusqueda(e.target.value)} className={`w-full pl-10 pr-4 py-3 rounded-xl ${inputClass}`} />
               </div>
-              <button onClick={limpiarFormulario} className={`px-4 rounded-xl flex items-center gap-2 ${T.btnP}`}><Plus size={20} /> Nuevo</button>
+              <button onClick={limpiarFormulario} className={`px-4 rounded-xl flex items-center gap-2 ${btnPrimary}`}><Plus size={20} /> Nuevo</button>
             </div>
             <div className='space-y-3'>
-              {activosFiltrados.length === 0 ? <p className={`text-center mt-10 ${T.txtM}`}>Sin activos.</p> : 
+              {activosFiltrados.length === 0 ? <p className={`text-center mt-10 ${txtMuted}`}>Sin activos.</p> : 
               activosFiltrados.map(a => (
-                <div key={a.id} onClick={() => { setEditando(a); setVista('detalles'); }} className={`p-4 rounded-xl border-l-4 ${tema==='oscuro'?'border-fuchsia-500':'border-blue-400'} active:opacity-80 ${T.card}`}>
+                <div key={a.id} onClick={() => { setEditando(a); setVista('detalles'); }} className={`p-4 rounded-xl border-l-4 ${darkMode ? 'border-fuchsia-500' : 'border-blue-400'} active:opacity-80 ${cardBg}`}>
                   <div className='flex justify-between items-start'>
                     <div>
-                      <p className={`text-xs font-bold ${T.txtD}`}>Nro. {a.numero}</p>
-                      <h3 className={`font-bold ${T.txt}`}>{a.nombreEquipo || (a.marcaCPU || a.marca) + ' ' + (a.modeloCPU || a.modelo)}</h3>
-                      <p className={`text-sm ${T.txtM}`}>{a.tipo} {a.subtipoImpresora ? '- '+a.subtipoImpresora : ''}</p>
+                      <p className={`text-xs font-bold ${txtDark}`}>Nro. {a.numero}</p>
+                      <h3 className={`font-bold ${txtMain}`}>{a.nombreEquipo || (a.marcaCPU || a.marca) + ' ' + (a.modeloCPU || a.modelo)}</h3>
+                      <p className={`text-sm ${txtMuted}`}>{a.tipo} {a.subtipoImpresora ? '- '+a.subtipoImpresora : ''}</p>
                     </div>
                     <div className='text-right'>
                       <span className={`text-xs font-bold px-2 py-1 rounded-full ${a.estado === 'Activo' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{a.estado}</span>
                     </div>
                   </div>
-                  <div className={`mt-2 text-sm border-t pt-2 flex justify-between ${T.txtM}`}>
+                  <div className={`mt-2 text-sm border-t pt-2 flex justify-between ${txtMuted}`}>
                     <span>{a.personaAsignada ? 'Asignado: ' + a.personaAsignada : 'En Stock'}</span>
                     <span>{a.oficina || '-'} {a.piso ? '- Piso ' + a.piso : ''}</span>
                   </div>
@@ -511,78 +539,80 @@ export default function App() {
         )}
 
         {vista === 'detalles' && editando && (
-          <div className={`p-4 rounded-xl space-y-4 ${T.card}`}>
-            <div className={`flex justify-between items-center border-b pb-2 ${tema==='oscuro'?'border-fuchsia-500':'border-gray-200'}`}>
-              <h2 className={`font-bold text-lg ${T.txt}`}>Ficha del Activo</h2>
-              <span className={`text-xs font-bold px-2 py-1 rounded-full ${tema==='oscuro'?'bg-fuchsia-900 text-fuchsia-300':'bg-blue-100 text-blue-800'}`}>Nro. {editando.numero}</span>
+          <div className={`p-4 rounded-xl space-y-4 ${cardBg}`}>
+            <div className={`flex justify-between items-center border-b pb-2 ${darkMode ? 'border-fuchsia-500' : 'border-gray-200'}`}>
+              <h2 className={`font-bold text-lg ${txtMain}`}>Ficha del Activo</h2>
+              <span className={`text-xs font-bold px-2 py-1 rounded-full ${darkMode ? 'bg-fuchsia-900 text-fuchsia-300' : 'bg-blue-100 text-blue-800'}`}>Nro. {editando.numero}</span>
             </div>
             <div className='grid grid-cols-2 gap-3 text-sm'>
-              <div><p className={`text-xs ${T.txtM}`}>Tipo</p><p className={`font-bold ${T.txt}`}>{editando.tipo || '-'}</p></div>
-              <div><p className={`text-xs ${T.txtM}`}>Nombre Equipo</p><p className={`font-bold ${T.txt}`}>{editando.nombreEquipo || '-'}</p></div>
-              <div><p className={`text-xs ${T.txtM}`}>Marca</p><p className={`font-bold ${T.txt}`}>{editando.marca || editando.marcaCPU || '-'}</p></div>
-              <div><p className={`text-xs ${T.txtM}`}>Modelo</p><p className={`font-bold ${T.txt}`}>{editando.modelo || editando.modeloCPU || '-'}</p></div>
-              <div><p className={`text-xs ${T.txtM}`}>Código AF</p><p className={`font-bold ${T.txt}`}>{editando.codigoActivo || editando.codigoActivoCPU || '-'}</p></div>
-              <div><p className={`text-xs ${T.txtM}`}>Serie</p><p className={`font-bold ${T.txt}`}>{editando.numeroSerie || editando.numeroSerieCPU || '-'}</p></div>
-              <div><p className={`text-xs ${T.txtM}`}>Procesador</p><p className={`font-bold ${T.txt}`}>{editando.procesador || '-'} {editando.generacion ? '('+editando.generacion+')' : ''}</p></div>
-              <div><p className={`text-xs ${T.txtM}`}>RAM</p><p className={`font-bold ${T.txt}`}>{editando.ram || '-'}</p></div>
-              <div><p className={`text-xs ${T.txtM}`}>Disco 1</p><p className={`font-bold ${T.txt}`}>{editando.tipoDisco} {editando.capacidadDisco}</p></div>
-              <div><p className={`text-xs ${T.txtM}`}>Disco 2</p><p className={`font-bold ${T.txt}`}>{editando.tipoDisco2} {editando.capacidadDisco2}</p></div>
-              <div><p className={`text-xs ${T.txtM}`}>Estado</p><p className={`font-bold ${T.txt}`}>{editando.estado || '-'}</p></div>
-              <div><p className={`text-xs ${T.txtM}`}>En Almacén</p><p className={`font-bold ${T.txt}`}>{editando.enAlmacen ? 'SÍ' : 'NO'}</p></div>
+              <div><p className={`text-xs ${txtMuted}`}>Tipo</p><p className={`font-bold ${txtMain}`}>{editando.tipo || '-'}</p></div>
+              <div><p className={`text-xs ${txtMuted}`}>Nombre Equipo</p><p className={`font-bold ${txtMain}`}>{editando.nombreEquipo || '-'}</p></div>
+              <div><p className={`text-xs ${txtMuted}`}>Marca</p><p className={`font-bold ${txtMain}`}>{editando.marca || editando.marcaCPU || '-'}</p></div>
+              <div><p className={`text-xs ${txtMuted}`}>Modelo</p><p className={`font-bold ${txtMain}`}>{editando.modelo || editando.modeloCPU || '-'}</p></div>
+              <div><p className={`text-xs ${txtMuted}`}>Código AF</p><p className={`font-bold ${txtMain}`}>{editando.codigoActivo || editando.codigoActivoCPU || '-'}</p></div>
+              <div><p className={`text-xs ${txtMuted}`}>Serie</p><p className={`font-bold ${txtMain}`}>{editando.numeroSerie || editando.numeroSerieCPU || '-'}</p></div>
+              <div><p className={`text-xs ${txtMuted}`}>Procesador</p><p className={`font-bold ${txtMain}`}>{editando.procesador || '-'} {editando.generacion ? '('+editando.generacion+')' : ''}</p></div>
+              <div><p className={`text-xs ${txtMuted}`}>RAM</p><p className={`font-bold ${txtMain}`}>{editando.ram || '-'}</p></div>
+              <div><p className={`text-xs ${txtMuted}`}>Disco 1</p><p className={`font-bold ${txtMain}`}>{editando.tipoDisco} {editando.capacidadDisco}</p></div>
+              <div><p className={`text-xs ${txtMuted}`}>Disco 2</p><p className={`font-bold ${txtMain}`}>{editando.tipoDisco2} {editando.capacidadDisco2}</p></div>
+              <div><p className={`text-xs ${txtMuted}`}>Estado</p><p className={`font-bold ${txtMain}`}>{editando.estado || '-'}</p></div>
+              <div><p className={`text-xs ${txtMuted}`}>En Almacén</p><p className={`font-bold ${txtMain}`}>{editando.enAlmacen ? 'SÍ' : 'NO'}</p></div>
             </div>
             {!editando.enAlmacen && (
-              <div className={`p-3 rounded-lg space-y-1 text-sm ${T.secBg}`}>
-                <h3 className={`font-bold border-b pb-1 mb-2 ${T.txt}`}>Ubicación y Asignación</h3>
-                <p className={T.txt}><span className={T.txtM}>Oficina:</span> {editando.oficina || '-'} (Piso {editando.piso || '-'})</p>
-                <p className={T.txt}><span className={T.txtM}>Asignado a:</span> {editando.personaAsignada || '-'}</p>
-                <p className={T.txt}><span className={T.txtM}>Cargo:</span> {editando.cargo || '-'}</p>
-                <p className={T.txt}><span className={T.txtM}>Fecha:</span> {editando.fechaAsignacion || '-'}</p>
+              <div className={`p-3 rounded-lg space-y-1 text-sm ${darkMode ? 'bg-black' : 'bg-gray-50'}`}>
+                <h3 className={`font-bold border-b pb-1 mb-2 ${txtMain}`}>Ubicación y Asignación</h3>
+                <p className={txtMain}><span className={txtMuted}>Oficina:</span> {editando.oficina || '-'} (Piso {editando.piso || '-'})</p>
+                <p className={txtMain}><span className={txtMuted}>Asignado a:</span> {editando.personaAsignada || '-'}</p>
+                <p className={txtMain}><span className={txtMuted}>Cargo:</span> {editando.cargo || '-'}</p>
+                <p className={txtMain}><span className={txtMuted}>Fecha:</span> {editando.fechaAsignacion || '-'}</p>
               </div>
             )}
             
-            {/* SECCIÓN QR AQUÍ */}
+            {/* SECCIÓN QR */}
             <div className='flex flex-col items-center gap-3 pt-4'>
-              <div id='qr-canvas-container-detalles' className='p-4 bg-white rounded-lg'><QRCodeCanvas value={generarDatosQR(editando)} size={180} level='M' /></div>
-              <button onClick={() => compartirQR(editando)} className={`w-full p-3 rounded-lg font-bold flex items-center justify-center gap-2 text-sm ${T.btnS}`}><Share2 size={18} /> Compartir QR</button>
+              <div id='qr-detalles-canvas' className='p-4 bg-white rounded-lg'>
+                <QRCodeCanvas value={generarDatosQR(editando)} size={180} level='M' />
+              </div>
+              <button onClick={() => compartirQR(editando)} className={`w-full p-3 rounded-lg font-bold flex items-center justify-center gap-2 text-sm ${btnSecondary}`}><Share2 size={18} /> Compartir QR</button>
             </div>
 
             {(editando.fotoEquipo || editando.fotoSerie) && (
               <div className='grid grid-cols-2 gap-4'>
-                {editando.fotoEquipo && <div><p className={`text-xs mb-1 ${T.txtM}`}>Foto Equipo</p><img src={editando.fotoEquipo} className='w-full h-32 object-cover rounded-lg border' /></div>}
-                {editando.fotoSerie && <div><p className={`text-xs mb-1 ${T.txtM}`}>Foto Serie</p><img src={editando.fotoSerie} className='w-full h-32 object-cover rounded-lg border' /></div>}
+                {editando.fotoEquipo && <div><p className={`text-xs mb-1 ${txtMuted}`}>Foto Equipo</p><img src={editando.fotoEquipo} className='w-full h-32 object-cover rounded-lg border' /></div>}
+                {editando.fotoSerie && <div><p className={`text-xs mb-1 ${txtMuted}`}>Foto Serie</p><img src={editando.fotoSerie} className='w-full h-32 object-cover rounded-lg border' /></div>}
               </div>
             )}
             
-            {/* SECCIÓN HISTORIAL AQUÍ */}
-            <div className={`p-3 rounded-lg ${T.secBg}`}>
-              <h3 className={`font-bold border-b pb-1 mb-2 text-sm ${T.txt}`}>Bitácora / Historial</h3>
+            {/* SECCIÓN HISTORIAL */}
+            <div className={`p-3 rounded-lg ${darkMode ? 'bg-black' : 'bg-gray-50'}`}>
+              <h3 className={`font-bold border-b pb-1 mb-2 text-sm ${txtMain}`}>Bitácora / Historial</h3>
               <div className='space-y-2 max-h-40 overflow-y-auto'>
-                {(editando.historial || []).length === 0 ? <p className={`text-xs text-center py-2 ${T.txtM}`}>Sin movimientos.</p> : 
+                {(editando.historial || []).length === 0 ? <p className={`text-xs text-center py-2 ${txtMuted}`}>Sin movimientos.</p> : 
                 (editando.historial || []).slice().reverse().map((h, i) => (
-                  <div key={i} className={`text-xs p-2 rounded border-l-4 ${tema==='oscuro'?'bg-black border-fuchsia-500':'bg-white border-blue-400'}`}>
-                    <p className={`font-bold ${T.txtM}`}>[{h.fecha}]</p>
-                    <p className={`${T.txt} mt-1`}>{h.nota}</p>
+                  <div key={i} className={`text-xs p-2 rounded border-l-4 ${darkMode ? 'bg-gray-900 border-fuchsia-500' : 'bg-white border-blue-400'}`}>
+                    <p className={`font-bold ${txtMuted}`}>[{h.fecha}]</p>
+                    <p className={`${txtMain} mt-1`}>{h.nota}</p>
                   </div>
                 ))}
               </div>
             </div>
             
             <div className='flex gap-3 pt-2'>
-              <button onClick={() => setVista('formulario')} className={`flex-1 p-3 rounded-lg font-bold flex items-center justify-center gap-2 ${T.btnP}`}><Edit3 size={20} /> Editar Equipo</button>
-              <button onClick={handleVolver} className={`p-3 rounded-lg font-bold ${T.btnS}`}><ArrowLeft size={20} /></button>
+              <button onClick={() => setVista('formulario')} className={`flex-1 p-3 rounded-lg font-bold flex items-center justify-center gap-2 ${btnPrimary}`}><Edit3 size={20} /> Editar Equipo</button>
+              <button onClick={handleVolver} className={`p-3 rounded-lg font-bold ${btnSecondary}`}><ArrowLeft size={20} /></button>
             </div>
           </div>
         )}
 
         {centroActual && vista === 'reporte' && (
           <div className='space-y-4'>
-            <div className={`p-4 rounded-xl ${T.card}`}>
-              <h2 className={`font-bold mb-3 ${T.txt}`}>1. Selecciona Equipos:</h2>
+            <div className={`p-4 rounded-xl ${cardBg}`}>
+              <h2 className={`font-bold mb-3 ${txtMain}`}>1. Selecciona Equipos:</h2>
               <div className='grid grid-cols-2 gap-2'>
                 {SUBTIPOS_REPORTE.map(cat => {
                   const isChecked = catsReporte.includes(cat);
-                  const activeClass = tema === 'oscuro' ? 'bg-fuchsia-900/50 border-fuchsia-500 text-fuchsia-300' : 'bg-indigo-50 border-indigo-500 text-indigo-800';
-                  const inactiveClass = tema === 'oscuro' ? 'bg-black border-gray-700 text-gray-400' : 'bg-gray-50 border-gray-200';
+                  const activeClass = darkMode ? 'bg-fuchsia-900/50 border-fuchsia-500 text-fuchsia-300' : 'bg-indigo-50 border-indigo-500 text-indigo-800';
+                  const inactiveClass = darkMode ? 'bg-black border-gray-700 text-gray-400' : 'bg-gray-50 border-gray-200';
                   return (
                     <label key={cat} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-sm ${isChecked ? activeClass : inactiveClass}`}>
                       <input type='checkbox' checked={isChecked} onChange={() => handleCatReporte(cat)} className='accent-fuchsia-500' />
@@ -593,31 +623,31 @@ export default function App() {
               </div>
             </div>
             
-            <div className={`p-4 rounded-xl space-y-3 ${T.card}`}>
-              <h2 className={`font-bold ${T.txt}`}>2. Columnas (Toca para desplegar):</h2>
-              {catsReporte.length === 0 ? <p className={`text-sm text-center py-4 ${T.txtM}`}>Primero selecciona un equipo arriba.</p> : catsReporte.map(cat => {
+            <div className={`p-4 rounded-xl space-y-3 ${cardBg}`}>
+              <h2 className={`font-bold ${txtMain}`}>2. Columnas (Toca para desplegar):</h2>
+              {catsReporte.length === 0 ? <p className={`text-sm text-center py-4 ${txtMuted}`}>Primero selecciona un equipo arriba.</p> : catsReporte.map(cat => {
                 const cols = reporteCols[cat] || [];
                 const camposDisponibles = CAMPOS_POR_TIPO[cat] || [];
-                const expClass = tema === 'oscuro' ? 'bg-black border-fuchsia-500/30' : 'bg-gray-50 border-gray-100';
+                const expClass = darkMode ? 'bg-black border-fuchsia-500/30' : 'bg-gray-50 border-gray-100';
                 return (
                   <div key={cat} className={`rounded-xl overflow-hidden border ${expClass}`}>
-                    <button type='button' onClick={() => setReporteExpandido(reporteExpandido === cat ? null : cat)} className={`w-full p-3 flex justify-between items-center font-bold active:opacity-80 ${T.txt}`}>
-                      <span>{cat} <span className={`text-xs font-normal ${T.txtM}`}>({cols.length} cols)</span></span>
-                      <ChevronDown size={18} className={T.txtM + (reporteExpandido === cat ? ' rotate-180 transition-transform' : ' transition-transform')} />
+                    <button type='button' onClick={() => setReporteExpandido(reporteExpandido === cat ? null : cat)} className={`w-full p-3 flex justify-between items-center font-bold active:opacity-80 ${txtMain}`}>
+                      <span>{cat} <span className={`text-xs font-normal ${txtMuted}`}>({cols.length} cols)</span></span>
+                      <ChevronDown size={18} className={txtMuted + (reporteExpandido === cat ? ' rotate-180 transition-transform' : ' transition-transform')} />
                     </button>
                     {reporteExpandido === cat && (
                       <div className='p-3 pt-0'>
                         <div className='flex justify-end gap-1 mb-2'>
-                          <button type='button' onClick={() => selectAllCols(cat)} className={`text-xs px-2 py-1 rounded font-bold ${T.btnS}`}>Todos</button>
-                          <button type='button' onClick={() => clearCols(cat)} className={`text-xs px-2 py-1 rounded font-bold ${T.btnD}`}>Limpiar</button>
+                          <button type='button' onClick={() => selectAllCols(cat)} className={`text-xs px-2 py-1 rounded font-bold ${btnSecondary}`}>Todos</button>
+                          <button type='button' onClick={() => clearCols(cat)} className={`text-xs px-2 py-1 rounded font-bold ${btnDanger}`}>Limpiar</button>
                         </div>
                         <div className='grid grid-cols-2 gap-2'>
                           {camposDisponibles.map((key, idx) => { 
                             const isSelected = cols.includes(key); 
                             const label = CAMPOS.find(c => c.key === key)?.label || key; 
                             const colorClass = COLORES_CHECKS[idx % COLORES_CHECKS.length]; 
-                            const selClass = tema === 'oscuro' ? `bg-gray-900 border-fuchsia-500 font-bold ${colorClass}` : `bg-white border-gray-300 font-bold ${colorClass}`;
-                            const unselClass = tema === 'oscuro' ? 'bg-black border-gray-700 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-500';
+                            const selClass = darkMode ? `bg-gray-900 border-fuchsia-500 font-bold ${colorClass}` : `bg-white border-gray-300 font-bold ${colorClass}`;
+                            const unselClass = darkMode ? 'bg-black border-gray-700 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-500';
                             return (
                               <label key={key} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-sm transition-all ${isSelected ? selClass : unselClass}`}>
                                 <input type='checkbox' checked={isSelected} onChange={() => handleCheckCol(cat, key)} className='w-4 h-4 accent-fuchsia-500' />
@@ -634,30 +664,30 @@ export default function App() {
             </div>
 
             {catsReporte.length > 0 && catsReporte.some(cat => (reporteCols[cat] || []).length > 0) && (
-              <div className={`p-4 rounded-xl overflow-x-auto ${T.card}`}>
-                <h3 className={`font-bold mb-3 text-sm ${T.txt}`}>Vista Previa:</h3>
+              <div className={`p-4 rounded-xl overflow-x-auto ${cardBg}`}>
+                <h3 className={`font-bold mb-3 text-sm ${txtMain}`}>Vista Previa:</h3>
                 {catsReporte.map(cat => { 
                   const datosCat = activos.filter(a => a.centro === centroActual && !a.enAlmacen && getSubtipo(a) === cat); 
                   const cols = reporteCols[cat] || []; 
                   if (datosCat.length === 0 || cols.length === 0) return null; 
                   return (
                     <div key={cat} className='mb-6'>
-                      <h4 className={`font-bold text-sm mb-2 border-b pb-1 ${T.txtD}`}>{cat} ({datosCat.length})</h4>
+                      <h4 className={`font-bold text-sm mb-2 border-b pb-1 ${txtDark}`}>{cat} ({datosCat.length})</h4>
                       <table className='w-full text-xs text-left border-collapse'>
                         <thead>
-                          <tr className={tema==='oscuro'?'bg-fuchsia-900/50 text-fuchsia-300':'bg-blue-800 text-white'}>
+                          <tr className={darkMode ? 'bg-fuchsia-900/50 text-fuchsia-300' : 'bg-blue-800 text-white'}>
                             {cols.map(k => <th key={k} className='p-2 border whitespace-nowrap'>{CAMPOS.find(c=>c.key===k)?.label || k}</th>)}
                           </tr>
                         </thead>
                         <tbody>
                           {datosCat.slice(0, 3).map((a, i) => (
-                            <tr key={a.id} className={tema==='oscuro'?(i % 2 === 0 ? 'bg-black' : 'bg-gray-900'):(i % 2 === 0 ? 'bg-gray-50' : 'bg-white')}>
-                              {cols.map(k => <td key={k} className={`p-2 border whitespace-nowrap ${T.txt}`}>{getValor(a, k)}</td>)}
+                            <tr key={a.id} className={darkMode ? (i % 2 === 0 ? 'bg-black' : 'bg-gray-900') : (i % 2 === 0 ? 'bg-gray-50' : 'bg-white')}>
+                              {cols.map(k => <td key={k} className={`p-2 border whitespace-nowrap ${txtMain}`}>{getValor(a, k)}</td>)}
                             </tr>
                           ))}
                         </tbody>
                       </table>
-                      {datosCat.length > 3 && <p className={`text-center text-xs mt-1 ${T.txtM}`}>+ {datosCat.length - 3} registros más...</p>}
+                      {datosCat.length > 3 && <p className={`text-center text-xs mt-1 ${txtMuted}`}>+ {datosCat.length - 3} registros más...</p>}
                     </div>
                   );
                 })}
@@ -665,47 +695,47 @@ export default function App() {
             )}
             
             <div className='grid grid-cols-2 gap-4'>
-              <button onClick={exportarCSV} disabled={cargando || catsReporte.length === 0} className={`p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 ${T.btnS}`}><Download size={20} /> Excel</button>
-              <button onClick={exportarPDF} disabled={cargando || catsReporte.length === 0} className={`p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 ${T.btnD}`}><FileText size={20} /> PDF</button>
+              <button onClick={exportarCSV} disabled={cargando || catsReporte.length === 0} className={`p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 ${btnSecondary}`}><Download size={20} /> Excel</button>
+              <button onClick={exportarPDF} disabled={cargando || catsReporte.length === 0} className={`p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 ${btnDanger}`}><FileText size={20} /> PDF</button>
             </div>
           </div>
         )}
 
-        {vista === 'formulario' && <FormularioActivo activo={editando} guardarDatos={guardarDatos} setVista={setVista} handleVolver={handleVolver} getNextNumber={getNextNumber} centroActual={centroActual} categoriaVista={categoriaVista} oficinas={oficinas} centros={centros} setMsg={setMsg} guardarArchivoNativo={guardarArchivoNativo} escanearParaCampo={escanearParaCampo} activos={activos} tema={tema} T={T} />}
-        {vista === 'config' && <ConfigVista setVista={setVista} setMsg={setMsg} setActivos={setActivos} setCentros={setCentros} setOficinas={setOficinas} setPisos={setPisos} setCustomPass={setCustomPass} setLogo={setLogo} guardarArchivoNativo={guardarArchivoNativo} tema={tema} T={T} />}
+        {vista === 'formulario' && <FormularioActivo activo={editando} guardarDatos={guardarDatos} setVista={setVista} handleVolver={handleVolver} getNextNumber={getNextNumber} centroActual={centroActual} categoriaVista={categoriaVista} oficinas={oficinas} centros={centros} setMsg={setMsg} guardarArchivoNativo={guardarArchivoNativo} escanearParaCampo={escanearParaCampo} activos={activos} darkMode={darkMode} txtMain={txtMain} txtMuted={txtMuted} txtDark={txtDark} btnPrimary={btnPrimary} btnSecondary={btnSecondary} btnDanger={btnDanger} cardBg={cardBg} inputClass={inputClass} />}
+        {vista === 'config' && <ConfigVista setVista={setVista} setMsg={setMsg} setActivos={setActivos} setCentros={setCentros} setOficinas={setOficinas} setPisos={setPisos} setCustomPass={setCustomPass} setLogo={setLogo} guardarArchivoNativo={guardarArchivoNativo} darkMode={darkMode} txtMain={txtMain} txtMuted={txtMuted} txtDark={txtDark} btnPrimary={btnPrimary} btnSecondary={btnSecondary} btnDanger={btnDanger} cardBg={cardBg} inputClass={inputClass} />}
       </div>
     </div>
   );
 }
 
-function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, setPisos, setCustomPass, setLogo, guardarArchivoNativo, tema, T }) {
+function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, setPisos, setCustomPass, setLogo, guardarArchivoNativo, darkMode, txtMain, txtMuted, txtDark, btnPrimary, btnSecondary, btnDanger, cardBg, inputClass }) {
   const [nueva, setNueva] = useState('');
   const h = (e) => { e.preventDefault(); if (nueva.length < 4) { alert('Minimo 4 caracteres'); return; } setCustomPass(nueva); localStorage.setItem('app_pass_v74', nueva); setMsg('Contrasena actualizada'); setTimeout(() => setMsg(''), 3000); setVista('hub'); };
   const handleLogo = (e) => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (event) => { const base64 = event.target.result; localStorage.setItem('logo_empresa_v74', base64); setLogo(base64); setMsg('Logo actualizado'); setTimeout(() => setMsg(''), 3000); }; reader.readAsDataURL(file); };
   const exportarRespaldo = () => { const respaldo = { activos: JSON.parse(localStorage.getItem('activos_fijos_v74') || '[]'), centros: JSON.parse(localStorage.getItem('mis_centros_v74') || '[]'), oficinas: JSON.parse(localStorage.getItem('mis_oficinas_v74') || '{}'), pisos: JSON.parse(localStorage.getItem('mis_pisos_v74') || '{}'), pass: localStorage.getItem('app_pass_v74'), logo: localStorage.getItem('logo_empresa_v74') }; const blob = new Blob([JSON.stringify(respaldo, null, 2)], { type: 'application/json' }); guardarArchivoNativo(blob, 'respaldo_activos.json'); };
   const importarRespaldo = (e) => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (event) => { try { const data = JSON.parse(event.target.result); if (data.activos) { localStorage.setItem('activos_fijos_v74', JSON.stringify(data.activos)); setActivos(data.activos); } if (data.centros) { localStorage.setItem('mis_centros_v74', JSON.stringify(data.centros)); setCentros(data.centros); } if (data.oficinas) { localStorage.setItem('mis_oficinas_v74', JSON.stringify(data.oficinas)); setOficinas(data.oficinas); } if (data.pisos) { localStorage.setItem('mis_pisos_v74', JSON.stringify(data.pisos)); setPisos(data.pisos); } if (data.pass) { localStorage.setItem('app_pass_v74', data.pass); setCustomPass(data.pass); } if (data.logo) { localStorage.setItem('logo_empresa_v74', data.logo); setLogo(data.logo); } setMsg('Respaldo restaurado'); setTimeout(()=>setMsg(''), 3000); setVista('hub'); } catch (err) { alert('Error: Archivo invalido.'); } }; reader.readAsText(file); };
   return (
-    <div className={`p-6 rounded-xl space-y-6 ${T.card}`}>
-      <button onClick={() => setVista('hub')} className={`flex items-center font-bold mb-2 ${T.txtD}`}><ArrowLeft size={20} /> Volver</button>
+    <div className={`p-6 rounded-xl space-y-6 ${cardBg}`}>
+      <button onClick={() => setVista('hub')} className={`flex items-center font-bold mb-2 ${txtDark}`}><ArrowLeft size={20} /> Volver</button>
       <div className='border-b pb-6'>
-        <h2 className={`text-xl font-bold mb-4 flex items-center gap-2 ${T.txt}`}><ImageIcon size={24} /> Logo de Empresa</h2>
-        <label className={`p-6 rounded-xl font-bold flex flex-col items-center gap-2 cursor-pointer border-2 border-dashed ${tema==='oscuro'?'border-fuchsia-500 text-fuchsia-300':'bg-blue-50 text-blue-700 border-blue-200'}`}>
+        <h2 className={`text-xl font-bold mb-4 flex items-center gap-2 ${txtMain}`}><ImageIcon size={24} /> Logo de Empresa</h2>
+        <label className={`p-6 rounded-xl font-bold flex flex-col items-center gap-2 cursor-pointer border-2 border-dashed ${darkMode ? 'border-fuchsia-500 text-fuchsia-300' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
           <Upload size={32} /><span>Seleccionar Logo</span>
           <input type='file' accept='image/*' onChange={handleLogo} className='hidden' />
         </label>
       </div>
       <div>
-        <h2 className={`text-xl font-bold mb-4 flex items-center gap-2 ${T.txt}`}><Key size={24} /> Cambiar Contrasena</h2>
+        <h2 className={`text-xl font-bold mb-4 flex items-center gap-2 ${txtMain}`}><Key size={24} /> Cambiar Contrasena</h2>
         <form onSubmit={h} className='space-y-4'>
-          <input type='password' value={nueva} onChange={e => setNueva(e.target.value)} required className={`w-full p-3 border rounded-lg ${T.in}`} placeholder='Nueva contrasena' />
-          <button type='submit' className={`w-full p-3 rounded-lg font-bold ${T.btnP}`}>Guardar</button>
+          <input type='password' value={nueva} onChange={e => setNueva(e.target.value)} required className={`w-full p-3 border rounded-lg ${inputClass}`} placeholder='Nueva contrasena' />
+          <button type='submit' className={`w-full p-3 rounded-lg font-bold ${btnPrimary}`}>Guardar</button>
         </form>
       </div>
       <div className='border-t pt-6'>
-        <h2 className={`text-xl font-bold mb-4 flex items-center gap-2 ${T.txt}`}><Save size={24} /> Respaldo de Datos</h2>
+        <h2 className={`text-xl font-bold mb-4 flex items-center gap-2 ${txtMain}`}><Save size={24} /> Respaldo de Datos</h2>
         <div className='grid grid-cols-2 gap-4'>
-          <button onClick={exportarRespaldo} className={`p-4 rounded-xl font-bold flex flex-col items-center gap-2 ${T.btnS}`}><Download size={24} /> Exportar</button>
-          <label className={`p-4 rounded-xl font-bold flex flex-col items-center gap-2 cursor-pointer ${T.btnD}`}>
+          <button onClick={exportarRespaldo} className={`p-4 rounded-xl font-bold flex flex-col items-center gap-2 ${btnSecondary}`}><Download size={24} /> Exportar</button>
+          <label className={`p-4 rounded-xl font-bold flex flex-col items-center gap-2 cursor-pointer ${btnDanger}`}>
             <Upload size={24} /> Importar
             <input type='file' accept='.json' onChange={importarRespaldo} className='hidden' />
           </label>
@@ -715,7 +745,7 @@ function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, se
   );
 }
 
-function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNextNumber, centroActual, categoriaVista, oficinas, centros, setMsg, guardarArchivoNativo, escanearParaCampo, activos, tema, T }) {
+function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNextNumber, centroActual, categoriaVista, oficinas, centros, setMsg, guardarArchivoNativo, escanearParaCampo, activos, darkMode, txtMain, txtMuted, txtDark, btnPrimary, btnSecondary, btnDanger, cardBg, inputClass }) {
   const esAlmacen = !centroActual; 
   const opcionesTipo = esAlmacen ? [...TIPOS_COMPUTO, ...TIPOS_RED] : (categoriaVista === 'red' ? TIPOS_RED : TIPOS_COMPUTO);
   const tipoDefault = categoriaVista === 'red' ? 'Impresora' : 'Laptop';
@@ -735,7 +765,7 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
     const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     let newForm = { ...form, [e.target.name]: val };
     if (e.target.name === 'oficina') { const o = oficinasDestino.find(o => o.nombre === val); if (o) newForm.piso = o.piso || ''; }
-    if (e.target.name === 'enAlmacen' && val === true) { newForm = { ...newForm, personaAsignada: '', cargo: '', numeroEmpleado: '', namaeResponsable: '', oficina: '', piso: '', fechaAsignacion: '' }; setMsg('Enviado a Almacén.'); setTimeout(()=>setMsg(''), 3000); }
+    if (e.target.name === 'enAlmacen' && val === true) { newForm = { ...newForm, personaAsignada: '', cargo: '', numeroEmpleado: '', nombreResponsable: '', oficina: '', piso: '', fechaAsignacion: '' }; setMsg('Enviado a Almacén.'); setTimeout(()=>setMsg(''), 3000); }
     setForm(newForm);
   };
   const handleMarca = (e) => { const val = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); setForm({ ...form, [e.target.name]: val }); };
@@ -768,8 +798,8 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
 
   const OficinaSelect = ({ req }) => (
     <div>
-      <label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Oficina</label>
-      <select name='oficina' value={form.oficina||''} onChange={h} required={req} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`}>
+      <label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Oficina</label>
+      <select name='oficina' value={form.oficina||''} onChange={h} required={req} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`}>
         <option value='' disabled>Seleccionar...</option>
         {oficinasDestino.map(o => <option key={o.id} value={o.nombre}>{o.nombre}</option>)}
       </select>
@@ -777,8 +807,8 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
   );
   const PisoInput = ({ req }) => (
     <div>
-      <label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Piso</label>
-      <input name='piso' value={form.piso||''} readOnly className={`w-full p-2.5 border rounded-lg text-sm ${T.in} cursor-not-allowed`} />
+      <label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Piso</label>
+      <input name='piso' value={form.piso||''} readOnly className={`w-full p-2.5 border rounded-lg text-sm ${inputClass} cursor-not-allowed`} />
     </div>
   );
   const esTipoRed = ['Impresora', 'Impresora Multifuncional', 'Scanner', 'Switch'].includes(form.tipo);
@@ -786,13 +816,13 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
 
   return (
     <div>
-      <button onClick={handleVolver} className={`flex items-center font-bold mb-4 ${T.txtD}`}><ArrowLeft size={20} /> Volver</button>
-      <form onSubmit={handleSubmit} className={`p-4 rounded-xl space-y-4 ${T.card}`}>
-        <h2 className={`font-bold text-lg border-b pb-2 ${T.txt}`}>{activo && !activo._template ? 'Editar Nro. ' + form.numero : 'Nuevo Registro'}</h2>
+      <button onClick={handleVolver} className={`flex items-center font-bold mb-4 ${txtDark}`}><ArrowLeft size={20} /> Volver</button>
+      <form onSubmit={handleSubmit} className={`p-4 rounded-xl space-y-4 ${cardBg}`}>
+        <h2 className={`font-bold text-lg border-b pb-2 ${txtMain}`}>{activo && !activo._template ? 'Editar Nro. ' + form.numero : 'Nuevo Registro'}</h2>
         {esAlmacen && !form.enAlmacen && (
-          <div className={`p-3 rounded-lg border-l-4 ${tema==='oscuro'?'bg-fuchsia-950/30 border-fuchsia-500':'bg-blue-50 border-blue-400'}`}>
-            <label className={`block text-xs font-bold mb-1 ${T.txtD}`}>ASIGNAR A MULTICENTRO</label>
-            <select name='centro' value={form.centro||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`}>
+          <div className={`p-3 rounded-lg border-l-4 ${darkMode ? 'bg-fuchsia-950/30 border-fuchsia-500' : 'bg-blue-50 border-blue-400'}`}>
+            <label className={`block text-xs font-bold mb-1 ${txtDark}`}>ASIGNAR A MULTICENTRO</label>
+            <select name='centro' value={form.centro||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`}>
               <option value='' disabled>Seleccionar...</option>
               {centros.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
             </select>
@@ -800,12 +830,12 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
         )}
         <div className='grid grid-cols-2 gap-4'>
           <div>
-            <label className={`block text-xs font-bold mb-1 ${T.txtM}`}>Nro. REGISTRO</label>
-            <input name='numero' value={form.numero} readOnly className={`w-full p-3 border rounded-lg font-bold ${T.in} cursor-not-allowed`} />
+            <label className={`block text-xs font-bold mb-1 ${txtMuted}`}>Nro. REGISTRO</label>
+            <input name='numero' value={form.numero} readOnly className={`w-full p-3 border rounded-lg font-bold ${inputClass} cursor-not-allowed`} />
           </div>
           <div>
-            <label className={`block text-xs font-bold mb-1 ${T.txtM}`}>TIPO EQUIPO</label>
-            <select name='tipo' value={form.tipo} onChange={h} className={`w-full p-3 border rounded-lg ${T.in}`}>
+            <label className={`block text-xs font-bold mb-1 ${txtMuted}`}>TIPO EQUIPO</label>
+            <select name='tipo' value={form.tipo} onChange={h} className={`w-full p-3 border rounded-lg ${inputClass}`}>
               {opcionesTipo.map(opt => <option key={opt}>{opt}</option>)}
             </select>
           </div>
@@ -813,111 +843,111 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
 
         {esTipoUnificado && (
           <>
-          <div className={`p-3 rounded-lg border-l-4 space-y-3 ${tema==='oscuro'?'bg-fuchsia-950/30 border-fuchsia-500':'bg-blue-50 border-blue-400'}`}>
-            <p className={`text-xs font-bold ${T.txtD}`}>DATOS {form.tipo === 'Laptop' ? 'LAPTOP' : 'ALL IN ONE'}</p>
+          <div className={`p-3 rounded-lg border-l-4 space-y-3 ${darkMode ? 'bg-fuchsia-950/30 border-fuchsia-500' : 'bg-blue-50 border-blue-400'}`}>
+            <p className={`text-xs font-bold ${txtDark}`}>DATOS {form.tipo === 'Laptop' ? 'LAPTOP' : 'ALL IN ONE'}</p>
             <div className='grid grid-cols-2 gap-3'>
-              <div className='col-span-2'><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Nombre Maquina</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
-              <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Marca</label><input name='marca' value={form.marca||''} onChange={handleMarca} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
-              <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
+              <div className='col-span-2'><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Nombre Maquina</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
+              <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Marca</label><input name='marca' value={form.marca||''} onChange={handleMarca} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
+              <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
               <div className='relative'>
-                <label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Codigo AF</label>
+                <label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Codigo AF</label>
                 <div className='flex gap-1'>
-                  <input name='codigoActivo' value={form.codigoActivo||''} onChange={h} onBlur={(e)=>validarUnico('codigoActivo', e.target.value)} className={`w-full p-2.5 border rounded-lg text-sm ${T.in} ${errores.codigoActivo ? 'border-red-500 bg-red-100' : ''}`} />
-                  <button type='button' onClick={() => escanearParaCampo('codigoActivo')} className={`px-2 rounded-lg ${T.btnS}`}><Barcode size={18} /></button>
+                  <input name='codigoActivo' value={form.codigoActivo||''} onChange={h} onBlur={(e)=>validarUnico('codigoActivo', e.target.value)} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass} ${errores.codigoActivo ? 'border-red-500 bg-red-100' : ''}`} />
+                  <button type='button' onClick={() => escanearParaCampo('codigoActivo')} className={`px-2 rounded-lg ${btnSecondary}`}><Barcode size={18} /></button>
                 </div>
                 {errores.codigoActivo && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}
               </div>
               <div className='relative'>
-                <label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Numero de Serie</label>
+                <label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Numero de Serie</label>
                 <div className='flex gap-1'>
-                  <input name='numeroSerie' value={form.numeroSerie||''} onChange={h} onBlur={(e)=>validarUnico('numeroSerie', e.target.value)} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in} ${errores.numeroSerie ? 'border-red-500 bg-red-100' : ''}`} />
-                  <button type='button' onClick={() => escanearParaCampo('numeroSerie')} className={`px-2 rounded-lg ${T.btnS}`}><Barcode size={18} /></button>
+                  <input name='numeroSerie' value={form.numeroSerie||''} onChange={h} onBlur={(e)=>validarUnico('numeroSerie', e.target.value)} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass} ${errores.numeroSerie ? 'border-red-500 bg-red-100' : ''}`} />
+                  <button type='button' onClick={() => escanearParaCampo('numeroSerie')} className={`px-2 rounded-lg ${btnSecondary}`}><Barcode size={18} /></button>
                 </div>
                 {errores.numeroSerie && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}
               </div>
             </div>
           </div>
-          <CamposSpecs form={form} setForm={setForm} handleProcesador={handleProcesador} formatMemory={formatMemory} handleNumeric={handleNumeric} handleIP={handleIP} errores={errores} tema={tema} T={T} />
-          <CamposUbicacion form={form} h={h} OficinaSelect={OficinaSelect} PisoInput={PisoInput} tema={tema} T={T} />
+          <CamposSpecs form={form} setForm={setForm} handleProcesador={handleProcesador} formatMemory={formatMemory} handleNumeric={handleNumeric} handleIP={handleIP} errores={errores} darkMode={darkMode} txtMain={txtMain} txtMuted={txtMuted} inputClass={inputClass} />
+          <CamposUbicacion form={form} h={h} OficinaSelect={OficinaSelect} PisoInput={PisoInput} darkMode={darkMode} txtMain={txtMain} txtMuted={txtMuted} inputClass={inputClass} />
           </>
         )}
 
         {form.tipo === 'Computadora de Escritorio' && (
           <>
-          <div className={`p-3 rounded-lg border-l-4 space-y-3 ${tema==='oscuro'?'bg-fuchsia-950/30 border-fuchsia-500':'bg-blue-50 border-blue-400'}`}>
-            <p className={`text-xs font-bold ${T.txtD}`}>DATOS CPU</p>
+          <div className={`p-3 rounded-lg border-l-4 space-y-3 ${darkMode ? 'bg-fuchsia-950/30 border-fuchsia-500' : 'bg-blue-50 border-blue-400'}`}>
+            <p className={`text-xs font-bold ${txtDark}`}>DATOS CPU</p>
             <div className='grid grid-cols-2 gap-3'>
-              <div className='col-span-2'><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Nombre Equipo</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
-              <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Marca CPU</label><input name='marcaCPU' value={form.marcaCPU||''} onChange={handleMarca} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
-              <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Modelo CPU</label><input name='modeloCPU' value={form.modeloCPU||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
+              <div className='col-span-2'><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Nombre Equipo</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
+              <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Marca CPU</label><input name='marcaCPU' value={form.marcaCPU||''} onChange={handleMarca} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
+              <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Modelo CPU</label><input name='modeloCPU' value={form.modeloCPU||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
               <div className='relative'>
-                <label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Codigo AF CPU</label>
+                <label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Codigo AF CPU</label>
                 <div className='flex gap-1'>
-                  <input name='codigoActivoCPU' value={form.codigoActivoCPU||''} onChange={h} onBlur={(e)=>validarUnico('codigoActivoCPU', e.target.value)} className={`w-full p-2.5 border rounded-lg text-sm ${T.in} ${errores.codigoActivoCPU ? 'border-red-500 bg-red-100' : ''}`} />
-                  <button type='button' onClick={() => escanearParaCampo('codigoActivoCPU')} className={`px-2 rounded-lg ${T.btnS}`}><Barcode size={18} /></button>
+                  <input name='codigoActivoCPU' value={form.codigoActivoCPU||''} onChange={h} onBlur={(e)=>validarUnico('codigoActivoCPU', e.target.value)} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass} ${errores.codigoActivoCPU ? 'border-red-500 bg-red-100' : ''}`} />
+                  <button type='button' onClick={() => escanearParaCampo('codigoActivoCPU')} className={`px-2 rounded-lg ${btnSecondary}`}><Barcode size={18} /></button>
                 </div>
                 {errores.codigoActivoCPU && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}
               </div>
               <div className='relative'>
-                <label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Serie CPU</label>
+                <label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Serie CPU</label>
                 <div className='flex gap-1'>
-                  <input name='numeroSerieCPU' value={form.numeroSerieCPU||''} onChange={h} onBlur={(e)=>validarUnico('numeroSerieCPU', e.target.value)} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in} ${errores.numeroSerieCPU ? 'border-red-500 bg-red-100' : ''}`} />
-                  <button type='button' onClick={() => escanearParaCampo('numeroSerieCPU')} className={`px-2 rounded-lg ${T.btnS}`}><Barcode size={18} /></button>
+                  <input name='numeroSerieCPU' value={form.numeroSerieCPU||''} onChange={h} onBlur={(e)=>validarUnico('numeroSerieCPU', e.target.value)} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass} ${errores.numeroSerieCPU ? 'border-red-500 bg-red-100' : ''}`} />
+                  <button type='button' onClick={() => escanearParaCampo('numeroSerieCPU')} className={`px-2 rounded-lg ${btnSecondary}`}><Barcode size={18} /></button>
                 </div>
                 {errores.numeroSerieCPU && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}
               </div>
             </div>
           </div>
-          <div className={`p-3 rounded-lg border-l-4 space-y-3 ${tema==='oscuro'?'bg-yellow-900/30 border-yellow-500':'bg-yellow-50 border-yellow-400'}`}>
-            <p className={`text-xs font-bold ${tema==='oscuro'?'text-yellow-400':'text-yellow-700'}`}>DATOS MONITOR</p>
+          <div className={`p-3 rounded-lg border-l-4 space-y-3 ${darkMode ? 'bg-yellow-900/30 border-yellow-500' : 'bg-yellow-50 border-yellow-400'}`}>
+            <p className={`text-xs font-bold ${darkMode ? 'text-yellow-400' : 'text-yellow-700'}`}>DATOS MONITOR</p>
             <div className='grid grid-cols-2 gap-3'>
-              <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Marca Monitor</label><input name='marcaMonitor' value={form.marcaMonitor||''} onChange={handleMarca} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
-              <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Modelo Monitor</label><input name='modeloMonitor' value={form.modeloMonitor||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
-              <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Serie Monitor</label><input name='numeroSerieMonitor' value={form.numeroSerieMonitor||''} onChange={h} onBlur={(e)=>validarUnico('numeroSerieMonitor', e.target.value)} className={`w-full p-2.5 border rounded-lg text-sm ${T.in} ${errores.numeroSerieMonitor ? 'border-red-500 bg-red-100' : ''}`} />{errores.numeroSerieMonitor && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}</div>
-              <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Codigo AF Monitor</label><input name='codigoActivoMonitor' value={form.codigoActivoMonitor||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
+              <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Marca Monitor</label><input name='marcaMonitor' value={form.marcaMonitor||''} onChange={handleMarca} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
+              <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Modelo Monitor</label><input name='modeloMonitor' value={form.modeloMonitor||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
+              <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Serie Monitor</label><input name='numeroSerieMonitor' value={form.numeroSerieMonitor||''} onChange={h} onBlur={(e)=>validarUnico('numeroSerieMonitor', e.target.value)} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass} ${errores.numeroSerieMonitor ? 'border-red-500 bg-red-100' : ''}`} />{errores.numeroSerieMonitor && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}</div>
+              <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Codigo AF Monitor</label><input name='codigoActivoMonitor' value={form.codigoActivoMonitor||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
             </div>
           </div>
-          <CamposSpecs form={form} setForm={setForm} handleProcesador={handleProcesador} formatMemory={formatMemory} handleNumeric={handleNumeric} handleIP={handleIP} errores={errores} tema={tema} T={T} />
-          <CamposUbicacion form={form} h={h} OficinaSelect={OficinaSelect} PisoInput={PisoInput} tema={tema} T={T} />
+          <CamposSpecs form={form} setForm={setForm} handleProcesador={handleProcesador} formatMemory={formatMemory} handleNumeric={handleNumeric} handleIP={handleIP} errores={errores} darkMode={darkMode} txtMain={txtMain} txtMuted={txtMuted} inputClass={inputClass} />
+          <CamposUbicacion form={form} h={h} OficinaSelect={OficinaSelect} PisoInput={PisoInput} darkMode={darkMode} txtMain={txtMain} txtMuted={txtMuted} inputClass={inputClass} />
           </>
         )}
 
         {esTipoRed && (
-          <div className={`p-3 rounded-lg border-l-4 space-y-3 ${tema==='oscuro'?'bg-orange-900/30 border-orange-500':'bg-orange-50 border-orange-400'}`}>
-            <p className={`text-xs font-bold ${tema==='oscuro'?'text-orange-400':'text-orange-600'}`}>DATOS {form.tipo.toUpperCase()}</p>
+          <div className={`p-3 rounded-lg border-l-4 space-y-3 ${darkMode ? 'bg-orange-900/30 border-orange-500' : 'bg-orange-50 border-orange-400'}`}>
+            <p className={`text-xs font-bold ${darkMode ? 'text-orange-400' : 'text-orange-600'}`}>DATOS {form.tipo.toUpperCase()}</p>
             <div className='grid grid-cols-2 gap-3'>
-              <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Estado</label><select name='estado' value={form.estado} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`}><option>Activo</option><option>En Mantenimiento</option><option>Danado</option></select></div>
-              <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Marca</label><input name='marca' value={form.marca||''} onChange={handleMarca} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
-              <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
-              <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Serie</label><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} onBlur={(e)=>validarUnico('numeroSerie', e.target.value)} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in} ${errores.numeroSerie ? 'border-red-500 bg-red-100' : ''}`} />{errores.numeroSerie && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}</div>
+              <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Estado</label><select name='estado' value={form.estado} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`}><option>Activo</option><option>En Mantenimiento</option><option>Danado</option></select></div>
+              <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Marca</label><input name='marca' value={form.marca||''} onChange={handleMarca} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
+              <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
+              <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Serie</label><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} onBlur={(e)=>validarUnico('numeroSerie', e.target.value)} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass} ${errores.numeroSerie ? 'border-red-500 bg-red-100' : ''}`} />{errores.numeroSerie && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}</div>
               <div className='relative'>
-                <label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Codigo AF</label>
+                <label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Codigo AF</label>
                 <div className='flex gap-1'>
-                  <input name='codigoActivo' value={form.codigoActivo||''} onChange={h} onBlur={(e)=>validarUnico('codigoActivo', e.target.value)} className={`w-full p-2.5 border rounded-lg text-sm ${T.in} ${errores.codigoActivo ? 'border-red-500 bg-red-100' : ''}`} />
-                  <button type='button' onClick={() => escanearParaCampo('codigoActivo')} className={`px-2 rounded-lg ${T.btnS}`}><Barcode size={18} /></button>
+                  <input name='codigoActivo' value={form.codigoActivo||''} onChange={h} onBlur={(e)=>validarUnico('codigoActivo', e.target.value)} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass} ${errores.codigoActivo ? 'border-red-500 bg-red-100' : ''}`} />
+                  <button type='button' onClick={() => escanearParaCampo('codigoActivo')} className={`px-2 rounded-lg ${btnSecondary}`}><Barcode size={18} /></button>
                 </div>
                 {errores.codigoActivo && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}
               </div>
-              {form.tipo !== 'Switch' && <div className='col-span-2'><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Conexion</label><select name='conexionImpresora' value={form.conexionImpresora||'En Red'} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`}><option>En Red</option><option>Por USB</option></select></div>}
+              {form.tipo !== 'Switch' && <div className='col-span-2'><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Conexion</label><select name='conexionImpresora' value={form.conexionImpresora||'En Red'} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`}><option>En Red</option><option>Por USB</option></select></div>}
               {(form.tipo === 'Switch' || form.conexionImpresora === 'En Red') && (
                 <>
-                  <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>MAC</label><input name='mac' value={form.mac||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
-                  <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>IP</label><input name='ip' value={form.ip||''} onChange={handleIP} className={`w-full p-2.5 border rounded-lg text-sm ${T.in} ${errores.ip ? 'border-red-500 bg-red-100' : ''}`} />{errores.ip && <p className='text-xs text-red-500 mt-1'>IP inválida</p>}</div>
+                  <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>MAC</label><input name='mac' value={form.mac||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
+                  <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>IP</label><input name='ip' value={form.ip||''} onChange={handleIP} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass} ${errores.ip ? 'border-red-500 bg-red-100' : ''}`} />{errores.ip && <p className='text-xs text-red-500 mt-1'>IP inválida</p>}</div>
                 </>
               )}
               <OficinaSelect req={true} /><PisoInput req={true} />
-              <div className='col-span-2'><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Fecha Asignacion</label><input type='date' name='fechaAsignacion' value={form.fechaAsignacion||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
+              <div className='col-span-2'><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Fecha Asignacion</label><input type='date' name='fechaAsignacion' value={form.fechaAsignacion||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
             </div>
           </div>
         )}
 
         <div>
-          <label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Notas</label>
-          <textarea name='notas' value={form.notas||''} onChange={h} rows='2' className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} placeholder='Observaciones...'></textarea>
+          <label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Notas</label>
+          <textarea name='notas' value={form.notas||''} onChange={h} rows='2' className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} placeholder='Observaciones...'></textarea>
         </div>
         
-        <div className={`p-3 rounded-lg border space-y-3 ${tema==='oscuro'?'bg-black border-fuchsia-500/30':'bg-gray-50 border-gray-200'}`}>
-          <p className={`text-xs font-bold ${tema==='oscuro'?'text-fuchsia-400':'text-gray-600'}`}>EVIDENCIA FOTOGRÁFICA (OPCIONAL)</p>
+        <div className={`p-3 rounded-lg border space-y-3 ${darkMode ? 'bg-black border-fuchsia-500/30' : 'bg-gray-50 border-gray-200'}`}>
+          <p className={`text-xs font-bold ${darkMode ? 'text-fuchsia-400' : 'text-gray-600'}`}>EVIDENCIA FOTOGRÁFICA (OPCIONAL)</p>
           <div className='grid grid-cols-2 gap-4'>
             <div className='text-center'>
               {form.fotoEquipo ? (
@@ -926,7 +956,7 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
                   <button type='button' onClick={() => eliminarFoto('fotoEquipo')} className='absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 shadow-md'><X size={14} /></button>
                 </div>
               ) : (
-                <button type='button' onClick={() => tomarFoto('fotoEquipo')} className={`w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center ${tema==='oscuro'?'border-fuchsia-500 text-fuchsia-400':'border-gray-300 text-gray-400'}`}>
+                <button type='button' onClick={() => tomarFoto('fotoEquipo')} className={`w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center ${darkMode ? 'border-fuchsia-500 text-fuchsia-400' : 'border-gray-300 text-gray-400'}`}>
                   <CameraIcon size={24} /><span className='text-xs mt-1 font-bold'>Foto del Equipo</span>
                 </button>
               )}
@@ -938,7 +968,7 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
                   <button type='button' onClick={() => eliminarFoto('fotoSerie')} className='absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 shadow-md'><X size={14} /></button>
                 </div>
               ) : (
-                <button type='button' onClick={() => tomarFoto('fotoSerie')} className={`w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center ${tema==='oscuro'?'border-cyan-500 text-cyan-400':'border-gray-300 text-gray-400'}`}>
+                <button type='button' onClick={() => tomarFoto('fotoSerie')} className={`w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center ${darkMode ? 'border-cyan-500 text-cyan-400' : 'border-gray-300 text-gray-400'}`}>
                   <CameraIcon size={24} /><span className='text-xs mt-1 font-bold'>Foto N° de Serie</span>
                 </button>
               )}
@@ -947,18 +977,18 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
         </div>
         
         {activo && !activo._template && (
-          <div className={`p-3 rounded-lg border ${tema==='oscuro'?'bg-black border-fuchsia-500/30':'bg-gray-50 border-gray-200'}`}>
-            <button type='button' onClick={() => setVerBitacora(!verBitacora)} className={`w-full flex justify-between items-center font-bold ${T.txt}`}>
+          <div className={`p-3 rounded-lg border ${darkMode ? 'bg-black border-fuchsia-500/30' : 'bg-gray-50 border-gray-200'}`}>
+            <button type='button' onClick={() => setVerBitacora(!verBitacora)} className={`w-full flex justify-between items-center font-bold ${txtMain}`}>
               <span className='flex items-center gap-2'><History size={18} /> Ver Bitácora ({(form.historial || []).length})</span>
               <ChevronDown size={18} className={verBitacora ? 'rotate-180 transition-transform' : 'transition-transform'} />
             </button>
             {verBitacora && (
               <div className='mt-3 space-y-2 max-h-48 overflow-y-auto'>
-                {(form.historial || []).length === 0 ? <p className={`text-xs text-center py-2 ${T.txtM}`}>Sin movimientos.</p> : 
+                {(form.historial || []).length === 0 ? <p className={`text-xs text-center py-2 ${txtMuted}`}>Sin movimientos.</p> : 
                 (form.historial || []).slice().reverse().map((h, i) => (
-                  <div key={i} className={`text-xs p-2 rounded border-l-4 ${tema==='oscuro'?'bg-gray-900 border-fuchsia-500':'bg-white border-blue-400'}`}>
-                    <p className={`font-bold ${T.txtM}`}>[{h.fecha}]</p>
-                    <p className={`${T.txt} mt-1`}>{h.nota}</p>
+                  <div key={i} className={`text-xs p-2 rounded border-l-4 ${darkMode ? 'bg-gray-900 border-fuchsia-500' : 'bg-white border-blue-400'}`}>
+                    <p className={`font-bold ${txtMuted}`}>[{h.fecha}]</p>
+                    <p className={`${txtMain} mt-1`}>{h.nota}</p>
                   </div>
                 ))}
               </div>
@@ -967,69 +997,69 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
         )}
         
         <div className='flex gap-3 pt-2'>
-          <button type='submit' className={`flex-1 p-3 rounded-lg font-bold flex items-center justify-center gap-2 ${T.btnP}`}><Save size={20} /> Guardar</button>
-          {activo && !activo._template && <button type='button' onClick={handleEliminar} className={`p-3 rounded-lg font-bold ${T.btnD}`}><Trash2 size={20} /></button>}
+          <button type='submit' className={`flex-1 p-3 rounded-lg font-bold flex items-center justify-center gap-2 ${btnPrimary}`}><Save size={20} /> Guardar</button>
+          {activo && !activo._template && <button type='button' onClick={handleEliminar} className={`p-3 rounded-lg font-bold ${btnDanger}`}><Trash2 size={20} /></button>}
         </div>
       </form>
     </div>
   );
 }
 
-function CamposSpecs({ form, setForm, handleProcesador, formatMemory, handleNumeric, handleIP, errores, tema, T }) {
+function CamposSpecs({ form, setForm, handleProcesador, formatMemory, handleNumeric, handleIP, errores, darkMode, txtMain, txtMuted, inputClass }) {
   const h = (e) => setForm({ ...form, [e.target.name]: e.target.value });
   return (
-    <div className={`p-3 rounded-lg border-l-4 space-y-3 ${tema==='oscuro'?'bg-purple-900/30 border-purple-500':'bg-purple-50 border-purple-400'}`}>
-      <p className={`text-xs font-bold ${tema==='oscuro'?'text-purple-400':'text-purple-600'}`}>ESPECIFICACIONES</p>
+    <div className={`p-3 rounded-lg border-l-4 space-y-3 ${darkMode ? 'bg-purple-900/30 border-purple-500' : 'bg-purple-50 border-purple-400'}`}>
+      <p className={`text-xs font-bold ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>ESPECIFICACIONES</p>
       <div className='grid grid-cols-2 gap-3'>
-        <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Procesador</label><input name='procesador' value={form.procesador||''} onChange={handleProcesador} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
-        <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Generacion</label><input name='generacion' value={form.generacion||''} readOnly className={`w-full p-2.5 border rounded-lg text-sm ${T.in} cursor-not-allowed`} /></div>
-        <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>RAM</label><input name='ram' value={form.ram||''} onChange={handleNumeric} onBlur={() => formatMemory('ram')} placeholder='Ej: 8' className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
-        <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>S.O.</label><input name='sistemaOperativo' value={form.sistemaOperativo||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
-        <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>MAC</label><input name='mac' value={form.mac||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
-        <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>IP</label><input name='ip' value={form.ip||''} onChange={handleIP} className={`w-full p-2.5 border rounded-lg text-sm ${T.in} ${errores.ip ? 'border-red-500 bg-red-100' : ''}`} />{errores.ip && <p className='text-xs text-red-500 mt-1'>IP inválida</p>}</div>
+        <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Procesador</label><input name='procesador' value={form.procesador||''} onChange={handleProcesador} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
+        <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Generacion</label><input name='generacion' value={form.generacion||''} readOnly className={`w-full p-2.5 border rounded-lg text-sm ${inputClass} cursor-not-allowed`} /></div>
+        <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>RAM</label><input name='ram' value={form.ram||''} onChange={handleNumeric} onBlur={() => formatMemory('ram')} placeholder='Ej: 8' className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
+        <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>S.O.</label><input name='sistemaOperativo' value={form.sistemaOperativo||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
+        <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>MAC</label><input name='mac' value={form.mac||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
+        <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>IP</label><input name='ip' value={form.ip||''} onChange={handleIP} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass} ${errores.ip ? 'border-red-500 bg-red-100' : ''}`} />{errores.ip && <p className='text-xs text-red-500 mt-1'>IP inválida</p>}</div>
       </div>
-      <div className={`border-t pt-3 mt-2 grid grid-cols-2 gap-3 ${tema==='oscuro'?'border-purple-500/30':'border-purple-200'}`}>
+      <div className={`border-t pt-3 mt-2 grid grid-cols-2 gap-3 ${darkMode ? 'border-purple-500/30' : 'border-purple-200'}`}>
         <div>
-          <p className={`text-xs font-bold mb-1 ${tema==='oscuro'?'text-purple-300':'text-purple-800'}`}>DISCO 1</p>
-          <select name='tipoDisco' value={form.tipoDisco||'SSD M.2'} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm mb-1 ${T.in}`}><option>SSD M.2</option><option>SSD SATA</option><option>HDD</option><option>M.2 NVMe</option></select>
-          <input name='capacidadDisco' value={form.capacidadDisco||''} onChange={handleNumeric} onBlur={() => formatMemory('capacidadDisco')} placeholder='Ej: 256' className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} />
+          <p className={`text-xs font-bold mb-1 ${darkMode ? 'text-purple-300' : 'text-purple-800'}`}>DISCO 1</p>
+          <select name='tipoDisco' value={form.tipoDisco||'SSD M.2'} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm mb-1 ${inputClass}`}><option>SSD M.2</option><option>SSD SATA</option><option>HDD</option><option>M.2 NVMe</option></select>
+          <input name='capacidadDisco' value={form.capacidadDisco||''} onChange={handleNumeric} onBlur={() => formatMemory('capacidadDisco')} placeholder='Ej: 256' className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} />
         </div>
         <div>
-          <p className={`text-xs font-bold mb-1 ${tema==='oscuro'?'text-purple-300':'text-purple-800'}`}>DISCO 2</p>
-          <select name='tipoDisco2' value={form.tipoDisco2||'Ninguno'} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm mb-1 ${T.in}`}><option>Ninguno</option><option>SSD M.2</option><option>SSD SATA</option><option>HDD</option><option>M.2 NVMe</option></select>
-          <input name='capacidadDisco2' value={form.capacidadDisco2||''} onChange={handleNumeric} onBlur={() => formatMemory('capacidadDisco2')} disabled={form.tipoDisco2==='Ninguno'} placeholder='Ej: 512' className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} />
+          <p className={`text-xs font-bold mb-1 ${darkMode ? 'text-purple-300' : 'text-purple-800'}`}>DISCO 2</p>
+          <select name='tipoDisco2' value={form.tipoDisco2||'Ninguno'} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm mb-1 ${inputClass}`}><option>Ninguno</option><option>SSD M.2</option><option>SSD SATA</option><option>HDD</option><option>M.2 NVMe</option></select>
+          <input name='capacidadDisco2' value={form.capacidadDisco2||''} onChange={handleNumeric} onBlur={() => formatMemory('capacidadDisco2')} disabled={form.tipoDisco2==='Ninguno'} placeholder='Ej: 512' className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} />
         </div>
       </div>
     </div>
   );
 }
 
-function CamposUbicacion({ form, h, OficinaSelect, PisoInput, tema, T }) {
+function CamposUbicacion({ form, h, OficinaSelect, PisoInput, darkMode, txtMain, txtMuted, inputClass }) {
   return (
-    <div className={`p-3 rounded-lg border-l-4 space-y-3 ${tema==='oscuro'?'bg-green-900/30 border-green-500':'bg-green-50 border-green-400'}`}>
-      <p className={`text-xs font-bold ${tema==='oscuro'?'text-green-400':'text-green-700'}`}>UBICACION Y ASIGNACION</p>
-      <label className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer ${tema==='oscuro'?'bg-black border-fuchsia-500/50':'bg-white border-indigo-200'}`}>
+    <div className={`p-3 rounded-lg border-l-4 space-y-3 ${darkMode ? 'bg-green-900/30 border-green-500' : 'bg-green-50 border-green-400'}`}>
+      <p className={`text-xs font-bold ${darkMode ? 'text-green-400' : 'text-green-700'}`}>UBICACION Y ASIGNACION</p>
+      <label className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer ${darkMode ? 'bg-black border-fuchsia-500/50' : 'bg-white border-indigo-200'}`}>
         <input type='checkbox' name='enAlmacen' checked={form.enAlmacen || false} onChange={h} className='w-5 h-5 accent-fuchsia-500' />
         <div>
-          <span className={`font-bold ${tema==='oscuro'?'text-fuchsia-400':'text-indigo-700'}`}>Marcar como 'En Almacen'</span>
-          <p className={`text-xs ${T.txtM}`}>Quita la asignacion del equipo.</p>
+          <span className={`font-bold ${darkMode ? 'text-fuchsia-400' : 'text-indigo-700'}`}>Marcar como 'En Almacen'</span>
+          <p className={`text-xs ${txtMuted}`}>Quita la asignacion del equipo.</p>
         </div>
       </label>
       {!form.enAlmacen ? (
         <div className='grid grid-cols-2 gap-3'>
-          <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Estado</label><select name='estado' value={form.estado} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`}><option>Activo</option><option>En Mantenimiento</option><option>Danado</option></select></div>
+          <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Estado</label><select name='estado' value={form.estado} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`}><option>Activo</option><option>En Mantenimiento</option><option>Danado</option></select></div>
           <PisoInput req={true} />
           <OficinaSelect req={true} />
-          <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Nro. Empleado</label><input name='numeroEmpleado' value={form.numeroEmpleado||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
-          <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Cargo</label><input name='cargo' value={form.cargo||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
-          <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Persona Asignada</label><input name='personaAsignada' value={form.personaAsignada||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
-          <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Responsable</label><input name='nombreResponsable' value={form.nombreResponsable||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
-          <div className='col-span-2'><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Fecha Asignacion</label><input type='date' name='fechaAsignacion' value={form.fechaAsignacion||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
+          <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Nro. Empleado</label><input name='numeroEmpleado' value={form.numeroEmpleado||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
+          <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Cargo</label><input name='cargo' value={form.cargo||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
+          <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Persona Asignada</label><input name='personaAsignada' value={form.personaAsignada||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
+          <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Responsable</label><input name='nombreResponsable' value={form.nombreResponsable||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
+          <div className='col-span-2'><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Fecha Asignacion</label><input type='date' name='fechaAsignacion' value={form.fechaAsignacion||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
         </div>
       ) : (
         <div className='grid grid-cols-2 gap-3'>
-          <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Estado Fisico</label><select name='estado' value={form.estado} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`}><option>Activo</option><option>En Mantenimiento</option><option>Danado</option></select></div>
-          <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Fecha Ingreso</label><input type='date' name='fechaAsignacion' value={form.fechaAsignacion||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
+          <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Estado Fisico</label><select name='estado' value={form.estado} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`}><option>Activo</option><option>En Mantenimiento</option><option>Danado</option></select></div>
+          <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Fecha Ingreso</label><input type='date' name='fechaAsignacion' value={form.fechaAsignacion||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
         </div>
       )}
     </div>
