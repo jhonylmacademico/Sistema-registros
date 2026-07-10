@@ -11,6 +11,7 @@ import jsQR from 'jsqr';
 const CENTROS_DEFAULT = [
   { id: 'sucre', nombre: 'Multicentro Sucre' }, { id: 'americas', nombre: 'Multicentro Las Americas' }, { id: 'victoria', nombre: 'Multicentro Victoria' }, { id: 'monteagudo', nombre: 'Multicentro Monteagudo' }, { id: 'camargo', nombre: 'Multicentro Camargo' }
 ];
+
 const COLORES_ITEMS = [
   { borde: 'border-blue-500', fondo: 'bg-blue-50', texto: 'text-blue-800', bordeN: 'border-fuchsia-500', fondoN: 'bg-fuchsia-950', textoN: 'text-fuchsia-300' },
   { borde: 'border-green-500', fondo: 'bg-green-50', texto: 'text-green-800', bordeN: 'border-cyan-500', fondoN: 'bg-cyan-950', textoN: 'text-cyan-300' },
@@ -18,6 +19,7 @@ const COLORES_ITEMS = [
   { borde: 'border-pink-500', fondo: 'bg-pink-50', texto: 'text-pink-800', bordeN: 'border-rose-500', fondoN: 'bg-rose-950', textoN: 'text-rose-300' },
   { borde: 'border-purple-500', fondo: 'bg-purple-50', texto: 'text-purple-800', bordeN: 'border-violet-500', fondoN: 'bg-violet-950', textoN: 'text-violet-300' }
 ];
+
 const COLORES_CHECKS = ['text-blue-600', 'text-green-600', 'text-amber-600', 'text-pink-600', 'text-purple-600', 'text-red-600', 'text-indigo-600', 'text-teal-600', 'text-orange-600', 'text-cyan-600'];
 const TIPOS_COMPUTO = ['Laptop', 'Computadora de Escritorio', 'Computadora All in One'];
 const TIPOS_RED = ['Impresora', 'Impresora Multifuncional', 'Scanner', 'Switch'];
@@ -26,6 +28,7 @@ const SUBTIPOS_REPORTE = [...TIPOS_COMPUTO, ...TIPOS_RED];
 const CAMPOS = [
   { key: 'numero', label: 'Nro. Registro' }, { key: 'tipo', label: 'Tipo Equipo' }, { key: 'nombreEquipo', label: 'Nombre Equipo' }, { key: 'marca', label: 'Marca' }, { key: 'modelo', label: 'Modelo' }, { key: 'codigoActivo', label: 'Código AF' }, { key: 'numeroSerie', label: 'Nro. Serie' }, { key: 'procesador', label: 'Procesador' }, { key: 'generacion', label: 'Generación' }, { key: 'ram', label: 'RAM' }, { key: 'tipoDisco', label: 'Disco 1 (Tipo)' }, { key: 'capacidadDisco', label: 'Disco 1 (Cap.)' }, { key: 'tipoDisco2', label: 'Disco 2 (Tipo)' }, { key: 'capacidadDisco2', label: 'Disco 2 (Cap.)' }, { key: 'sistemaOperativo', label: 'Sistema Operativo' }, { key: 'mac', label: 'MAC' }, { key: 'ip', label: 'IP' }, { key: 'estado', label: 'Estado' }, { key: 'enAlmacen', label: 'En Almacén' }, { key: 'centro', label: 'Centro' }, { key: 'oficina', label: 'Oficina' }, { key: 'piso', label: 'Piso' }, { key: 'personaAsignada', label: 'Persona Asignada' }, { key: 'numeroEmpleado', label: 'Nro. Empleado' }, { key: 'cargo', label: 'Cargo' }, { key: 'nombreResponsable', label: 'Responsable' }, { key: 'fechaAsignacion', label: 'Fecha Asignación' }, { key: 'notas', label: 'Notas' }, { key: 'historial', label: 'Historial' }, { key: 'marcaCPU', label: 'Marca CPU' }, { key: 'modeloCPU', label: 'Modelo CPU' }, { key: 'codigoActivoCPU', label: 'Cód. AF CPU' }, { key: 'numeroSerieCPU', label: 'Serie CPU' }, { key: 'marcaMonitor', label: 'Marca Monitor' }, { key: 'modeloMonitor', label: 'Modelo Monitor' }, { key: 'codigoActivoMonitor', label: 'Cód. AF Monitor' }, { key: 'numeroSerieMonitor', label: 'Serie Monitor' }, { key: 'conexionImpresora', label: 'Conexión' }
 ];
+
 const CAMPOS_POR_TIPO = {
   'Laptop': ['numero', 'nombreEquipo', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'procesador', 'generacion', 'ram', 'sistemaOperativo', 'mac', 'ip', 'tipoDisco', 'capacidadDisco', 'tipoDisco2', 'capacidadDisco2', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
   'Computadora All in One': ['numero', 'nombreEquipo', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'procesador', 'generacion', 'ram', 'sistemaOperativo', 'mac', 'ip', 'tipoDisco', 'capacidadDisco', 'tipoDisco2', 'capacidadDisco2', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
@@ -282,9 +285,16 @@ export default function App() {
               <button onClick={() => setVista('gestion_centros')} className={`px-3 py-2 rounded-lg flex items-center gap-1 text-sm font-bold ${tema==='oscuro'?'bg-fuchsia-900/50 text-fuchsia-300':'bg-indigo-100 text-indigo-700'}`}><Edit3 size={16} /> Gestionar</button>
             </div>
             <div className='grid grid-cols-1 gap-4'>
-              {centros.map((c, index) => { const color = COLORES_ITEMS[index % COLORES_ITEMS.length]; const cClass = tema === 'oscuro' ? `${color.bordeN} ${color.fondoN} ${color.textoN}` : `${color.borde} ${color.fondo} text-gray-800`; return (
-                <button key={c.id} onClick={() => { setCentroActual(c.id); setVista('dashboard'); setPisoExpandido(null); setCategoriaVista('computo'); }} className={`p-6 rounded-xl shadow-sm border-l-4 text-left active:opacity-80 ${cClass}`}><h3 className='text-lg font-bold'>{c.nombre}</h3><p className='text-sm opacity-70 mt-1'>{activos.filter(a => a.centro === c.id && !a.enAlmacen).length} activos</p></button>
-              );})}
+              {centros.map((c, index) => { 
+                const color = COLORES_ITEMS[index % COLORES_ITEMS.length]; 
+                const cClass = tema === 'oscuro' ? `${color.bordeN} ${color.fondoN} ${color.textoN}` : `${color.borde} ${color.fondo} text-gray-800`; 
+                return (
+                  <button key={c.id} onClick={() => { setCentroActual(c.id); setVista('dashboard'); setPisoExpandido(null); setCategoriaVista('computo'); }} className={`p-6 rounded-xl shadow-sm border-l-4 text-left active:opacity-80 ${cClass}`}>
+                    <h3 className='text-lg font-bold'>{c.nombre}</h3>
+                    <p className='text-sm opacity-70 mt-1'>{activos.filter(a => a.centro === c.id && !a.enAlmacen).length} activos</p>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
@@ -298,12 +308,16 @@ export default function App() {
                 <button onClick={agregarCentro} className={`px-4 py-2 rounded-lg flex items-center gap-1 font-bold text-sm ${T.btnP}`}><Plus size={18} /> Nuevo</button>
               </div>
               <div className='space-y-3'>
-                {centros.map((c, index) => { const color = COLORES_ITEMS[index % COLORES_ITEMS.length]; const cClass = tema === 'oscuro' ? `${color.bordeN} ${color.fondoN}` : `${color.borde} ${color.fondo}`; return (
-                  <div key={c.id} className={`flex justify-between items-center p-4 rounded-lg border ${cClass}`}>
-                    <div><p className={`font-bold ${T.txt}`}>{c.nombre}</p><p className={`text-xs ${T.txtM}`}>{activos.filter(a => a.centro === c.id).length} equipos totales</p></div>
-                    <div className='flex gap-2'><button onClick={() => editarCentro(c.id, c.nombre)} className={`px-3 py-2 rounded-lg text-sm font-bold ${T.btnS}`}>Editar</button><button onClick={() => eliminarCentro(c.id)} className={`px-3 py-2 rounded-lg text-sm font-bold ${T.btnD}`}>Borrar</button></div>
-                  </div>
-                );})}
+                {centros.map((c, index) => { 
+                  const color = COLORES_ITEMS[index % COLORES_ITEMS.length]; 
+                  const cClass = tema === 'oscuro' ? `${color.bordeN} ${color.fondoN}` : `${color.borde} ${color.fondo}`; 
+                  return (
+                    <div key={c.id} className={`flex justify-between items-center p-4 rounded-lg border ${cClass}`}>
+                      <div><p className={`font-bold ${T.txt}`}>{c.nombre}</p><p className={`text-xs ${T.txtM}`}>{activos.filter(a => a.centro === c.id).length} equipos totales</p></div>
+                      <div className='flex gap-2'><button onClick={() => editarCentro(c.id, c.nombre)} className={`px-3 py-2 rounded-lg text-sm font-bold ${T.btnS}`}>Editar</button><button onClick={() => eliminarCentro(c.id)} className={`px-3 py-2 rounded-lg text-sm font-bold ${T.btnD}`}>Borrar</button></div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -311,44 +325,88 @@ export default function App() {
 
         {vista === 'almacen' && (
           <div>
-            <div className='flex gap-2 mb-4'><div className='flex-1 relative'><Search className={`absolute left-3 top-3.5 ${T.txtM}`} size={18} /><input placeholder='Buscar en almacén...' value={busqueda} onChange={e => setBusqueda(e.target.value)} className={`w-full pl-10 pr-4 py-3 rounded-xl ${T.in}`} /></div><button onClick={limpiarFormulario} className={`px-4 rounded-xl flex items-center gap-2 ${T.btnP}`}><Plus size={20} /> Nuevo</button></div>
-            <div className='space-y-3'>{activosEnAlmacen.length === 0 ? <p className={`text-center mt-10 ${T.txtM}`}>El almacén está vacío.</p> : activosEnAlmacen.filter(a => (a.marca||'').toLowerCase().includes(busqueda.toLowerCase()) || (a.nombreEquipo||'').toLowerCase().includes(busqueda.toLowerCase())).map(a => (<div key={a.id} onClick={() => { setEditando(a); setVista('detalles'); }} className={`p-4 rounded-xl border-l-4 border-indigo-400 active:opacity-80 ${T.card}`}><div className='flex justify-between items-start'><div><p className='text-xs text-indigo-600 font-bold'>Nro. {a.numero}</p><h3 className={`font-bold ${T.txt}`}>{a.nombreEquipo || (a.marcaCPU || a.marca) + ' ' + (a.modeloCPU || a.modelo)}</h3><p className={`text-sm ${T.txtM}`}>{a.tipo} {a.subtipoImpresora ? '- '+a.subtipoImpresora : ''}</p></div>{a.centro && <span className={`text-xs font-bold px-2 py-1 rounded-full ${tema==='oscuro'?'bg-black':'bg-gray-100 text-gray-600'}`}>{centros.find(c=>c.id===a.centro)?.nombre || 'N/A'}</span>}</div></div>))}</div>
+            <div className='flex gap-2 mb-4'>
+              <div className='flex-1 relative'>
+                <Search className={`absolute left-3 top-3.5 ${T.txtM}`} size={18} />
+                <input placeholder='Buscar en almacén...' value={busqueda} onChange={e => setBusqueda(e.target.value)} className={`w-full pl-10 pr-4 py-3 rounded-xl ${T.in}`} />
+              </div>
+              <button onClick={limpiarFormulario} className={`px-4 rounded-xl flex items-center gap-2 ${T.btnP}`}><Plus size={20} /> Nuevo</button>
+            </div>
+            <div className='space-y-3'>
+              {activosEnAlmacen.length === 0 ? <p className={`text-center mt-10 ${T.txtM}`}>El almacén está vacío.</p> : 
+              activosEnAlmacen.filter(a => (a.marca||'').toLowerCase().includes(busqueda.toLowerCase()) || (a.nombreEquipo||'').toLowerCase().includes(busqueda.toLowerCase())).map(a => (
+                <div key={a.id} onClick={() => { setEditando(a); setVista('detalles'); }} className={`p-4 rounded-xl border-l-4 border-indigo-400 active:opacity-80 ${T.card}`}>
+                  <div className='flex justify-between items-start'>
+                    <div>
+                      <p className='text-xs text-indigo-600 font-bold'>Nro. {a.numero}</p>
+                      <h3 className={`font-bold ${T.txt}`}>{a.nombreEquipo || (a.marcaCPU || a.marca) + ' ' + (a.modeloCPU || a.modelo)}</h3>
+                      <p className={`text-sm ${T.txtM}`}>{a.tipo} {a.subtipoImpresora ? '- '+a.subtipoImpresora : ''}</p>
+                    </div>
+                    {a.centro && <span className={`text-xs font-bold px-2 py-1 rounded-full ${tema==='oscuro'?'bg-black':'bg-gray-100 text-gray-600'}`}>{centros.find(c=>c.id===a.centro)?.nombre || 'N/A'}</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
         {centroActual && vista === 'dashboard' && (
           <div className='space-y-4'>
             <div className={`flex p-1 rounded-xl ${tema==='oscuro'?'bg-black border border-fuchsia-500':'bg-gray-200'}`}>
-              <button onClick={() => { setCategoriaVista('computo'); setEstadoFiltro(null); setOficinaFiltro(null); setSubtipoFiltro('Todos'); }} className={`flex-1 p-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 ${categoriaVista === 'computo' ? (tema==='oscuro'?'bg-gray-900 text-fuchsia-400 shadow-[0_0_10px_#d946ef]':'bg-white text-blue-600 shadow') : T.txtM}`}><Laptop size={18} /> Cómputo ({activos.filter(a => a.centro === centroActual && !a.enAlmacen && TIPOS_COMPUTO.includes(getSubtipo(a))).length})</button>
-              <button onClick={() => { setCategoriaVista('red'); setEstadoFiltro(null); setOficinaFiltro(null); setSubtipoFiltro('Todos'); }} className={`flex-1 p-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 ${categoriaVista === 'red' ? (tema==='oscuro'?'bg-gray-900 text-cyan-400 shadow-[0_0_10px_#22d3ee]':'bg-white text-blue-600 shadow') : T.txtM}`}><Printer size={18} /> Red ({activos.filter(a => a.centro === centroActual && !a.enAlmacen && TIPOS_RED.includes(getSubtipo(a))).length})</button>
+              <button onClick={() => { setCategoriaVista('computo'); setEstadoFiltro(null); setOficinaFiltro(null); setSubtipoFiltro('Todos'); }} className={`flex-1 p-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 ${categoriaVista === 'computo' ? (tema==='oscuro'?'bg-gray-900 text-fuchsia-400 shadow-[0_0_10px_#d946ef]':'bg-white text-blue-600 shadow') : T.txtM}`}>
+                <Laptop size={18} /> Cómputo ({activos.filter(a => a.centro === centroActual && !a.enAlmacen && TIPOS_COMPUTO.includes(getSubtipo(a))).length})
+              </button>
+              <button onClick={() => { setCategoriaVista('red'); setEstadoFiltro(null); setOficinaFiltro(null); setSubtipoFiltro('Todos'); }} className={`flex-1 p-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 ${categoriaVista === 'red' ? (tema==='oscuro'?'bg-gray-900 text-cyan-400 shadow-[0_0_10px_#22d3ee]':'bg-white text-blue-600 shadow') : T.txtM}`}>
+                <Printer size={18} /> Red ({activos.filter(a => a.centro === centroActual && !a.enAlmacen && TIPOS_RED.includes(getSubtipo(a))).length})
+              </button>
             </div>
             <h2 className={`text-xl font-bold mb-2 ${T.txt}`}>Resumen General</h2>
             <div className='grid grid-cols-2 gap-3'>
               <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro(null); setSubtipoFiltro('Todos'); setVista('lista'); }} className={`p-4 rounded-xl border-l-4 border-gray-500 text-left ${T.card}`}><p className={`text-xs ${T.txtM}`}>Total Equipos</p><p className={`text-2xl font-bold ${T.txt}`}>{datosCentro.length}</p></button>
-              <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro('Activo'); setSubtipoFiltro('Todos'); setVista('lista'); }} className={`p-4 rounded-xl border-l-4 border-green-500 text-left ${T.card}`}><p className={`text-xs ${T.txtM}`}>Activos</p><p className={`text-2xl font-bold text-green-500`}>{datosCentro.filter(a=>a.estado==='Activo').length}</p></button>
-              <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro('Danado'); setSubtipoFiltro('Todos'); setVista('lista'); }} className={`p-4 rounded-xl border-l-4 border-red-500 text-left ${T.card}`}><p className={`text-xs ${T.txtM}`}>Dañados</p><p className={`text-2xl font-bold text-red-500`}>{datosCentro.filter(a=>a.estado==='Danado').length}</p></button>
-              <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro('En Mantenimiento'); setSubtipoFiltro('Todos'); setVista('lista'); }} className={`p-4 rounded-xl border-l-4 border-yellow-500 text-left ${T.card}`}><p className={`text-xs ${T.txtM}`}>Mantenimiento</p><p className={`text-2xl font-bold text-yellow-500`}>{datosCentro.filter(a=>a.estado==='En Mantenimiento').length}</p></button>
+              <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro('Activo'); setSubtipoFiltro('Todos'); setVista('lista'); }} className={`p-4 rounded-xl border-l-4 border-green-500 text-left ${T.card}`}><p className={`text-xs ${T.txtM}`}>Activos</p><p className='text-2xl font-bold text-green-500'>{datosCentro.filter(a=>a.estado==='Activo').length}</p></button>
+              <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro('Danado'); setSubtipoFiltro('Todos'); setVista('lista'); }} className={`p-4 rounded-xl border-l-4 border-red-500 text-left ${T.card}`}><p className={`text-xs ${T.txtM}`}>Dañados</p><p className='text-2xl font-bold text-red-500'>{datosCentro.filter(a=>a.estado==='Danado').length}</p></button>
+              <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro('En Mantenimiento'); setSubtipoFiltro('Todos'); setVista('lista'); }} className={`p-4 rounded-xl border-l-4 border-yellow-500 text-left ${T.card}`}><p className={`text-xs ${T.txtM}`}>Mantenimiento</p><p className='text-2xl font-bold text-yellow-500'>{datosCentro.filter(a=>a.estado==='En Mantenimiento').length}</p></button>
             </div>
-            <div className='flex justify-between items-center mt-4 mb-2'><h3 className={`font-bold flex items-center gap-2 ${T.txt}`}><MapPin size={18} /> Oficinas por Piso</h3><button onClick={() => setVista('oficinas')} className={`px-3 py-1.5 rounded-lg flex items-center gap-1 text-sm font-bold ${tema==='oscuro'?'bg-fuchsia-900/50 text-fuchsia-300':'bg-indigo-100 text-indigo-700'}`}><Edit3 size={16} /> Gestionar</button></div>
+            <div className='flex justify-between items-center mt-4 mb-2'>
+              <h3 className={`font-bold flex items-center gap-2 ${T.txt}`}><MapPin size={18} /> Oficinas por Piso</h3>
+              <button onClick={() => setVista('oficinas')} className={`px-3 py-1.5 rounded-lg flex items-center gap-1 text-sm font-bold ${tema==='oscuro'?'bg-fuchsia-900/50 text-fuchsia-300':'bg-indigo-100 text-indigo-700'}`}><Edit3 size={16} /> Gestionar</button>
+            </div>
             {pisosOrdenados.length === 0 ? <p className={`text-sm p-4 rounded-lg text-center ${T.card} ${T.txtM}`}>No hay oficinas asignadas a pisos. Ve a Gestionar.</p> : (
-              <div className='space-y-3'>{pisosOrdenados.map((p, pIdx) => { 
-                const colorPiso = COLORES_ITEMS[pIdx % COLORES_ITEMS.length]; const cClass = tema === 'oscuro' ? `${colorPiso.bordeN} ${colorPiso.fondoN}` : `${colorPiso.borde} ${colorPiso.fondo}`;
-                const equiposEnPiso = datosCentro.filter(a => (a.piso ? a.piso : 'Sin Piso') === p).length; const oficinasEnPiso = oficinasAgrupadas[p]; 
-                return (
-                  <div key={p} className={`rounded-xl overflow-hidden border ${T.card} ${tema==='oscuro'?colorPiso.bordeN:''}`}>
-                    <button onClick={() => setPisoExpandido(pisoExpandido === p ? null : p)} className={`w-full p-4 flex justify-between items-center active:opacity-80`}><span className={`font-bold ${T.txt}`}>Piso {p}</span><div className='flex items-center gap-3'><span className={`text-xs px-2 py-1 rounded-full font-bold ${tema==='oscuro'?'bg-black text-fuchsia-300':'bg-gray-100 text-gray-600'}`}>{equiposEnPiso} equipos</span><ChevronDown size={20} className={`${T.txtM} transition-transform ${pisoExpandido === p ? 'rotate-180' : ''}`} /></div></button>
-                    {pisoExpandido === p && (<div className='p-3 pt-0 grid grid-cols-2 gap-3'>{oficinasEnPiso.length === 0 ? <p className={`col-span-2 text-center text-xs py-2 ${T.txtM}`}>No hay oficinas.</p> : oficinasEnPiso.map((o, oIdx) => { 
-                      const colorOficina = COLORES_ITEMS[(pIdx + oIdx) % COLORES_ITEMS.length]; const oClass = tema === 'oscuro' ? `${colorOficina.fondoN} ${colorOficina.bordeN}` : `${colorOficina.fondo} ${colorOficina.borde}`;
-                      const count = datosCentro.filter(a => a.oficina === o.nombre).length; 
-                      return (
-                        <button key={o.id} onClick={() => { setOficinaFiltro(o.nombre); setPisoFiltro(p === 'Sin Piso' ? '' : p); setEstadoFiltro(null); setSubtipoFiltro('Todos'); setVista('lista'); setBusqueda(''); }} className={`p-3 rounded-lg border text-left active:opacity-80 ${oClass}`}>
-                          <h4 className={`font-bold text-sm ${T.txt}`}>{o.nombre}</h4><p className={`text-xs mt-1 ${T.txtM}`}>{count} equipos</p>
-                        </button>
-                      ); 
-                    })}</div>)}
-                  </div>
-                );
-              })}</div>
+              <div className='space-y-3'>
+                {pisosOrdenados.map((p, pIdx) => { 
+                  const colorPiso = COLORES_ITEMS[pIdx % COLORES_ITEMS.length]; 
+                  const cClass = tema === 'oscuro' ? `${colorPiso.bordeN} ${colorPiso.fondoN}` : `${colorPiso.borde} ${colorPiso.fondo}`;
+                  const equiposEnPiso = datosCentro.filter(a => (a.piso ? a.piso : 'Sin Piso') === p).length; 
+                  const oficinasEnPiso = oficinasAgrupadas[p]; 
+                  return (
+                    <div key={p} className={`rounded-xl overflow-hidden border ${T.card} ${tema==='oscuro'?colorPiso.bordeN:''}`}>
+                      <button onClick={() => setPisoExpandido(pisoExpandido === p ? null : p)} className='w-full p-4 flex justify-between items-center active:opacity-80'>
+                        <span className={`font-bold ${T.txt}`}>Piso {p}</span>
+                        <div className='flex items-center gap-3'>
+                          <span className={`text-xs px-2 py-1 rounded-full font-bold ${tema==='oscuro'?'bg-black text-fuchsia-300':'bg-gray-100 text-gray-600'}`}>{equiposEnPiso} equipos</span>
+                          <ChevronDown size={20} className={`${T.txtM} transition-transform ${pisoExpandido === p ? 'rotate-180' : ''}`} />
+                        </div>
+                      </button>
+                      {pisoExpandido === p && (
+                        <div className='p-3 pt-0 grid grid-cols-2 gap-3'>
+                          {oficinasEnPiso.length === 0 ? <p className={`col-span-2 text-center text-xs py-2 ${T.txtM}`}>No hay oficinas.</p> : 
+                          oficinasEnPiso.map((o, oIdx) => { 
+                            const colorOficina = COLORES_ITEMS[(pIdx + oIdx) % COLORES_ITEMS.length]; 
+                            const oClass = tema === 'oscuro' ? `${colorOficina.fondoN} ${colorOficina.bordeN}` : `${colorOficina.fondo} ${colorOficina.borde}`;
+                            const count = datosCentro.filter(a => a.oficina === o.nombre).length; 
+                            return (
+                              <button key={o.id} onClick={() => { setOficinaFiltro(o.nombre); setPisoFiltro(p === 'Sin Piso' ? '' : p); setEstadoFiltro(null); setSubtipoFiltro('Todos'); setVista('lista'); setBusqueda(''); }} className={`p-3 rounded-lg border text-left active:opacity-80 ${oClass}`}>
+                                <h4 className={`font-bold text-sm ${T.txt}`}>{o.nombre}</h4>
+                                <p className={`text-xs mt-1 ${T.txtM}`}>{count} equipos</p>
+                              </button>
+                            ); 
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
         )}
@@ -357,29 +415,49 @@ export default function App() {
           <div>
             <button onClick={handleVolver} className={`flex items-center font-bold mb-4 ${T.txtD}`}><ArrowLeft size={20} /> Volver al Dashboard</button>
             <div className={`p-4 rounded-xl mb-4 ${T.card}`}>
-              <div className='flex justify-between items-center mb-4'><h2 className={`font-bold text-lg flex items-center gap-2 ${T.txt}`}><Layers size={20} /> Pisos de {centros.find(c=>c.id===centroActual)?.nombre}</h2><button onClick={agregarPiso} className={`px-4 py-2 rounded-lg flex items-center gap-1 font-bold text-sm ${T.btnP}`}><Plus size={18} /> Nuevo Piso</button></div>
+              <div className='flex justify-between items-center mb-4'>
+                <h2 className={`font-bold text-lg flex items-center gap-2 ${T.txt}`}><Layers size={20} /> Pisos de {centros.find(c=>c.id===centroActual)?.nombre}</h2>
+                <button onClick={agregarPiso} className={`px-4 py-2 rounded-lg flex items-center gap-1 font-bold text-sm ${T.btnP}`}><Plus size={18} /> Nuevo Piso</button>
+              </div>
               {pisosCentroActual.length === 0 ? <p className={`text-center py-4 text-sm ${T.txtM}`}>No hay pisos creados.</p> : (
                 <div className='flex flex-wrap gap-2'>
-                  {pisosCentroActual.map((p, index) => { const colorPiso = COLORES_ITEMS[index % COLORES_ITEMS.length]; const cClass = tema === 'oscuro' ? `${colorPiso.bordeN} ${colorPiso.fondoN}` : `${colorPiso.borde} ${colorPiso.fondo}`; return (
-                    <div key={index} className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${cClass}`}>
-                      <span className={`font-bold text-sm ${tema==='oscuro'?colorPiso.textoN:'text-gray-700'}`}>Piso {p}</span>
-                      <button onClick={() => editarPiso(p)} className={T.txtD}><Edit3 size={14} /></button>
-                      <button onClick={() => eliminarPiso(p)} className='text-red-500'><Trash2 size={14} /></button>
-                    </div>
-                  );})}
+                  {pisosCentroActual.map((p, index) => { 
+                    const colorPiso = COLORES_ITEMS[index % COLORES_ITEMS.length]; 
+                    const cClass = tema === 'oscuro' ? `${colorPiso.bordeN} ${colorPiso.fondoN}` : `${colorPiso.borde} ${colorPiso.fondo}`; 
+                    return (
+                      <div key={index} className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${cClass}`}>
+                        <span className={`font-bold text-sm ${tema==='oscuro'?colorPiso.textoN:'text-gray-700'}`}>Piso {p}</span>
+                        <button onClick={() => editarPiso(p)} className={T.txtD}><Edit3 size={14} /></button>
+                        <button onClick={() => eliminarPiso(p)} className='text-red-500'><Trash2 size={14} /></button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
             <div className={`p-4 rounded-xl ${T.card}`}>
-              <div className='flex justify-between items-center mb-4'><h2 className={`font-bold text-lg ${T.txt}`}>Oficinas de {centros.find(c=>c.id===centroActual)?.nombre}</h2><button onClick={agregarOficina} className={`px-4 py-2 rounded-lg flex items-center gap-1 font-bold text-sm ${T.btnP}`}><Plus size={18} /> Nueva Oficina</button></div>
+              <div className='flex justify-between items-center mb-4'>
+                <h2 className={`font-bold text-lg ${T.txt}`}>Oficinas de {centros.find(c=>c.id===centroActual)?.nombre}</h2>
+                <button onClick={agregarOficina} className={`px-4 py-2 rounded-lg flex items-center gap-1 font-bold text-sm ${T.btnP}`}><Plus size={18} /> Nueva Oficina</button>
+              </div>
               {oficinasCentro.length === 0 ? <p className={`text-center py-8 text-sm ${T.txtM}`}>Aun no hay oficinas creadas.</p> : (
                 <div className='space-y-3'>
-                  {oficinasCentro.map((o, index) => { const colorOficina = COLORES_ITEMS[index % COLORES_ITEMS.length]; const cClass = tema === 'oscuro' ? `${colorOficina.bordeN} ${colorOficina.fondoN}` : `${colorOficina.borde} ${colorOficina.fondo}`; return (
-                    <div key={o.id} className={`flex justify-between items-center p-4 rounded-lg border ${cClass}`}>
-                      <div><p className={`font-bold ${T.txt}`}>{index + 1}. {o.nombre}</p><p className={`text-xs ${T.txtM}`}>{datosCentro.filter(a => a.oficina === o.nombre).length} equipos | Piso: {o.piso || 'N/A'}</p></div>
-                      <div className='flex gap-2'><button onClick={() => editarOficina(o.id, o.nombre)} className={`px-3 py-2 rounded-lg text-sm font-bold ${T.btnS}`}>Editar</button><button onClick={() => eliminarOficina(o.id, o.nombre)} className={`px-3 py-2 rounded-lg text-sm font-bold ${T.btnD}`}>Borrar</button></div>
-                    </div>
-                  );})}
+                  {oficinasCentro.map((o, index) => { 
+                    const colorOficina = COLORES_ITEMS[index % COLORES_ITEMS.length]; 
+                    const cClass = tema === 'oscuro' ? `${colorOficina.bordeN} ${colorOficina.fondoN}` : `${colorOficina.borde} ${colorOficina.fondo}`; 
+                    return (
+                      <div key={o.id} className={`flex justify-between items-center p-4 rounded-lg border ${cClass}`}>
+                        <div>
+                          <p className={`font-bold ${T.txt}`}>{index + 1}. {o.nombre}</p>
+                          <p className={`text-xs ${T.txtM}`}>{datosCentro.filter(a => a.oficina === o.nombre).length} equipos | Piso: {o.piso || 'N/A'}</p>
+                        </div>
+                        <div className='flex gap-2'>
+                          <button onClick={() => editarOficina(o.id, o.nombre)} className={`px-3 py-2 rounded-lg text-sm font-bold ${T.btnS}`}>Editar</button>
+                          <button onClick={() => eliminarOficina(o.id, o.nombre)} className={`px-3 py-2 rounded-lg text-sm font-bold ${T.btnD}`}>Borrar</button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -388,66 +466,208 @@ export default function App() {
 
         {centroActual && vista === 'lista' && (
           <div>
-            {(estadoFiltro || oficinaFiltro) && (<div className={`p-3 rounded-xl mb-4 flex justify-between items-center border ${tema==='oscuro'?'bg-fuchsia-950/50 border-fuchsia-500':'bg-blue-50 border-blue-200'}`}><div><p className={`text-xs font-bold ${tema==='oscuro'?'text-fuchsia-400':'text-blue-600'}`}>FILTRANDO POR:</p><p className={`text-sm font-bold ${T.txt}`}>{estadoFiltro ? 'Estado: ' + estadoFiltro : 'Oficina: ' + oficinaFiltro} {pisoFiltro && pisoFiltro !== 'Todos' ? '| Piso: ' + pisoFiltro : ''}</p></div><button onClick={() => { setEstadoFiltro(null); setOficinaFiltro(null); setPisoFiltro('Todos'); setBusqueda(''); setSubtipoFiltro('Todos'); }} className={`font-bold text-sm ${T.btnD}`}>LIMPIAR</button></div>)}
-            <div className='flex gap-2 mb-4 overflow-x-auto pb-2'><button onClick={() => setSubtipoFiltro('Todos')} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ${subtipoFiltro === 'Todos' ? (tema==='oscuro'?'bg-fuchsia-600 text-white':'bg-gray-800 text-white') : T.chip}`}>Todos</button>{categoriaVista === 'computo' ? (TIPOS_COMPUTO.map(s => (<button key={s} onClick={() => setSubtipoFiltro(s)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ${subtipoFiltro === s ? T.chipA : T.chip}`}>{s}</button>))) : (TIPOS_RED.map(s => (<button key={s} onClick={() => setSubtipoFiltro(s)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ${subtipoFiltro === s ? T.chipA : T.chip}`}>{s}</button>)))}</div>
-            <div className='flex gap-2 mb-4'><div className='flex-1 relative'><Search className={`absolute left-3 top-3.5 ${T.txtM}`} size={18} /><input placeholder='Buscar equipo...' value={busqueda} onChange={e => setBusqueda(e.target.value)} className={`w-full pl-10 pr-4 py-3 rounded-xl ${T.in}`} /></div><button onClick={limpiarFormulario} className={`px-4 rounded-xl flex items-center gap-2 ${T.btnP}`}><Plus size={20} /> Nuevo</button></div>
-            <div className='space-y-3'>{activosFiltrados.length === 0 ? <p className={`text-center mt-10 ${T.txtM}`}>Sin activos.</p> : activosFiltrados.map(a => (<div key={a.id} onClick={() => { setEditando(a); setVista('detalles'); }} className={`p-4 rounded-xl border-l-4 ${tema==='oscuro'?'border-fuchsia-500':'border-blue-400'} active:opacity-80 ${T.card}`}><div className='flex justify-between items-start'><div><p className={`text-xs font-bold ${T.txtD}`}>Nro. {a.numero}</p><h3 className={`font-bold ${T.txt}`}>{a.nombreEquipo || (a.marcaCPU || a.marca) + ' ' + (a.modeloCPU || a.modelo)}</h3><p className={`text-sm ${T.txtM}`}>{a.tipo} {a.subtipoImpresora ? '- '+a.subtipoImpresora : ''}</p></div><div className='text-right'><span className={`text-xs font-bold px-2 py-1 rounded-full ${a.estado === 'Activo' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{a.estado}</span></div></div><div className={`mt-2 text-sm border-t pt-2 flex justify-between ${T.txtM}`}><span>{a.personaAsignada ? 'Asignado: ' + a.personaAsignada : 'En Stock'}</span><span>{a.oficina || '-'} {a.piso ? '- Piso ' + a.piso : ''}</span></div></div>))}</div>
+            {(estadoFiltro || oficinaFiltro) && (
+              <div className={`p-3 rounded-xl mb-4 flex justify-between items-center border ${tema==='oscuro'?'bg-fuchsia-950/50 border-fuchsia-500':'bg-blue-50 border-blue-200'}`}>
+                <div>
+                  <p className={`text-xs font-bold ${tema==='oscuro'?'text-fuchsia-400':'text-blue-600'}`}>FILTRANDO POR:</p>
+                  <p className={`text-sm font-bold ${T.txt}`}>{estadoFiltro ? 'Estado: ' + estadoFiltro : 'Oficina: ' + oficinaFiltro} {pisoFiltro && pisoFiltro !== 'Todos' ? '| Piso: ' + pisoFiltro : ''}</p>
+                </div>
+                <button onClick={() => { setEstadoFiltro(null); setOficinaFiltro(null); setPisoFiltro('Todos'); setBusqueda(''); setSubtipoFiltro('Todos'); }} className={`font-bold text-sm ${T.btnD}`}>LIMPIAR</button>
+              </div>
+            )}
+            <div className='flex gap-2 mb-4 overflow-x-auto pb-2'>
+              <button onClick={() => setSubtipoFiltro('Todos')} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ${subtipoFiltro === 'Todos' ? (tema==='oscuro'?'bg-fuchsia-600 text-white':'bg-gray-800 text-white') : T.chip}`}>Todos</button>
+              {categoriaVista === 'computo' ? (TIPOS_COMPUTO.map(s => (<button key={s} onClick={() => setSubtipoFiltro(s)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ${subtipoFiltro === s ? T.chipA : T.chip}`}>{s}</button>))) : (TIPOS_RED.map(s => (<button key={s} onClick={() => setSubtipoFiltro(s)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap ${subtipoFiltro === s ? T.chipA : T.chip}`}>{s}</button>)))}
+            </div>
+            <div className='flex gap-2 mb-4'>
+              <div className='flex-1 relative'>
+                <Search className={`absolute left-3 top-3.5 ${T.txtM}`} size={18} />
+                <input placeholder='Buscar equipo...' value={busqueda} onChange={e => setBusqueda(e.target.value)} className={`w-full pl-10 pr-4 py-3 rounded-xl ${T.in}`} />
+              </div>
+              <button onClick={limpiarFormulario} className={`px-4 rounded-xl flex items-center gap-2 ${T.btnP}`}><Plus size={20} /> Nuevo</button>
+            </div>
+            <div className='space-y-3'>
+              {activosFiltrados.length === 0 ? <p className={`text-center mt-10 ${T.txtM}`}>Sin activos.</p> : 
+              activosFiltrados.map(a => (
+                <div key={a.id} onClick={() => { setEditando(a); setVista('detalles'); }} className={`p-4 rounded-xl border-l-4 ${tema==='oscuro'?'border-fuchsia-500':'border-blue-400'} active:opacity-80 ${T.card}`}>
+                  <div className='flex justify-between items-start'>
+                    <div>
+                      <p className={`text-xs font-bold ${T.txtD}`}>Nro. {a.numero}</p>
+                      <h3 className={`font-bold ${T.txt}`}>{a.nombreEquipo || (a.marcaCPU || a.marca) + ' ' + (a.modeloCPU || a.modelo)}</h3>
+                      <p className={`text-sm ${T.txtM}`}>{a.tipo} {a.subtipoImpresora ? '- '+a.subtipoImpresora : ''}</p>
+                    </div>
+                    <div className='text-right'>
+                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${a.estado === 'Activo' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{a.estado}</span>
+                    </div>
+                  </div>
+                  <div className={`mt-2 text-sm border-t pt-2 flex justify-between ${T.txtM}`}>
+                    <span>{a.personaAsignada ? 'Asignado: ' + a.personaAsignada : 'En Stock'}</span>
+                    <span>{a.oficina || '-'} {a.piso ? '- Piso ' + a.piso : ''}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
         {vista === 'detalles' && editando && (
           <div className={`p-4 rounded-xl space-y-4 ${T.card}`}>
-            <div className={`flex justify-between items-center border-b pb-2 ${tema==='oscuro'?'border-fuchsia-500':'border-gray-200'}`}><h2 className={`font-bold text-lg ${T.txt}`}>Ficha del Activo</h2><span className={`text-xs font-bold px-2 py-1 rounded-full ${tema==='oscuro'?'bg-fuchsia-900 text-fuchsia-300':'bg-blue-100 text-blue-800'}`}>Nro. {editando.numero}</span></div>
-            <div className='grid grid-cols-2 gap-3 text-sm'>
-              <div><p className={`text-xs ${T.txtM}`}>Tipo</p><p className={`font-bold ${T.txt}`}>{editando.tipo || '-'}</p></div><div><p className={`text-xs ${T.txtM}`}>Nombre Equipo</p><p className={`font-bold ${T.txt}`}>{editando.nombreEquipo || '-'}</p></div>
-              <div><p className={`text-xs ${T.txtM}`}>Marca</p><p className={`font-bold ${T.txt}`}>{editando.marca || editando.marcaCPU || '-'}</p></div><div><p className={`text-xs ${T.txtM}`}>Modelo</p><p className={`font-bold ${T.txt}`}>{editando.modelo || editando.modeloCPU || '-'}</p></div>
-              <div><p className={`text-xs ${T.txtM}`}>Código AF</p><p className={`font-bold ${T.txt}`}>{editando.codigoActivo || editando.codigoActivoCPU || '-'}</p></div><div><p className={`text-xs ${T.txtM}`}>Serie</p><p className={`font-bold ${T.txt}`}>{editando.numeroSerie || editando.numeroSerieCPU || '-'}</p></div>
-              <div><p className={`text-xs ${T.txtM}`}>Procesador</p><p className={`font-bold ${T.txt}`}>{editando.procesador || '-'} {editando.generacion ? '('+editando.generacion+')' : ''}</p></div><div><p className={`text-xs ${T.txtM}`}>RAM</p><p className={`font-bold ${T.txt}`}>{editando.ram || '-'}</p></div>
-              <div><p className={`text-xs ${T.txtM}`}>Disco 1</p><p className={`font-bold ${T.txt}`}>{editando.tipoDisco} {editando.capacidadDisco}</p></div><div><p className={`text-xs ${T.txtM}`}>Disco 2</p><p className={`font-bold ${T.txt}`}>{editando.tipoDisco2} {editando.capacidadDisco2}</p></div>
-              <div><p className={`text-xs ${T.txtM}`}>Estado</p><p className={`font-bold ${T.txt}`}>{editando.estado || '-'}</p></div><div><p className={`text-xs ${T.txtM}`}>En Almacén</p><p className={`font-bold ${T.txt}`}>{editando.enAlmacen ? 'SÍ' : 'NO'}</p></div>
+            <div className={`flex justify-between items-center border-b pb-2 ${tema==='oscuro'?'border-fuchsia-500':'border-gray-200'}`}>
+              <h2 className={`font-bold text-lg ${T.txt}`}>Ficha del Activo</h2>
+              <span className={`text-xs font-bold px-2 py-1 rounded-full ${tema==='oscuro'?'bg-fuchsia-900 text-fuchsia-300':'bg-blue-100 text-blue-800'}`}>Nro. {editando.numero}</span>
             </div>
-            {!editando.enAlmacen && (<div className={`p-3 rounded-lg space-y-1 text-sm ${T.secBg}`}><h3 className={`font-bold border-b pb-1 mb-2 ${T.txt}`}>Ubicación y Asignación</h3><p className={T.txt}><span className={T.txtM}>Oficina:</span> {editando.oficina || '-'} (Piso {editando.piso || '-'})</p><p className={T.txt}><span className={T.txtM}>Asignado a:</span> {editando.personaAsignada || '-'}</p><p className={T.txt}><span className={T.txtM}>Cargo:</span> {editando.cargo || '-'}</p><p className={T.txt}><span className={T.txtM}>Fecha:</span> {editando.fechaAsignacion || '-'}</p></div>)}
+            <div className='grid grid-cols-2 gap-3 text-sm'>
+              <div><p className={`text-xs ${T.txtM}`}>Tipo</p><p className={`font-bold ${T.txt}`}>{editando.tipo || '-'}</p></div>
+              <div><p className={`text-xs ${T.txtM}`}>Nombre Equipo</p><p className={`font-bold ${T.txt}`}>{editando.nombreEquipo || '-'}</p></div>
+              <div><p className={`text-xs ${T.txtM}`}>Marca</p><p className={`font-bold ${T.txt}`}>{editando.marca || editando.marcaCPU || '-'}</p></div>
+              <div><p className={`text-xs ${T.txtM}`}>Modelo</p><p className={`font-bold ${T.txt}`}>{editando.modelo || editando.modeloCPU || '-'}</p></div>
+              <div><p className={`text-xs ${T.txtM}`}>Código AF</p><p className={`font-bold ${T.txt}`}>{editando.codigoActivo || editando.codigoActivoCPU || '-'}</p></div>
+              <div><p className={`text-xs ${T.txtM}`}>Serie</p><p className={`font-bold ${T.txt}`}>{editando.numeroSerie || editando.numeroSerieCPU || '-'}</p></div>
+              <div><p className={`text-xs ${T.txtM}`}>Procesador</p><p className={`font-bold ${T.txt}`}>{editando.procesador || '-'} {editando.generacion ? '('+editando.generacion+')' : ''}</p></div>
+              <div><p className={`text-xs ${T.txtM}`}>RAM</p><p className={`font-bold ${T.txt}`}>{editando.ram || '-'}</p></div>
+              <div><p className={`text-xs ${T.txtM}`}>Disco 1</p><p className={`font-bold ${T.txt}`}>{editando.tipoDisco} {editando.capacidadDisco}</p></div>
+              <div><p className={`text-xs ${T.txtM}`}>Disco 2</p><p className={`font-bold ${T.txt}`}>{editando.tipoDisco2} {editando.capacidadDisco2}</p></div>
+              <div><p className={`text-xs ${T.txtM}`}>Estado</p><p className={`font-bold ${T.txt}`}>{editando.estado || '-'}</p></div>
+              <div><p className={`text-xs ${T.txtM}`}>En Almacén</p><p className={`font-bold ${T.txt}`}>{editando.enAlmacen ? 'SÍ' : 'NO'}</p></div>
+            </div>
+            {!editando.enAlmacen && (
+              <div className={`p-3 rounded-lg space-y-1 text-sm ${T.secBg}`}>
+                <h3 className={`font-bold border-b pb-1 mb-2 ${T.txt}`}>Ubicación y Asignación</h3>
+                <p className={T.txt}><span className={T.txtM}>Oficina:</span> {editando.oficina || '-'} (Piso {editando.piso || '-'})</p>
+                <p className={T.txt}><span className={T.txtM}>Asignado a:</span> {editando.personaAsignada || '-'}</p>
+                <p className={T.txt}><span className={T.txtM}>Cargo:</span> {editando.cargo || '-'}</p>
+                <p className={T.txt}><span className={T.txtM}>Fecha:</span> {editando.fechaAsignacion || '-'}</p>
+              </div>
+            )}
             
             {/* SECCIÓN QR AQUÍ */}
             <div className='flex flex-col items-center gap-3 pt-4'>
-              <div id='qr-canvas-container-detalles' className={`p-4 rounded-lg ${tema==='oscuro'?'bg-white':'bg-white'}`}><QRCodeCanvas value={generarDatosQR(editando)} size={180} level='M' /></div>
+              <div id='qr-canvas-container-detalles' className='p-4 bg-white rounded-lg'><QRCodeCanvas value={generarDatosQR(editando)} size={180} level='M' /></div>
               <button onClick={() => compartirQR(editando)} className={`w-full p-3 rounded-lg font-bold flex items-center justify-center gap-2 text-sm ${T.btnS}`}><Share2 size={18} /> Compartir QR</button>
             </div>
 
-            {(editando.fotoEquipo || editando.fotoSerie) && (<div className='grid grid-cols-2 gap-4'>{editando.fotoEquipo && <div><p className={`text-xs mb-1 ${T.txtM}`}>Foto Equipo</p><img src={editando.fotoEquipo} className='w-full h-32 object-cover rounded-lg border' /></div>}{editando.fotoSerie && <div><p className={`text-xs mb-1 ${T.txtM}`}>Foto Serie</p><img src={editando.fotoSerie} className='w-full h-32 object-cover rounded-lg border' /></div>}</div>)}
+            {(editando.fotoEquipo || editando.fotoSerie) && (
+              <div className='grid grid-cols-2 gap-4'>
+                {editando.fotoEquipo && <div><p className={`text-xs mb-1 ${T.txtM}`}>Foto Equipo</p><img src={editando.fotoEquipo} className='w-full h-32 object-cover rounded-lg border' /></div>}
+                {editando.fotoSerie && <div><p className={`text-xs mb-1 ${T.txtM}`}>Foto Serie</p><img src={editando.fotoSerie} className='w-full h-32 object-cover rounded-lg border' /></div>}
+              </div>
+            )}
             
             {/* SECCIÓN HISTORIAL AQUÍ */}
-            <div className={`p-3 rounded-lg ${T.secBg}`}><h3 className={`font-bold border-b pb-1 mb-2 text-sm ${T.txt}`}>Bitácora / Historial</h3><div className='space-y-2 max-h-40 overflow-y-auto'>{(editando.historial || []).length === 0 ? <p className={`text-xs text-center py-2 ${T.txtM}`}>Sin movimientos.</p> : (editando.historial || []).slice().reverse().map((h, i) => (<div key={i} className={`text-xs p-2 rounded border-l-4 ${tema==='oscuro'?'bg-black border-fuchsia-500':'bg-white border-blue-400'}`}><p className={`font-bold ${T.txtM}`}>[{h.fecha}]</p><p className={`${T.txt} mt-1`}>{h.nota}</p></div>))}</div></div>
+            <div className={`p-3 rounded-lg ${T.secBg}`}>
+              <h3 className={`font-bold border-b pb-1 mb-2 text-sm ${T.txt}`}>Bitácora / Historial</h3>
+              <div className='space-y-2 max-h-40 overflow-y-auto'>
+                {(editando.historial || []).length === 0 ? <p className={`text-xs text-center py-2 ${T.txtM}`}>Sin movimientos.</p> : 
+                (editando.historial || []).slice().reverse().map((h, i) => (
+                  <div key={i} className={`text-xs p-2 rounded border-l-4 ${tema==='oscuro'?'bg-black border-fuchsia-500':'bg-white border-blue-400'}`}>
+                    <p className={`font-bold ${T.txtM}`}>[{h.fecha}]</p>
+                    <p className={`${T.txt} mt-1`}>{h.nota}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
             
-            <div className='flex gap-3 pt-2'><button onClick={() => setVista('formulario')} className={`flex-1 p-3 rounded-lg font-bold flex items-center justify-center gap-2 ${T.btnP}`}><Edit3 size={20} /> Editar Equipo</button><button onClick={handleVolver} className={`p-3 rounded-lg font-bold ${T.btnS}`}><ArrowLeft size={20} /></button></div>
+            <div className='flex gap-3 pt-2'>
+              <button onClick={() => setVista('formulario')} className={`flex-1 p-3 rounded-lg font-bold flex items-center justify-center gap-2 ${T.btnP}`}><Edit3 size={20} /> Editar Equipo</button>
+              <button onClick={handleVolver} className={`p-3 rounded-lg font-bold ${T.btnS}`}><ArrowLeft size={20} /></button>
+            </div>
           </div>
         )}
 
         {centroActual && vista === 'reporte' && (
           <div className='space-y-4'>
-            <div className={`p-4 rounded-xl ${T.card}`}><h2 className={`font-bold mb-3 ${T.txt}`}>1. Selecciona Equipos:</h2><div className='grid grid-cols-2 gap-2'>{SUBTIPOS_REPORTE.map(cat => (<label key={cat} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-sm ${catsReporte.includes(cat) ? (tema==='oscuro'?'bg-fuchsia-900/50 border-fuchsia-500 text-fuchsia-300':'bg-indigo-50 border-indigo-500 text-indigo-800') : (tema==='oscuro'?'bg-black border-gray-700 text-gray-400':'bg-gray-50 border-gray-200')}><input type='checkbox' checked={catsReporte.includes(cat)} onChange={() => handleCatReporte(cat)} className='accent-fuchsia-500' />{cat}</label>))}</div></div>
+            <div className={`p-4 rounded-xl ${T.card}`}>
+              <h2 className={`font-bold mb-3 ${T.txt}`}>1. Selecciona Equipos:</h2>
+              <div className='grid grid-cols-2 gap-2'>
+                {SUBTIPOS_REPORTE.map(cat => {
+                  const isChecked = catsReporte.includes(cat);
+                  const activeClass = tema === 'oscuro' ? 'bg-fuchsia-900/50 border-fuchsia-500 text-fuchsia-300' : 'bg-indigo-50 border-indigo-500 text-indigo-800';
+                  const inactiveClass = tema === 'oscuro' ? 'bg-black border-gray-700 text-gray-400' : 'bg-gray-50 border-gray-200';
+                  return (
+                    <label key={cat} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-sm ${isChecked ? activeClass : inactiveClass}`}>
+                      <input type='checkbox' checked={isChecked} onChange={() => handleCatReporte(cat)} className='accent-fuchsia-500' />
+                      {cat}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+            
             <div className={`p-4 rounded-xl space-y-3 ${T.card}`}>
               <h2 className={`font-bold ${T.txt}`}>2. Columnas (Toca para desplegar):</h2>
               {catsReporte.length === 0 ? <p className={`text-sm text-center py-4 ${T.txtM}`}>Primero selecciona un equipo arriba.</p> : catsReporte.map(cat => {
                 const cols = reporteCols[cat] || [];
                 const camposDisponibles = CAMPOS_POR_TIPO[cat] || [];
+                const expClass = tema === 'oscuro' ? 'bg-black border-fuchsia-500/30' : 'bg-gray-50 border-gray-100';
                 return (
-                  <div key={cat} className={`rounded-xl overflow-hidden border ${tema==='oscuro'?'bg-black border-fuchsia-500/30':'bg-gray-50 border-gray-100'}`}>
-                    <button type='button' onClick={() => setReporteExpandido(reporteExpandido === cat ? null : cat)} className={`w-full p-3 flex justify-between items-center font-bold active:opacity-80 ${T.txt}`}><span>{cat} <span className={`text-xs font-normal ${T.txtM}`}>({cols.length} cols)</span></span><ChevronDown size={18} className={T.txtM + (reporteExpandido === cat ? ' rotate-180 transition-transform' : ' transition-transform')} /></button>
-                    {reporteExpandido === cat && (<div className='p-3 pt-0'><div className='flex justify-end gap-1 mb-2'><button type='button' onClick={() => selectAllCols(cat)} className={`text-xs px-2 py-1 rounded font-bold ${T.btnS}`}>Todos</button><button type='button' onClick={() => clearCols(cat)} className={`text-xs px-2 py-1 rounded font-bold ${T.btnD}`}>Limpiar</button></div><div className='grid grid-cols-2 gap-2'>{camposDisponibles.map((key, idx) => { const isSelected = cols.includes(key); const label = CAMPOS.find(c => c.key === key)?.label || key; const colorClass = COLORES_CHECKS[idx % COLORES_CHECKS.length]; return (<label key={key} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-sm transition-all ${isSelected ? (tema==='oscuro'?`bg-gray-900 border-fuchsia-500 font-bold ${colorClass}`:`bg-white border-gray-300 font-bold ${colorClass}`) : (tema==='oscuro'?'bg-black border-gray-700 text-gray-400':'bg-gray-50 border-gray-200 text-gray-500')} `}><input type='checkbox' checked={isSelected} onChange={() => handleCheckCol(cat, key)} className='w-4 h-4 accent-fuchsia-500' /><span className='flex-1 truncate'>{label}</span></label>); })}</div></div>)}
+                  <div key={cat} className={`rounded-xl overflow-hidden border ${expClass}`}>
+                    <button type='button' onClick={() => setReporteExpandido(reporteExpandido === cat ? null : cat)} className={`w-full p-3 flex justify-between items-center font-bold active:opacity-80 ${T.txt}`}>
+                      <span>{cat} <span className={`text-xs font-normal ${T.txtM}`}>({cols.length} cols)</span></span>
+                      <ChevronDown size={18} className={T.txtM + (reporteExpandido === cat ? ' rotate-180 transition-transform' : ' transition-transform')} />
+                    </button>
+                    {reporteExpandido === cat && (
+                      <div className='p-3 pt-0'>
+                        <div className='flex justify-end gap-1 mb-2'>
+                          <button type='button' onClick={() => selectAllCols(cat)} className={`text-xs px-2 py-1 rounded font-bold ${T.btnS}`}>Todos</button>
+                          <button type='button' onClick={() => clearCols(cat)} className={`text-xs px-2 py-1 rounded font-bold ${T.btnD}`}>Limpiar</button>
+                        </div>
+                        <div className='grid grid-cols-2 gap-2'>
+                          {camposDisponibles.map((key, idx) => { 
+                            const isSelected = cols.includes(key); 
+                            const label = CAMPOS.find(c => c.key === key)?.label || key; 
+                            const colorClass = COLORES_CHECKS[idx % COLORES_CHECKS.length]; 
+                            const selClass = tema === 'oscuro' ? `bg-gray-900 border-fuchsia-500 font-bold ${colorClass}` : `bg-white border-gray-300 font-bold ${colorClass}`;
+                            const unselClass = tema === 'oscuro' ? 'bg-black border-gray-700 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-500';
+                            return (
+                              <label key={key} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-sm transition-all ${isSelected ? selClass : unselClass}`}>
+                                <input type='checkbox' checked={isSelected} onChange={() => handleCheckCol(cat, key)} className='w-4 h-4 accent-fuchsia-500' />
+                                <span className='flex-1 truncate'>{label}</span>
+                              </label>
+                            ); 
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
+
             {catsReporte.length > 0 && catsReporte.some(cat => (reporteCols[cat] || []).length > 0) && (
               <div className={`p-4 rounded-xl overflow-x-auto ${T.card}`}>
                 <h3 className={`font-bold mb-3 text-sm ${T.txt}`}>Vista Previa:</h3>
-                {catsReporte.map(cat => { const datosCat = activos.filter(a => a.centro === centroActual && !a.enAlmacen && getSubtipo(a) === cat); const cols = reporteCols[cat] || []; if (datosCat.length === 0 || cols.length === 0) return null; return (
-                  <div key={cat} className='mb-6'><h4 className={`font-bold text-sm mb-2 border-b pb-1 ${T.txtD}`}>{cat} ({datosCat.length})</h4><table className='w-full text-xs text-left border-collapse'><thead><tr className={tema==='oscuro'?'bg-fuchsia-900/50 text-fuchsia-300':'bg-blue-800 text-white'}>{cols.map(k => <th key={k} className='p-2 border whitespace-nowrap'>{CAMPOS.find(c=>c.key===k)?.label || k}</th>)}</tr></thead><tbody>{datosCat.slice(0, 3).map((a, i) => (<tr key={a.id} className={tema==='oscuro'?(i % 2 === 0 ? 'bg-black' : 'bg-gray-900'):(i % 2 === 0 ? 'bg-gray-50' : 'bg-white')} >{cols.map(k => <td key={k} className={`p-2 border whitespace-nowrap ${T.txt}`}>{getValor(a, k)}</td>)}</tr>))}</tbody></table>{datosCat.length > 3 && <p className={`text-center text-xs mt-1 ${T.txtM}`}>+ {datosCat.length - 3} registros más...</p>}</div>
-                );})}
+                {catsReporte.map(cat => { 
+                  const datosCat = activos.filter(a => a.centro === centroActual && !a.enAlmacen && getSubtipo(a) === cat); 
+                  const cols = reporteCols[cat] || []; 
+                  if (datosCat.length === 0 || cols.length === 0) return null; 
+                  return (
+                    <div key={cat} className='mb-6'>
+                      <h4 className={`font-bold text-sm mb-2 border-b pb-1 ${T.txtD}`}>{cat} ({datosCat.length})</h4>
+                      <table className='w-full text-xs text-left border-collapse'>
+                        <thead>
+                          <tr className={tema==='oscuro'?'bg-fuchsia-900/50 text-fuchsia-300':'bg-blue-800 text-white'}>
+                            {cols.map(k => <th key={k} className='p-2 border whitespace-nowrap'>{CAMPOS.find(c=>c.key===k)?.label || k}</th>)}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {datosCat.slice(0, 3).map((a, i) => (
+                            <tr key={a.id} className={tema==='oscuro'?(i % 2 === 0 ? 'bg-black' : 'bg-gray-900'):(i % 2 === 0 ? 'bg-gray-50' : 'bg-white')}>
+                              {cols.map(k => <td key={k} className={`p-2 border whitespace-nowrap ${T.txt}`}>{getValor(a, k)}</td>)}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {datosCat.length > 3 && <p className={`text-center text-xs mt-1 ${T.txtM}`}>+ {datosCat.length - 3} registros más...</p>}
+                    </div>
+                  );
+                })}
               </div>
             )}
-            <div className='grid grid-cols-2 gap-4'><button onClick={exportarCSV} disabled={cargando || catsReporte.length === 0} className={`p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 ${T.btnS}`}><Download size={20} /> Excel</button><button onClick={exportarPDF} disabled={cargando || catsReporte.length === 0} className={`p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 ${T.btnD}`}><FileText size={20} /> PDF</button></div>
+            
+            <div className='grid grid-cols-2 gap-4'>
+              <button onClick={exportarCSV} disabled={cargando || catsReporte.length === 0} className={`p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 ${T.btnS}`}><Download size={20} /> Excel</button>
+              <button onClick={exportarPDF} disabled={cargando || catsReporte.length === 0} className={`p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 ${T.btnD}`}><FileText size={20} /> PDF</button>
+            </div>
           </div>
         )}
 
@@ -467,9 +687,30 @@ function ConfigVista({ setVista, setMsg, setActivos, setCentros, setOficinas, se
   return (
     <div className={`p-6 rounded-xl space-y-6 ${T.card}`}>
       <button onClick={() => setVista('hub')} className={`flex items-center font-bold mb-2 ${T.txtD}`}><ArrowLeft size={20} /> Volver</button>
-      <div className='border-b pb-6'><h2 className={`text-xl font-bold mb-4 flex items-center gap-2 ${T.txt}`}><ImageIcon size={24} /> Logo de Empresa</h2><label className={`p-6 rounded-xl font-bold flex flex-col items-center gap-2 cursor-pointer border-2 border-dashed ${tema==='oscuro'?'border-fuchsia-500 text-fuchsia-300':'bg-blue-50 text-blue-700 border-blue-200'}`}><Upload size={32} /><span>Seleccionar Logo</span><input type='file' accept='image/*' onChange={handleLogo} className='hidden' /></label></div>
-      <div><h2 className={`text-xl font-bold mb-4 flex items-center gap-2 ${T.txt}`}><Key size={24} /> Cambiar Contrasena</h2><form onSubmit={h} className='space-y-4'><input type='password' value={nueva} onChange={e => setNueva(e.target.value)} required className={`w-full p-3 border rounded-lg ${T.in}`} placeholder='Nueva contrasena' /><button type='submit' className={`w-full p-3 rounded-lg font-bold ${T.btnP}`}>Guardar</button></form></div>
-      <div className='border-t pt-6'><h2 className={`text-xl font-bold mb-4 flex items-center gap-2 ${T.txt}`}><Save size={24} /> Respaldo de Datos</h2><div className='grid grid-cols-2 gap-4'><button onClick={exportarRespaldo} className={`p-4 rounded-xl font-bold flex flex-col items-center gap-2 ${T.btnS}`}><Download size={24} /> Exportar</button><label className={`p-4 rounded-xl font-bold flex flex-col items-center gap-2 cursor-pointer ${T.btnD}`}><Upload size={24} /> Importar<input type='file' accept='.json' onChange={importarRespaldo} className='hidden' /></label></div></div>
+      <div className='border-b pb-6'>
+        <h2 className={`text-xl font-bold mb-4 flex items-center gap-2 ${T.txt}`}><ImageIcon size={24} /> Logo de Empresa</h2>
+        <label className={`p-6 rounded-xl font-bold flex flex-col items-center gap-2 cursor-pointer border-2 border-dashed ${tema==='oscuro'?'border-fuchsia-500 text-fuchsia-300':'bg-blue-50 text-blue-700 border-blue-200'}`}>
+          <Upload size={32} /><span>Seleccionar Logo</span>
+          <input type='file' accept='image/*' onChange={handleLogo} className='hidden' />
+        </label>
+      </div>
+      <div>
+        <h2 className={`text-xl font-bold mb-4 flex items-center gap-2 ${T.txt}`}><Key size={24} /> Cambiar Contrasena</h2>
+        <form onSubmit={h} className='space-y-4'>
+          <input type='password' value={nueva} onChange={e => setNueva(e.target.value)} required className={`w-full p-3 border rounded-lg ${T.in}`} placeholder='Nueva contrasena' />
+          <button type='submit' className={`w-full p-3 rounded-lg font-bold ${T.btnP}`}>Guardar</button>
+        </form>
+      </div>
+      <div className='border-t pt-6'>
+        <h2 className={`text-xl font-bold mb-4 flex items-center gap-2 ${T.txt}`}><Save size={24} /> Respaldo de Datos</h2>
+        <div className='grid grid-cols-2 gap-4'>
+          <button onClick={exportarRespaldo} className={`p-4 rounded-xl font-bold flex flex-col items-center gap-2 ${T.btnS}`}><Download size={24} /> Exportar</button>
+          <label className={`p-4 rounded-xl font-bold flex flex-col items-center gap-2 cursor-pointer ${T.btnD}`}>
+            <Upload size={24} /> Importar
+            <input type='file' accept='.json' onChange={importarRespaldo} className='hidden' />
+          </label>
+        </div>
+      </div>
     </div>
   );
 }
@@ -478,7 +719,7 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
   const esAlmacen = !centroActual; 
   const opcionesTipo = esAlmacen ? [...TIPOS_COMPUTO, ...TIPOS_RED] : (categoriaVista === 'red' ? TIPOS_RED : TIPOS_COMPUTO);
   const tipoDefault = categoriaVista === 'red' ? 'Impresora' : 'Laptop';
-  const initialForm = activo && !activo._template ? activo : { id: Date.now().toString(), centro: centroActual, numero: getNextNumber(), tipo: tipoDefault, subtipoImpresora: 'Impresora Normal', nombreEquipo: '', marca: '', modelo: '', codigoActivo: '', numeroSerie: '', procesador: '', generacion: '', ram: '', tipoDisco: 'SSD M.2', capacidadDisco: '', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: '', mac: '', ip: '', estado: 'Activo', enAlmacen: esAlmacen, oficina: activo?.oficina || '', piso: activo?.piso || '', cargo: '', numeroEmpleado: '', personaAsignada: '', nombreResponsable: '', fechaAsignacion: '', marcaCPU: '', modeloCPU: '', codigoActivoCPU: '', numeroSerieCPU: '', marcaMonitor: '', modeloMonitor: '', codigoActivoMonitor: '', numeroSerieMonitor: '', conexionImpresora: 'En Red', notas: '', fotoEquipo: '', fotoSerie: '', historial: [] };
+  const initialForm = activo && !activo._template ? activo : { id: Date.now().toString(), centro: centroActual, numero: getNextNumber(), tipo: tipoDefault, subtipoImpresora: 'Impresora Normal', nombreEquipo: '', marca: '', modelo: '', codigoActivo: '', numeroSerie: '', procesador: '', generacion: '', ram: '', tipoDisco: 'SSD M.2', capacidadDisco: '', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: '', mac: '', ip: '', estado: 'Activo', enAlmacen: esAlmacen, oficina: activo?.oficina || '', piso: activo?.piso || '', cargo: '', numeroEmpleado: '', personaAsignada: '', namaeResponsable: '', fechaAsignacion: '', marcaCPU: '', modeloCPU: '', codigoActivoCPU: '', numeroSerieCPU: '', marcaMonitor: '', modeloMonitor: '', codigoActivoMonitor: '', numeroSerieMonitor: '', conexionImpresora: 'En Red', notas: '', fotoEquipo: '', fotoSerie: '', historial: [] };
   const [form, setForm] = useState(initialForm);
   const [verBitacora, setVerBitacora] = useState(false);
   const [errores, setErrores] = useState({});
@@ -525,8 +766,21 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
   };
   const handleEliminar = () => { if (confirm('Eliminar?')) { const d = JSON.parse(localStorage.getItem('activos_fijos_v74') || '[]'); guardarDatos(d.filter(a => a.id !== form.id)); handleVolver(); } };
 
-  const OficinaSelect = ({ req }) => (<div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Oficina</label><select name='oficina' value={form.oficina||''} onChange={h} required={req} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`}><option value='' disabled>Seleccionar...</option>{oficinasDestino.map(o => <option key={o.id} value={o.nombre}>{o.nombre}</option>)}</select></div>);
-  const PisoInput = ({ req }) => (<div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Piso</label><input name='piso' value={form.piso||''} readOnly className={`w-full p-2.5 border rounded-lg text-sm ${T.in} cursor-not-allowed`} /></div>);
+  const OficinaSelect = ({ req }) => (
+    <div>
+      <label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Oficina</label>
+      <select name='oficina' value={form.oficina||''} onChange={h} required={req} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`}>
+        <option value='' disabled>Seleccionar...</option>
+        {oficinasDestino.map(o => <option key={o.id} value={o.nombre}>{o.nombre}</option>)}
+      </select>
+    </div>
+  );
+  const PisoInput = ({ req }) => (
+    <div>
+      <label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Piso</label>
+      <input name='piso' value={form.piso||''} readOnly className={`w-full p-2.5 border rounded-lg text-sm ${T.in} cursor-not-allowed`} />
+    </div>
+  );
   const esTipoRed = ['Impresora', 'Impresora Multifuncional', 'Scanner', 'Switch'].includes(form.tipo);
   const esTipoUnificado = ['Laptop', 'Computadora All in One'].includes(form.tipo);
 
@@ -535,10 +789,26 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
       <button onClick={handleVolver} className={`flex items-center font-bold mb-4 ${T.txtD}`}><ArrowLeft size={20} /> Volver</button>
       <form onSubmit={handleSubmit} className={`p-4 rounded-xl space-y-4 ${T.card}`}>
         <h2 className={`font-bold text-lg border-b pb-2 ${T.txt}`}>{activo && !activo._template ? 'Editar Nro. ' + form.numero : 'Nuevo Registro'}</h2>
-        {esAlmacen && !form.enAlmacen && (<div className={`p-3 rounded-lg border-l-4 ${tema==='oscuro'?'bg-fuchsia-950/30 border-fuchsia-500':'bg-blue-50 border-blue-400'}`}><label className={`block text-xs font-bold mb-1 ${T.txtD}`}>ASIGNAR A MULTICENTRO</label><select name='centro' value={form.centro||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`}><option value='' disabled>Seleccionar...</option>{centros.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}</select></div>)}
+        {esAlmacen && !form.enAlmacen && (
+          <div className={`p-3 rounded-lg border-l-4 ${tema==='oscuro'?'bg-fuchsia-950/30 border-fuchsia-500':'bg-blue-50 border-blue-400'}`}>
+            <label className={`block text-xs font-bold mb-1 ${T.txtD}`}>ASIGNAR A MULTICENTRO</label>
+            <select name='centro' value={form.centro||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`}>
+              <option value='' disabled>Seleccionar...</option>
+              {centros.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+            </select>
+          </div>
+        )}
         <div className='grid grid-cols-2 gap-4'>
-          <div><label className={`block text-xs font-bold mb-1 ${T.txtM}`}>Nro. REGISTRO</label><input name='numero' value={form.numero} readOnly className={`w-full p-3 border rounded-lg font-bold ${T.in} cursor-not-allowed`} /></div>
-          <div><label className={`block text-xs font-bold mb-1 ${T.txtM}`}>TIPO EQUIPO</label><select name='tipo' value={form.tipo} onChange={h} className={`w-full p-3 border rounded-lg ${T.in}`}>{opcionesTipo.map(opt => <option key={opt}>{opt}</option>)}</select></div>
+          <div>
+            <label className={`block text-xs font-bold mb-1 ${T.txtM}`}>Nro. REGISTRO</label>
+            <input name='numero' value={form.numero} readOnly className={`w-full p-3 border rounded-lg font-bold ${T.in} cursor-not-allowed`} />
+          </div>
+          <div>
+            <label className={`block text-xs font-bold mb-1 ${T.txtM}`}>TIPO EQUIPO</label>
+            <select name='tipo' value={form.tipo} onChange={h} className={`w-full p-3 border rounded-lg ${T.in}`}>
+              {opcionesTipo.map(opt => <option key={opt}>{opt}</option>)}
+            </select>
+          </div>
         </div>
 
         {esTipoUnificado && (
@@ -549,8 +819,22 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
               <div className='col-span-2'><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Nombre Maquina</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
               <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Marca</label><input name='marca' value={form.marca||''} onChange={handleMarca} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
               <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
-              <div className='relative'><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Codigo AF</label><div className='flex gap-1'><input name='codigoActivo' value={form.codigoActivo||''} onChange={h} onBlur={(e)=>validarUnico('codigoActivo', e.target.value)} className={`w-full p-2.5 border rounded-lg text-sm ${T.in} ${errores.codigoActivo ? 'border-red-500 bg-red-100' : ''}`} /><button type='button' onClick={() => escanearParaCampo('codigoActivo')} className={`px-2 rounded-lg ${T.btnS}`}><Barcode size={18} /></button></div>{errores.codigoActivo && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}</div>
-              <div className='relative'><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Numero de Serie</label><div className='flex gap-1'><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} onBlur={(e)=>validarUnico('numeroSerie', e.target.value)} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in} ${errores.numeroSerie ? 'border-red-500 bg-red-100' : ''}`} /><button type='button' onClick={() => escanearParaCampo('numeroSerie')} className={`px-2 rounded-lg ${T.btnS}`}><Barcode size={18} /></button></div>{errores.numeroSerie && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}</div>
+              <div className='relative'>
+                <label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Codigo AF</label>
+                <div className='flex gap-1'>
+                  <input name='codigoActivo' value={form.codigoActivo||''} onChange={h} onBlur={(e)=>validarUnico('codigoActivo', e.target.value)} className={`w-full p-2.5 border rounded-lg text-sm ${T.in} ${errores.codigoActivo ? 'border-red-500 bg-red-100' : ''}`} />
+                  <button type='button' onClick={() => escanearParaCampo('codigoActivo')} className={`px-2 rounded-lg ${T.btnS}`}><Barcode size={18} /></button>
+                </div>
+                {errores.codigoActivo && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}
+              </div>
+              <div className='relative'>
+                <label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Numero de Serie</label>
+                <div className='flex gap-1'>
+                  <input name='numeroSerie' value={form.numeroSerie||''} onChange={h} onBlur={(e)=>validarUnico('numeroSerie', e.target.value)} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in} ${errores.numeroSerie ? 'border-red-500 bg-red-100' : ''}`} />
+                  <button type='button' onClick={() => escanearParaCampo('numeroSerie')} className={`px-2 rounded-lg ${T.btnS}`}><Barcode size={18} /></button>
+                </div>
+                {errores.numeroSerie && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}
+              </div>
             </div>
           </div>
           <CamposSpecs form={form} setForm={setForm} handleProcesador={handleProcesador} formatMemory={formatMemory} handleNumeric={handleNumeric} handleIP={handleIP} errores={errores} tema={tema} T={T} />
@@ -563,11 +847,25 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
           <div className={`p-3 rounded-lg border-l-4 space-y-3 ${tema==='oscuro'?'bg-fuchsia-950/30 border-fuchsia-500':'bg-blue-50 border-blue-400'}`}>
             <p className={`text-xs font-bold ${T.txtD}`}>DATOS CPU</p>
             <div className='grid grid-cols-2 gap-3'>
-              <div className='col-span-2'><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Nombre Equipo</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
+              <div className='col-span-2'><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Namae Equipo</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
               <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Marca CPU</label><input name='marcaCPU' value={form.marcaCPU||''} onChange={handleMarca} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
               <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Modelo CPU</label><input name='modeloCPU' value={form.modeloCPU||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
-              <div className='relative'><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Codigo AF CPU</label><div className='flex gap-1'><input name='codigoActivoCPU' value={form.codigoActivoCPU||''} onChange={h} onBlur={(e)=>validarUnico('codigoActivoCPU', e.target.value)} className={`w-full p-2.5 border rounded-lg text-sm ${T.in} ${errores.codigoActivoCPU ? 'border-red-500 bg-red-100' : ''}`} /><button type='button' onClick={() => escanearParaCampo('codigoActivoCPU')} className={`px-2 rounded-lg ${T.btnS}`}><Barcode size={18} /></button></div>{errores.codigoActivoCPU && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}</div>
-              <div className='relative'><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Serie CPU</label><div className='flex gap-1'><input name='numeroSerieCPU' value={form.numeroSerieCPU||''} onChange={h} onBlur={(e)=>validarUnico('numeroSerieCPU', e.target.value)} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in} ${errores.numeroSerieCPU ? 'border-red-500 bg-red-100' : ''}`} /><button type='button' onClick={() => escanearParaCampo('numeroSerieCPU')} className={`px-2 rounded-lg ${T.btnS}`}><Barcode size={18} /></button></div>{errores.numeroSerieCPU && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}</div>
+              <div className='relative'>
+                <label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Codigo AF CPU</label>
+                <div className='flex gap-1'>
+                  <input name='codigoActivoCPU' value={form.codigoActivoCPU||''} onChange={h} onBlur={(e)=>validarUnico('codigoActivoCPU', e.target.value)} className={`w-full p-2.5 border rounded-lg text-sm ${T.in} ${errores.codigoActivoCPU ? 'border-red-500 bg-red-100' : ''}`} />
+                  <button type='button' onClick={() => escanearParaCampo('codigoActivoCPU')} className={`px-2 rounded-lg ${T.btnS}`}><Barcode size={18} /></button>
+                </div>
+                {errores.codigoActivoCPU && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}
+              </div>
+              <div className='relative'>
+                <label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Serie CPU</label>
+                <div className='flex gap-1'>
+                  <input name='numeroSerieCPU' value={form.numeroSerieCPU||''} onChange={h} onBlur={(e)=>validarUnico('numeroSerieCPU', e.target.value)} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in} ${errores.numeroSerieCPU ? 'border-red-500 bg-red-100' : ''}`} />
+                  <button type='button' onClick={() => escanearParaCampo('numeroSerieCPU')} className={`px-2 rounded-lg ${T.btnS}`}><Barcode size={18} /></button>
+                </div>
+                {errores.numeroSerieCPU && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}
+              </div>
             </div>
           </div>
           <div className={`p-3 rounded-lg border-l-4 space-y-3 ${tema==='oscuro'?'bg-yellow-900/30 border-yellow-500':'bg-yellow-50 border-yellow-400'}`}>
@@ -592,22 +890,86 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
               <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Marca</label><input name='marca' value={form.marca||''} onChange={handleMarca} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
               <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
               <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Serie</label><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} onBlur={(e)=>validarUnico('numeroSerie', e.target.value)} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in} ${errores.numeroSerie ? 'border-red-500 bg-red-100' : ''}`} />{errores.numeroSerie && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}</div>
-              <div className='relative'><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Codigo AF</label><div className='flex gap-1'><input name='codigoActivo' value={form.codigoActivo||''} onChange={h} onBlur={(e)=>validarUnico('codigoActivo', e.target.value)} className={`w-full p-2.5 border rounded-lg text-sm ${T.in} ${errores.codigoActivo ? 'border-red-500 bg-red-100' : ''}`} /><button type='button' onClick={() => escanearParaCampo('codigoActivo')} className={`px-2 rounded-lg ${T.btnS}`}><Barcode size={18} /></button></div>{errores.codigoActivo && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}</div>
+              <div className='relative'>
+                <label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Codigo AF</label>
+                <div className='flex gap-1'>
+                  <input name='codigoActivo' value={form.codigoActivo||''} onChange={h} onBlur={(e)=>validarUnico('codigoActivo', e.target.value)} className={`w-full p-2.5 border rounded-lg text-sm ${T.in} ${errores.codigoActivo ? 'border-red-500 bg-red-100' : ''}`} />
+                  <button type='button' onClick={() => escanearParaCampo('codigoActivo')} className={`px-2 rounded-lg ${T.btnS}`}><Barcode size={18} /></button>
+                </div>
+                {errores.codigoActivo && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}
+              </div>
               {form.tipo !== 'Switch' && <div className='col-span-2'><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Conexion</label><select name='conexionImpresora' value={form.conexionImpresora||'En Red'} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`}><option>En Red</option><option>Por USB</option></select></div>}
-              {(form.tipo === 'Switch' || form.conexionImpresora === 'En Red') && (<><div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>MAC</label><input name='mac' value={form.mac||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div><div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>IP</label><input name='ip' value={form.ip||''} onChange={handleIP} className={`w-full p-2.5 border rounded-lg text-sm ${T.in} ${errores.ip ? 'border-red-500 bg-red-100' : ''}`} />{errores.ip && <p className='text-xs text-red-500 mt-1'>IP inválida</p>}</div></>)}
+              {(form.tipo === 'Switch' || form.conexionImpresora === 'En Red') && (
+                <>
+                  <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>MAC</label><input name='mac' value={form.mac||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
+                  <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>IP</label><input name='ip' value={form.ip||''} onChange={handleIP} className={`w-full p-2.5 border rounded-lg text-sm ${T.in} ${errores.ip ? 'border-red-500 bg-red-100' : ''}`} />{errores.ip && <p className='text-xs text-red-500 mt-1'>IP inválida</p>}</div>
+                </>
+              )}
               <OficinaSelect req={true} /><PisoInput req={true} />
               <div className='col-span-2'><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Fecha Asignacion</label><input type='date' name='fechaAsignacion' value={form.fechaAsignacion||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
             </div>
           </div>
         )}
 
-        <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Notas</label><textarea name='notas' value={form.notas||''} onChange={h} rows='2' className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} placeholder='Observaciones...'></textarea></div>
+        <div>
+          <label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Notas</label>
+          <textarea name='notas' value={form.notas||''} onChange={h} rows='2' className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} placeholder='Observaciones...'></textarea>
+        </div>
         
-        <div className={`p-3 rounded-lg border space-y-3 ${tema==='oscuro'?'bg-black border-fuchsia-500/30':'bg-gray-50 border-gray-200'}`}><p className={`text-xs font-bold ${tema==='oscuro'?'text-fuchsia-400':'text-gray-600'}`}>EVIDENCIA FOTOGRÁFICA (OPCIONAL)</p><div className='grid grid-cols-2 gap-4'><div className='text-center'>{form.fotoEquipo ? (<div className='relative'><img src={form.fotoEquipo} alt='Foto Equipo' className='w-full h-32 object-cover rounded-lg border' /><button type='button' onClick={() => eliminarFoto('fotoEquipo')} className='absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 shadow-md'><X size={14} /></button></div>) : (<button type='button' onClick={() => tomarFoto('fotoEquipo')} className={`w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center ${tema==='oscuro'?'border-fuchsia-500 text-fuchsia-400':'border-gray-300 text-gray-400'}`}><CameraIcon size={24} /><span className='text-xs mt-1 font-bold'>Foto del Equipo</span></button>)}</div><div className='text-center'>{form.fotoSerie ? (<div className='relative'><img src={form.fotoSerie} alt='Foto Serie' className='w-full h-32 object-cover rounded-lg border' /><button type='button' onClick={() => eliminarFoto('fotoSerie')} className='absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 shadow-md'><X size={14} /></button></div>) : (<button type='button' onClick={() => tomarFoto('fotoSerie')} className={`w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center ${tema==='oscuro'?'border-cyan-500 text-cyan-400':'border-gray-300 text-gray-400'}`}><CameraIcon size={24} /><span className='text-xs mt-1 font-bold'>Foto N° de Serie</span></button>)}</div></div></div>
+        <div className={`p-3 rounded-lg border space-y-3 ${tema==='oscuro'?'bg-black border-fuchsia-500/30':'bg-gray-50 border-gray-200'}`}>
+          <p className={`text-xs font-bold ${tema==='oscuro'?'text-fuchsia-400':'text-gray-600'}`}>EVIDENCIA FOTOGRÁFICA (OPCIONAL)</p>
+          <div className='grid grid-cols-2 gap-4'>
+            <div className='text-center'>
+              {form.fotoEquipo ? (
+                <div className='relative'>
+                  <img src={form.fotoEquipo} alt='Foto Equipo' className='w-full h-32 object-cover rounded-lg border' />
+                  <button type='button' onClick={() => eliminarFoto('fotoEquipo')} className='absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 shadow-md'><X size={14} /></button>
+                </div>
+              ) : (
+                <button type='button' onClick={() => tomarFoto('fotoEquipo')} className={`w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center ${tema==='oscuro'?'border-fuchsia-500 text-fuchsia-400':'border-gray-300 text-gray-400'}`}>
+                  <CameraIcon size={24} /><span className='text-xs mt-1 font-bold'>Foto del Equipo</span>
+                </button>
+              )}
+            </div>
+            <div className='text-center'>
+              {form.fotoSerie ? (
+                <div className='relative'>
+                  <img src={form.fotoSerie} alt='Foto Serie' className='w-full h-32 object-cover rounded-lg border' />
+                  <button type='button' onClick={() => eliminarFoto('fotoSerie')} className='absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 shadow-md'><X size={14} /></button>
+                </div>
+              ) : (
+                <button type='button' onClick={() => tomarFoto('fotoSerie')} className={`w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center ${tema==='oscuro'?'border-cyan-500 text-cyan-400':'border-gray-300 text-gray-400'}`}>
+                  <CameraIcon size={24} /><span className='text-xs mt-1 font-bold'>Foto N° de Serie</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
         
-        {activo && !activo._template && (<div className={`p-3 rounded-lg border ${tema==='oscuro'?'bg-black border-fuchsia-500/30':'bg-gray-50 border-gray-200'}`}><button type='button' onClick={() => setVerBitacora(!verBitacora)} className={`w-full flex justify-between items-center font-bold ${T.txt}`}><span className='flex items-center gap-2'><History size={18} /> Ver Bitácora ({(form.historial || []).length})</span><ChevronDown size={18} className={verBitacora ? 'rotate-180 transition-transform' : 'transition-transform'} /></button>{verBitacora && (<div className='mt-3 space-y-2 max-h-48 overflow-y-auto'>{(form.historial || []).length === 0 ? <p className={`text-xs text-center py-2 ${T.txtM}`}>Sin movimientos.</p> : (form.historial || []).slice().reverse().map((h, i) => (<div key={i} className={`text-xs p-2 rounded border-l-4 ${tema==='oscuro'?'bg-gray-900 border-fuchsia-500':'bg-white border-blue-400'}`}><p className={`font-bold ${T.txtM}`}>[{h.fecha}]</p><p className={`${T.txt} mt-1`}>{h.nota}</p></div>))}</div>)}</div>)}
+        {activo && !activo._template && (
+          <div className={`p-3 rounded-lg border ${tema==='oscuro'?'bg-black border-fuchsia-500/30':'bg-gray-50 border-gray-200'}`}>
+            <button type='button' onClick={() => setVerBitacora(!verBitacora)} className={`w-full flex justify-between items-center font-bold ${T.txt}`}>
+              <span className='flex items-center gap-2'><History size={18} /> Ver Bitácora ({(form.historial || []).length})</span>
+              <ChevronDown size={18} className={verBitacora ? 'rotate-180 transition-transform' : 'transition-transform'} />
+            </button>
+            {verBitacora && (
+              <div className='mt-3 space-y-2 max-h-48 overflow-y-auto'>
+                {(form.historial || []).length === 0 ? <p className={`text-xs text-center py-2 ${T.txtM}`}>Sin movimientos.</p> : 
+                (form.historial || []).slice().reverse().map((h, i) => (
+                  <div key={i} className={`text-xs p-2 rounded border-l-4 ${tema==='oscuro'?'bg-gray-900 border-fuchsia-500':'bg-white border-blue-400'}`}>
+                    <p className={`font-bold ${T.txtM}`}>[{h.fecha}]</p>
+                    <p className={`${T.txt} mt-1`}>{h.nota}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         
-        <div className='flex gap-3 pt-2'><button type='submit' className={`flex-1 p-3 rounded-lg font-bold flex items-center justify-center gap-2 ${T.btnP}`}><Save size={20} /> Guardar</button>{activo && !activo._template && <button type='button' onClick={handleEliminar} className={`p-3 rounded-lg font-bold ${T.btnD}`}><Trash2 size={20} /></button>}</div>
+        <div className='flex gap-3 pt-2'>
+          <button type='submit' className={`flex-1 p-3 rounded-lg font-bold flex items-center justify-center gap-2 ${T.btnP}`}><Save size={20} /> Guardar</button>
+          {activo && !activo._template && <button type='button' onClick={handleEliminar} className={`p-3 rounded-lg font-bold ${T.btnD}`}><Trash2 size={20} /></button>}
+        </div>
       </form>
     </div>
   );
@@ -627,8 +989,16 @@ function CamposSpecs({ form, setForm, handleProcesador, formatMemory, handleNume
         <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>IP</label><input name='ip' value={form.ip||''} onChange={handleIP} className={`w-full p-2.5 border rounded-lg text-sm ${T.in} ${errores.ip ? 'border-red-500 bg-red-100' : ''}`} />{errores.ip && <p className='text-xs text-red-500 mt-1'>IP inválida</p>}</div>
       </div>
       <div className={`border-t pt-3 mt-2 grid grid-cols-2 gap-3 ${tema==='oscuro'?'border-purple-500/30':'border-purple-200'}`}>
-        <div><p className={`text-xs font-bold mb-1 ${tema==='oscuro'?'text-purple-300':'text-purple-800'}`}>DISCO 1</p><select name='tipoDisco' value={form.tipoDisco||'SSD M.2'} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm mb-1 ${T.in}`}><option>SSD M.2</option><option>SSD SATA</option><option>HDD</option><option>M.2 NVMe</option></select><input name='capacidadDisco' value={form.capacidadDisco||''} onChange={handleNumeric} onBlur={() => formatMemory('capacidadDisco')} placeholder='Ej: 256' className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
-        <div><p className={`text-xs font-bold mb-1 ${tema==='oscuro'?'text-purple-300':'text-purple-800'}`}>DISCO 2</p><select name='tipoDisco2' value={form.tipoDisco2||'Ninguno'} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm mb-1 ${T.in}`}><option>Ninguno</option><option>SSD M.2</option><option>SSD SATA</option><option>HDD</option><option>M.2 NVMe</option></select><input name='capacidadDisco2' value={form.capacidadDisco2||''} onChange={handleNumeric} onBlur={() => formatMemory('capacidadDisco2')} disabled={form.tipoDisco2==='Ninguno'} placeholder='Ej: 512' className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
+        <div>
+          <p className={`text-xs font-bold mb-1 ${tema==='oscuro'?'text-purple-300':'text-purple-800'}`}>DISCO 1</p>
+          <select name='tipoDisco' value={form.tipoDisco||'SSD M.2'} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm mb-1 ${T.in}`}><option>SSD M.2</option><option>SSD SATA</option><option>HDD</option><option>M.2 NVMe</option></select>
+          <input name='capacidadDisco' value={form.capacidadDisco||''} onChange={handleNumeric} onBlur={() => formatMemory('capacidadDisco')} placeholder='Ej: 256' className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} />
+        </div>
+        <div>
+          <p className={`text-xs font-bold mb-1 ${tema==='oscuro'?'text-purple-300':'text-purple-800'}`}>DISCO 2</p>
+          <select name='tipoDisco2' value={form.tipoDisco2||'Ninguno'} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm mb-1 ${T.in}`}><option>Ninguno</option><option>SSD M.2</option><option>SSD SATA</option><option>HDD</option><option>M.2 NVMe</option></select>
+          <input name='capacidadDisco2' value={form.capacidadDisco2||''} onChange={handleNumeric} onBlur={() => formatMemory('capacidadDisco2')} disabled={form.tipoDisco2==='Ninguno'} placeholder='Ej: 512' className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} />
+        </div>
       </div>
     </div>
   );
@@ -638,15 +1008,22 @@ function CamposUbicacion({ form, h, OficinaSelect, PisoInput, tema, T }) {
   return (
     <div className={`p-3 rounded-lg border-l-4 space-y-3 ${tema==='oscuro'?'bg-green-900/30 border-green-500':'bg-green-50 border-green-400'}`}>
       <p className={`text-xs font-bold ${tema==='oscuro'?'text-green-400':'text-green-700'}`}>UBICACION Y ASIGNACION</p>
-      <label className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer ${tema==='oscuro'?'bg-black border-fuchsia-500/50':'bg-white border-indigo-200'}`}><input type='checkbox' name='enAlmacen' checked={form.enAlmacen || false} onChange={h} className='w-5 h-5 accent-fuchsia-500' /><div><span className={`font-bold ${tema==='oscuro'?'text-fuchsia-400':'text-indigo-700'}`}>Marcar como 'En Almacen'</span><p className={`text-xs ${T.txtM}`}>Quita la asignacion del equipo.</p></div></label>
+      <label className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer ${tema==='oscuro'?'bg-black border-fuchsia-500/50':'bg-white border-indigo-200'}`}>
+        <input type='checkbox' name='enAlmacen' checked={form.enAlmacen || false} onChange={h} className='w-5 h-5 accent-fuchsia-500' />
+        <div>
+          <span className={`font-bold ${tema==='oscuro'?'text-fuchsia-400':'text-indigo-700'}`}>Marcar como 'En Almacen'</span>
+          <p className={`text-xs ${T.txtM}`}>Quita la asignacion del equipo.</p>
+        </div>
+      </label>
       {!form.enAlmacen ? (
         <div className='grid grid-cols-2 gap-3'>
           <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Estado</label><select name='estado' value={form.estado} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`}><option>Activo</option><option>En Mantenimiento</option><option>Danado</option></select></div>
-          <PisoInput req={true} /><OficinaSelect req={true} />
+          <PisoInput req={true} />
+          <OficinaSelect req={true} />
           <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Nro. Empleado</label><input name='numeroEmpleado' value={form.numeroEmpleado||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
           <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Cargo</label><input name='cargo' value={form.cargo||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
           <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Persona Asignada</label><input name='personaAsignada' value={form.personaAsignada||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
-          <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Responsable</label><input name='nombreResponsable' value={form.nombreResponsable||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
+          <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Responsable</label><input name='namaeResponsable' value={form.nombreResponsable||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
           <div className='col-span-2'><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Fecha Asignacion</label><input type='date' name='fechaAsignacion' value={form.fechaAsignacion||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
         </div>
       ) : (
