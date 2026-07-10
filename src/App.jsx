@@ -92,7 +92,7 @@ export default function App() {
   const guardarPisos = (n) => { setPisos(n); localStorage.setItem('mis_pisos_v74', JSON.stringify(n)); };
   const guardarCentros = (n) => { setCentros(n); localStorage.setItem('mis_centros_v74', JSON.stringify(n)); };
   const handleLogin = (e) => { e.preventDefault(); if (user === 'admin' && pass === customPass) setIsLoggedIn(true); };
-  const getNextNumber = () => { const d = JSON.parse(localStorage.getItem('activos_fijos_v74') || '[]'); return (d.reduce((m, a) => Math.max(m, parseInt(a.numero || '0')), 0) + 1).toString().padStart(4, '0'); };
+  const getNextNumber = () => { const d = JSON.parse(localStorage.getItem('activos_fijos_v74') || '[]'); return (d.reduce((m, a) => Math.max(m, parseInt(a?.numero || '0')), 0) + 1).toString().padStart(4, '0'); };
   
   const agregarCentro = () => { const n = prompt('Nombre del nuevo Multicentro:'); if (n && n.trim()) { const id = n.trim().toLowerCase().replace(/\s+/g, '_') + '_' + Date.now().toString().slice(-4); guardarCentros([...centros, { id, nombre: n.trim() }]); } };
   const editarCentro = (id, viejoNombre) => { const n = prompt('Editar nombre:', viejoNombre); if (n && n.trim() && n !== viejoNombre) { guardarCentros(centros.map(c => c.id === id ? { ...c, nombre: n.trim() } : c)); } };
@@ -108,8 +108,8 @@ export default function App() {
 
   const limpiarFormulario = () => { setEditando({ _template: true, oficina: oficinaFiltro || '', piso: pisoFiltro || '' }); setVista('formulario'); };
   
-  const getValor = (a, key) => { if (key === 'enAlmacen') return a.enAlmacen ? 'SI' : 'NO'; if (key === 'historial') { if (!a.historial || a.historial.length === 0) return 'Sin registros'; return a.historial.map(h => `[${h.fecha}] ${h.nota}`).join(' \n '); } if (key === 'centro') return centros.find(c => c.id === a.centro)?.nombre || '-'; return a[key] || '-'; };
-  const getSubtipo = (a) => (a.tipo === 'Impresora' && a.subtipoImpresora === 'Multifuncional') ? 'Impresora Multifuncional' : (a.tipo === 'Impresora' && a.subtipoImpresora === 'Scanner') ? 'Scanner' : a.tipo;
+  const getValor = (a, key) => { if (key === 'enAlmacen') return a?.enAlmacen ? 'SI' : 'NO'; if (key === 'historial') { if (!a?.historial || a.historial.length === 0) return 'Sin registros'; return a.historial.map(h => `[${h?.fecha}] ${h?.nota}`).join(' \n '); } if (key === 'centro') return centros.find(c => c.id === a?.centro)?.nombre || '-'; return a?.[key] || '-'; };
+  const getSubtipo = (a) => (a?.tipo === 'Impresora' && a?.subtipoImpresora === 'Multifuncional') ? 'Impresora Multifuncional' : (a?.tipo === 'Impresora' && a?.subtipoImpresora === 'Scanner') ? 'Scanner' : a?.tipo;
 
   const handleCheckCol = (tipo, key) => setReporteCols(prev => { const c = prev[tipo] || []; return { ...prev, [tipo]: c.includes(key) ? c.filter(k => k !== key) : [...c, key] }; });
   const selectAllCols = (tipo) => setReporteCols(prev => ({ ...prev, [tipo]: [...CAMPOS_POR_TIPO[tipo]] }));
@@ -139,7 +139,7 @@ export default function App() {
   };
 
   const exportarCSV = () => {
-    const datosCentro = activos.filter(a => a.centro === centroActual && !a.enAlmacen);
+    const datosCentro = activos.filter(a => a?.centro === centroActual && !a?.enAlmacen);
     let csv = '\uFEFF' + 'REPORTE DE ACTIVOS FIJOS\nCentro: ' + (centros.find(c=>c.id===centroActual)?.nombre || '') + '\n---------------------------------------------------\n';
     catsReporte.forEach(cat => {
       const datosCat = datosCentro.filter(a => getSubtipo(a) === cat);
@@ -156,7 +156,7 @@ export default function App() {
   const COLORES_PDF = { 'Laptop': [30, 58, 95], 'Computadora de Escritorio': [22, 163, 74], 'Computadora All in One': [217, 119, 6], 'Impresora': [220, 38, 38], 'Impresora Multifuncional': [147, 51, 234], 'Scanner': [14, 165, 233], 'Switch': [120, 53, 15] };
 
   const exportarPDF = () => {
-    const datosCentro = activos.filter(a => a.centro === centroActual && !a.enAlmacen);
+    const datosCentro = activos.filter(a => a?.centro === centroActual && !a?.enAlmacen);
     const doc = new jsPDF('l', 'mm', 'a4'); 
     if (logo) { try { doc.addImage(logo, 'PNG', 14, 10, 30, 15); } catch (e) {} }
     doc.setFontSize(18); doc.setTextColor(30, 58, 95); doc.text('Reporte de Activos Fijos', 50, 18);
@@ -246,17 +246,17 @@ export default function App() {
     );
   }
 
-  const datosCentro = centroActual ? activos.filter(a => a.centro === centroActual && !a.enAlmacen && (categoriaVista === 'computo' ? TIPOS_COMPUTO.includes(getSubtipo(a)) : TIPOS_RED.includes(getSubtipo(a)))) : [];
+  const datosCentro = centroActual ? activos.filter(a => a?.centro === centroActual && !a?.enAlmacen && (categoriaVista === 'computo' ? TIPOS_COMPUTO.includes(getSubtipo(a)) : TIPOS_RED.includes(getSubtipo(a)))) : [];
   const oficinasCentro = oficinas[centroActual] || [];
   const pisosCentroActual = pisos[centroActual] || [];
   let datosFinales = datosCentro;
-  if (estadoFiltro) datosFinales = datosFinales.filter(a => a.estado === estadoFiltro);
-  else if (oficinaFiltro) { datosFinales = datosFinales.filter(a => a.oficina === oficinaFiltro); if (pisoFiltro !== 'Todos') datosFinales = datosFinales.filter(a => a.piso === pisoFiltro); }
+  if (estadoFiltro) datosFinales = datosFinales.filter(a => a?.estado === estadoFiltro);
+  else if (oficinaFiltro) { datosFinales = datosFinales.filter(a => a?.oficina === oficinaFiltro); if (pisoFiltro !== 'Todos') datosFinales = datosFinales.filter(a => a?.piso === pisoFiltro); }
   if (subtipoFiltro !== 'Todos') datosFinales = datosFinales.filter(a => getSubtipo(a) === subtipoFiltro);
-  const activosFiltrados = datosFinales.filter(a => (a.marca||'').toLowerCase().includes(busqueda.toLowerCase()) || (a.nombreEquipo||'').toLowerCase().includes(busqueda.toLowerCase()) || (a.numero||'').includes(busqueda));
-  const activosEnAlmacen = activos.filter(a => a.enAlmacen);
+  const activosFiltrados = datosFinales.filter(a => (a?.marca||'').toLowerCase().includes(busqueda.toLowerCase()) || (a?.nombreEquipo||'').toLowerCase().includes(busqueda.toLowerCase()) || (a?.numero||'').includes(busqueda));
+  const activosEnAlmacen = activos.filter(a => a?.enAlmacen);
   const oficinasAgrupadas = {};
-  oficinasCentro.forEach(o => { const p = o.piso || 'Sin Piso'; if (!oficinasAgrupadas[p]) oficinasAgrupadas[p] = []; oficinasAgrupadas[p].push(o); });
+  oficinasCentro.forEach(o => { const p = o?.piso || 'Sin Piso'; if (!oficinasAgrupadas[p]) oficinasAgrupadas[p] = []; oficinasAgrupadas[p].push(o); });
   const pisosOrdenados = Object.keys(oficinasAgrupadas).sort((a, b) => { if (a === 'Sin Piso') return 1; if (b === 'Sin Piso') return -1; return a.localeCompare(b); });
 
   return (
@@ -334,7 +334,7 @@ export default function App() {
             </div>
             <div className='space-y-3'>
               {activosEnAlmacen.length === 0 ? <p className={`text-center mt-10 ${T.txtM}`}>El almacén está vacío.</p> : 
-              activosEnAlmacen.filter(a => (a.marca||'').toLowerCase().includes(busqueda.toLowerCase()) || (a.nombreEquipo||'').toLowerCase().includes(busqueda.toLowerCase())).map(a => (
+              activosEnAlmacen.filter(a => (a?.marca||'').toLowerCase().includes(busqueda.toLowerCase()) || (a?.nombreEquipo||'').toLowerCase().includes(busqueda.toLowerCase())).map(a => (
                 <div key={a.id} onClick={() => { setEditando(a); setVista('detalles'); }} className={`p-4 rounded-xl border-l-4 border-indigo-400 active:opacity-80 ${T.card}`}>
                   <div className='flex justify-between items-start'>
                     <div>
@@ -376,7 +376,7 @@ export default function App() {
                 {pisosOrdenados.map((p, pIdx) => { 
                   const colorPiso = COLORES_ITEMS[pIdx % COLORES_ITEMS.length]; 
                   const cClass = tema === 'oscuro' ? `${colorPiso.bordeN} ${colorPiso.fondoN}` : `${colorPiso.borde} ${colorPiso.fondo}`;
-                  const equiposEnPiso = datosCentro.filter(a => (a.piso ? a.piso : 'Sin Piso') === p).length; 
+                  const equiposEnPiso = datosCentro.filter(a => (a?.piso || 'Sin Piso') === p).length; 
                   const oficinasEnPiso = oficinasAgrupadas[p]; 
                   return (
                     <div key={p} className={`rounded-xl overflow-hidden border ${T.card} ${tema==='oscuro'?colorPiso.bordeN:''}`}>
@@ -393,7 +393,7 @@ export default function App() {
                           oficinasEnPiso.map((o, oIdx) => { 
                             const colorOficina = COLORES_ITEMS[(pIdx + oIdx) % COLORES_ITEMS.length]; 
                             const oClass = tema === 'oscuro' ? `${colorOficina.fondoN} ${colorOficina.bordeN}` : `${colorOficina.fondo} ${colorOficina.borde}`;
-                            const count = datosCentro.filter(a => a.oficina === o.nombre).length; 
+                            const count = datosCentro.filter(a => a?.oficina === o.nombre).length; 
                             return (
                               <button key={o.id} onClick={() => { setOficinaFiltro(o.nombre); setPisoFiltro(p === 'Sin Piso' ? '' : p); setEstadoFiltro(null); setSubtipoFiltro('Todos'); setVista('lista'); setBusqueda(''); }} className={`p-3 rounded-lg border text-left active:opacity-80 ${oClass}`}>
                                 <h4 className={`font-bold text-sm ${T.txt}`}>{o.nombre}</h4>
@@ -719,7 +719,7 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
   const esAlmacen = !centroActual; 
   const opcionesTipo = esAlmacen ? [...TIPOS_COMPUTO, ...TIPOS_RED] : (categoriaVista === 'red' ? TIPOS_RED : TIPOS_COMPUTO);
   const tipoDefault = categoriaVista === 'red' ? 'Impresora' : 'Laptop';
-  const initialForm = activo && !activo._template ? activo : { id: Date.now().toString(), centro: centroActual, numero: getNextNumber(), tipo: tipoDefault, subtipoImpresora: 'Impresora Normal', nombreEquipo: '', marca: '', modelo: '', codigoActivo: '', numeroSerie: '', procesador: '', generacion: '', ram: '', tipoDisco: 'SSD M.2', capacidadDisco: '', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: '', mac: '', ip: '', estado: 'Activo', enAlmacen: esAlmacen, oficina: activo?.oficina || '', piso: activo?.piso || '', cargo: '', numeroEmpleado: '', personaAsignada: '', namaeResponsable: '', fechaAsignacion: '', marcaCPU: '', modeloCPU: '', codigoActivoCPU: '', numeroSerieCPU: '', marcaMonitor: '', modeloMonitor: '', codigoActivoMonitor: '', numeroSerieMonitor: '', conexionImpresora: 'En Red', notas: '', fotoEquipo: '', fotoSerie: '', historial: [] };
+  const initialForm = activo && !activo._template ? activo : { id: Date.now().toString(), centro: centroActual, numero: getNextNumber(), tipo: tipoDefault, subtipoImpresora: 'Impresora Normal', nombreEquipo: '', marca: '', modelo: '', codigoActivo: '', numeroSerie: '', procesador: '', generacion: '', ram: '', tipoDisco: 'SSD M.2', capacidadDisco: '', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: '', mac: '', ip: '', estado: 'Activo', enAlmacen: esAlmacen, oficina: activo?.oficina || '', piso: activo?.piso || '', cargo: '', numeroEmpleado: '', personaAsignada: '', nombreResponsable: '', fechaAsignacion: '', marcaCPU: '', modeloCPU: '', codigoActivoCPU: '', numeroSerieCPU: '', marcaMonitor: '', modeloMonitor: '', codigoActivoMonitor: '', numeroSerieMonitor: '', conexionImpresora: 'En Red', notas: '', fotoEquipo: '', fotoSerie: '', historial: [] };
   const [form, setForm] = useState(initialForm);
   const [verBitacora, setVerBitacora] = useState(false);
   const [errores, setErrores] = useState({});
@@ -735,7 +735,7 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
     const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     let newForm = { ...form, [e.target.name]: val };
     if (e.target.name === 'oficina') { const o = oficinasDestino.find(o => o.nombre === val); if (o) newForm.piso = o.piso || ''; }
-    if (e.target.name === 'enAlmacen' && val === true) { newForm = { ...newForm, personaAsignada: '', cargo: '', numeroEmpleado: '', nombreResponsable: '', oficina: '', piso: '', fechaAsignacion: '' }; setMsg('Enviado a Almacén.'); setTimeout(()=>setMsg(''), 3000); }
+    if (e.target.name === 'enAlmacen' && val === true) { newForm = { ...newForm, personaAsignada: '', cargo: '', numeroEmpleado: '', namaeResponsable: '', oficina: '', piso: '', fechaAsignacion: '' }; setMsg('Enviado a Almacén.'); setTimeout(()=>setMsg(''), 3000); }
     setForm(newForm);
   };
   const handleMarca = (e) => { const val = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); setForm({ ...form, [e.target.name]: val }); };
@@ -847,7 +847,7 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
           <div className={`p-3 rounded-lg border-l-4 space-y-3 ${tema==='oscuro'?'bg-fuchsia-950/30 border-fuchsia-500':'bg-blue-50 border-blue-400'}`}>
             <p className={`text-xs font-bold ${T.txtD}`}>DATOS CPU</p>
             <div className='grid grid-cols-2 gap-3'>
-              <div className='col-span-2'><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Namae Equipo</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
+              <div className='col-span-2'><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Nombre Equipo</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
               <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Marca CPU</label><input name='marcaCPU' value={form.marcaCPU||''} onChange={handleMarca} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
               <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Modelo CPU</label><input name='modeloCPU' value={form.modeloCPU||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
               <div className='relative'>
@@ -1023,7 +1023,7 @@ function CamposUbicacion({ form, h, OficinaSelect, PisoInput, tema, T }) {
           <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Nro. Empleado</label><input name='numeroEmpleado' value={form.numeroEmpleado||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
           <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Cargo</label><input name='cargo' value={form.cargo||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
           <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Persona Asignada</label><input name='personaAsignada' value={form.personaAsignada||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
-          <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Responsable</label><input name='namaeResponsable' value={form.nombreResponsable||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
+          <div><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Responsable</label><input name='nombreResponsable' value={form.nombreResponsable||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
           <div className='col-span-2'><label className={`block text-xs font-medium mb-1 ${T.txtM}`}>Fecha Asignacion</label><input type='date' name='fechaAsignacion' value={form.fechaAsignacion||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${T.in}`} /></div>
         </div>
       ) : (
