@@ -477,7 +477,7 @@ export default function App() {
                       <div key={o.id} className={`flex justify-between items-center p-4 rounded-lg border ${cClass}`}>
                         <div>
                           <p className={`font-bold ${txtMain}`}>{index + 1}. {o.nombre}</p>
-                          <p className={`text-xs ${txtMuted}`}>{datosCentro.filter(a => a.oficina === o.nombre).length} equipos | Piso: {o.piso || 'N/A'}</p>
+                          <p className={`text-xs ${txtMuted}`}>{datosCentro.filter(a => a.oficina === o.namae).length} equipos | Piso: {o.piso || 'N/A'}</p>
                         </div>
                         <div className='flex gap-2'>
                           <button onClick={() => editarOficina(o.id, o.nombre)} className={`px-3 py-2 rounded-lg text-sm font-bold ${btnSecondary}`}>Editar</button>
@@ -646,12 +646,14 @@ export default function App() {
                             const isSelected = cols.includes(key); 
                             const label = CAMPOS.find(c => c.key === key)?.label || key; 
                             const colorClass = COLORES_CHECKS[idx % COLORES_CHECKS.length]; 
+                            const order = cols.indexOf(key) + 1;
                             const selClass = darkMode ? `bg-gray-900 border-fuchsia-500 font-bold ${colorClass}` : `bg-white border-gray-300 font-bold ${colorClass}`;
                             const unselClass = darkMode ? 'bg-black border-gray-700 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-500';
                             return (
                               <label key={key} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-sm transition-all ${isSelected ? selClass : unselClass}`}>
                                 <input type='checkbox' checked={isSelected} onChange={() => handleCheckCol(cat, key)} className='w-4 h-4 accent-fuchsia-500' />
                                 <span className='flex-1 truncate'>{label}</span>
+                                {isSelected && <span className='ml-auto text-xs font-bold bg-gray-800 text-white px-1.5 py-0.5 rounded-full'>{order}</span>}
                               </label>
                             ); 
                           })}
@@ -904,7 +906,7 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
               <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Marca Monitor</label><input name='marcaMonitor' value={form.marcaMonitor||''} onChange={handleMarca} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
               <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Modelo Monitor</label><input name='modeloMonitor' value={form.modeloMonitor||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
               <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Serie Monitor</label><input name='numeroSerieMonitor' value={form.numeroSerieMonitor||''} onChange={h} onBlur={(e)=>validarUnico('numeroSerieMonitor', e.target.value)} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass} ${errores.numeroSerieMonitor ? 'border-red-500 bg-red-100' : ''}`} />{errores.numeroSerieMonitor && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}</div>
-              <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Codigo AF Monitor</label><input name='codigoActivoMonitor' value={form.codigoActivoMonitor||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
+              <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Codigo AF Monitor</label><input name='codigoActivoMonitor' value={form.kodeigoActivoMonitor||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
             </div>
           </div>
           <CamposSpecs form={form} setForm={setForm} handleProcesador={handleProcesador} formatMemory={formatMemory} handleNumeric={handleNumeric} handleIP={handleIP} errores={errores} darkMode={darkMode} txtMain={txtMain} txtMuted={txtMuted} inputClass={inputClass} />
