@@ -13,14 +13,7 @@ const CENTROS_DEFAULT = [
 ];
 
 const COLORES_ITEMS = [
-  { borde: 'border-blue-500', fondo: 'bg-blue-50', texto: 'text-blue-800' },
-  { borde: 'border-green-500', fondo: 'bg-green-50', texto: 'text-green-800' },
-  { borde: 'border-amber-500', fondo: 'bg-amber-50', texto: 'text-amber-800' },
-  { borde: 'border-pink-500', fondo: 'bg-pink-50', texto: 'text-pink-800' },
-  { borde: 'border-purple-500', fondo: 'bg-purple-50', texto: 'text-purple-800' },
-  { borde: 'border-red-500', fondo: 'bg-red-50', texto: 'text-red-800' },
-  { borde: 'border-indigo-500', fondo: 'bg-indigo-50', texto: 'text-indigo-800' },
-  { borde: 'border-teal-500', fondo: 'bg-teal-50', texto: 'text-teal-800' }
+  { borde: 'border-blue-500', fondo: 'bg-blue-50', texto: 'text-blue-800' }, { borde: 'border-green-500', fondo: 'bg-green-50', texto: 'text-green-800' }, { borde: 'border-amber-500', fondo: 'bg-amber-50', texto: 'text-amber-800' }, { borde: 'border-pink-500', fondo: 'bg-pink-50', texto: 'text-pink-800' }, { borde: 'border-purple-500', fondo: 'bg-purple-50', texto: 'text-purple-800' }, { borde: 'border-red-500', fondo: 'bg-red-50', texto: 'text-red-800' }, { borde: 'border-indigo-500', fondo: 'bg-indigo-50', texto: 'text-indigo-800' }, { borde: 'border-teal-500', fondo: 'bg-teal-50', texto: 'text-teal-800' }
 ];
 
 const COLORES_CHECKS = ['text-blue-600', 'text-green-600', 'text-amber-600', 'text-pink-600', 'text-purple-600', 'text-red-600', 'text-indigo-600', 'text-teal-600', 'text-orange-600', 'text-cyan-600'];
@@ -90,101 +83,25 @@ export default function App() {
   const handleLogin = (e) => { e.preventDefault(); if (user === 'admin' && pass === customPass) setIsLoggedIn(true); };
   const getNextNumber = () => { const d = JSON.parse(localStorage.getItem('activos_fijos_v74') || '[]'); return (d.reduce((m, a) => Math.max(m, parseInt(a.numero || '0')), 0) + 1).toString().padStart(4, '0'); };
   
-  const agregarCentro = () => { 
-    const n = prompt('Nombre del nuevo Multicentro:'); 
-    if (n && n.trim()) { 
-      const id = n.trim().toLowerCase().replace(/\s+/g, '_') + '_' + Date.now().toString().slice(-4);
-      const nc = [...centros, { id, nombre: n.trim() }]; 
-      guardarCentros(nc); 
-    } 
-  };
-  const editarCentro = (id, viejoNombre) => { 
-    const n = prompt('Editar nombre del Multicentro:', viejoNombre); 
-    if (n && n.trim() && n !== viejoNombre) { 
-      const nc = centros.map(c => c.id === id ? { ...c, nombre: n.trim() } : c); 
-      guardarCentros(nc); 
-    } 
-  };
-  const eliminarCentro = (id) => { 
-    if (confirm('Seguro que quieres eliminar este Multicentro? Se eliminarán también los equipos asociados.')) { 
-      guardarCentros(centros.filter(c => c.id !== id)); 
-      guardarDatos(activos.filter(a => a.centro !== id));
-      const nuevasOficinas = { ...oficinas }; delete nuevasOficinas[id]; guardarOficinas(nuevasOficinas);
-      const nuevosPisos = { ...pisos }; delete nuevosPisos[id]; guardarPisos(nuevosPisos);
-    } 
-  };
+  const agregarCentro = () => { const n = prompt('Nombre del nuevo Multicentro:'); if (n && n.trim()) { const id = n.trim().toLowerCase().replace(/\s+/g, '_') + '_' + Date.now().toString().slice(-4); guardarCentros([...centros, { id, nombre: n.trim() }]); } };
+  const editarCentro = (id, viejoNombre) => { const n = prompt('Editar nombre del Multicentro:', viejoNombre); if (n && n.trim() && n !== viejoNombre) { guardarCentros(centros.map(c => c.id === id ? { ...c, nombre: n.trim() } : c)); } };
+  const eliminarCentro = (id) => { if (confirm('Seguro que quieres eliminar este Multicentro? Se eliminarán también los equipos asociados.')) { guardarCentros(centros.filter(c => c.id !== id)); guardarDatos(activos.filter(a => a.centro !== id)); const no = { ...oficinas }; delete no[id]; guardarOficinas(no); const np = { ...pisos }; delete np[id]; guardarPisos(np); } };
 
-  const agregarPiso = () => { 
-    const n = prompt(`Nombre del nuevo piso para ${centros.find(c=>c.id===centroActual)?.nombre}:`); 
-    if (n && n.trim()) { 
-      const pisosCentro = pisos[centroActual] || [];
-      if (!pisosCentro.includes(n.trim())) { 
-        guardarPisos({ ...pisos, [centroActual]: [...pisosCentro, n.trim()] }); 
-        setMsg('Piso agregado'); setTimeout(()=>setMsg(''), 2000); 
-      } else { alert('Ese piso ya existe en este centro'); } 
-    } 
-  };
-  const editarPiso = (viejoPiso) => {
-    const n = prompt('Editar nombre del piso:', viejoPiso);
-    if (n && n.trim() && n !== viejoPiso) {
-      if (pisos[centroActual].includes(n.trim())) { alert('Ese piso ya existe'); return; }
-      guardarPisos({ ...pisos, [centroActual]: pisos[centroActual].map(p => p === viejoPiso ? n.trim() : p) });
-      const nuevasOficinas = (oficinas[centroActual] || []).map(o => o.piso === viejoPiso ? { ...o, piso: n.trim() } : o);
-      guardarOficinas({ ...oficinas, [centroActual]: nuevasOficinas });
-      const nuevosActivos = activos.map(a => a.centro === centroActual && a.piso === viejoPiso ? { ...a, piso: n.trim() } : a);
-      guardarDatos(nuevosActivos);
-      setMsg('Piso actualizado'); setTimeout(()=>setMsg(''), 2000);
-    }
-  };
-  const eliminarPiso = (piso) => {
-    if (confirm(`Eliminar el piso ${piso}? Las oficinas aquí perderán su piso asignado.`)) {
-      guardarPisos({ ...pisos, [centroActual]: pisos[centroActual].filter(p => p !== piso) });
-      const nuevasOficinas = (oficinas[centroActual] || []).map(o => o.piso === piso ? { ...o, piso: '' } : o);
-      guardarOficinas({ ...oficinas, [centroActual]: nuevasOficinas });
-      setMsg('Piso eliminado'); setTimeout(()=>setMsg(''), 2000);
-    }
-  };
+  const agregarPiso = () => { const n = prompt(`Nombre del nuevo piso:`); if (n && n.trim()) { const pc = pisos[centroActual] || []; if (!pc.includes(n.trim())) { guardarPisos({ ...pisos, [centroActual]: [...pc, n.trim()] }); setMsg('Piso agregado'); setTimeout(()=>setMsg(''), 2000); } else { alert('Ese piso ya existe'); } } };
+  const editarPiso = (viejoPiso) => { const n = prompt('Editar nombre del piso:', viejoPiso); if (n && n.trim() && n !== viejoPiso) { if (pisos[centroActual].includes(n.trim())) { alert('Ese piso ya existe'); return; } guardarPisos({ ...pisos, [centroActual]: pisos[centroActual].map(p => p === viejoPiso ? n.trim() : p) }); const no = (oficinas[centroActual] || []).map(o => o.piso === viejoPiso ? { ...o, piso: n.trim() } : o); guardarOficinas({ ...oficinas, [centroActual]: no }); const na = activos.map(a => a.centro === centroActual && a.piso === viejoPiso ? { ...a, piso: n.trim() } : a); guardarDatos(na); setMsg('Piso actualizado'); setTimeout(()=>setMsg(''), 2000); } };
+  const eliminarPiso = (piso) => { if (confirm(`Eliminar el piso ${piso}?`)) { guardarPisos({ ...pisos, [centroActual]: pisos[centroActual].filter(p => p !== piso) }); const no = (oficinas[centroActual] || []).map(o => o.piso === piso ? { ...o, piso: '' } : o); guardarOficinas({ ...oficinas, [centroActual]: no }); setMsg('Piso eliminado'); setTimeout(()=>setMsg(''), 2000); } };
 
-  const agregarOficina = () => { 
-    const n = prompt('Nombre de la nueva oficina:'); 
-    if (n && n.trim()) { 
-      const pisosCentro = pisos[centroActual] || [];
-      let p = '';
-      if (pisosCentro.length > 0) {
-        p = prompt(`En qué piso está? (Opciones: ${pisosCentro.join(', ')}):`, pisosCentro[0]);
-        if (p && !pisosCentro.includes(p)) { alert('Ese piso no existe. Primero créalo en la sección de pisos.'); return; }
-      } else { alert('Primero crea al menos un piso para este centro.'); return; }
-      const act = oficinas[centroActual] || []; 
-      const nuevas = [...act, { id: n.trim().toLowerCase().replace(/\s+/g, '_') + '_' + Date.now().toString().slice(-4), nombre: n.trim(), piso: p }]; 
-      guardarOficinas({...oficinas, [centroActual]: nuevas}); 
-      setMsg('Oficina agregada'); setTimeout(()=>setMsg(''), 2000); 
-    } 
-  };
-  const editarOficina = (id, viejoNombre) => {
-    const n = prompt('Editar nombre de la oficina:', viejoNombre);
-    if (n && n.trim() && n !== viejoNombre) {
-      const nuevasOficinas = (oficinas[centroActual] || []).map(o => o.id === id ? { ...o, nombre: n.trim() } : o);
-      guardarOficinas({ ...oficinas, [centroActual]: nuevasOficinas });
-      const nuevosActivos = activos.map(a => a.centro === centroActual && a.oficina === viejoNombre ? { ...a, oficina: n.trim() } : a);
-      guardarDatos(nuevosActivos);
-      setMsg('Oficina actualizada'); setTimeout(()=>setMsg(''), 2000);
-    }
-  };
-  const eliminarOficina = (id, nombre) => {
-    if (confirm(`Eliminar la oficina ${nombre}?`)) {
-      guardarOficinas({ ...oficinas, [centroActual]: (oficinas[centroActual] || []).filter(o => o.id !== id) });
-      setMsg('Oficina eliminada'); setTimeout(()=>setMsg(''), 2000);
-    }
-  };
+  const agregarOficina = () => { const n = prompt('Nombre de la nueva oficina:'); if (n && n.trim()) { const pc = pisos[centroActual] || []; let p = ''; if (pc.length > 0) { p = prompt(`En qué piso está? (${pc.join(', ')}):`, pc[0]); if (p && !pc.includes(p)) { alert('Ese piso no existe.'); return; } } else { alert('Primero crea un piso.'); return; } const no = [...(oficinas[centroActual] || []), { id: n.trim().toLowerCase().replace(/\s+/g, '_') + '_' + Date.now().toString().slice(-4), nombre: n.trim(), piso: p }]; guardarOficinas({...oficinas, [centroActual]: no}); setMsg('Oficina agregada'); setTimeout(()=>setMsg(''), 2000); } };
+  const editarOficina = (id, viejoNombre) => { const n = prompt('Editar nombre:', viejoNombre); if (n && n.trim() && n !== viejoNombre) { const no = (oficinas[centroActual] || []).map(o => o.id === id ? { ...o, nombre: n.trim() } : o); guardarOficinas({ ...oficinas, [centroActual]: no }); const na = activos.map(a => a.centro === centroActual && a.oficina === viejoNombre ? { ...a, oficina: n.trim() } : a); guardarDatos(na); setMsg('Oficina actualizada'); setTimeout(()=>setMsg(''), 2000); } };
+  const eliminarOficina = (id, nombre) => { if (confirm(`Eliminar ${nombre}?`)) { guardarOficinas({ ...oficinas, [centroActual]: (oficinas[centroActual] || []).filter(o => o.id !== id) }); setMsg('Oficina eliminada'); setTimeout(()=>setMsg(''), 2000); } };
 
-  const limpiarFormulario = () => { setEditando(null); setVista('formulario'); };
+  const limpiarFormulario = () => { 
+    // Pasar la oficina y piso actuales al formulario nuevo
+    setEditando({ _template: true, oficina: oficinaFiltro || '', piso: pisoFiltro || '' }); 
+    setVista('formulario'); 
+  };
   
-  const getValor = (a, key) => { 
-    if (key === 'enAlmacen') return a.enAlmacen ? 'SI' : 'NO'; 
-    if (key === 'historial') { if (!a.historial || a.historial.length === 0) return 'Sin registros'; return a.historial.map(h => `[${h.fecha}] ${h.nota}`).join(' \n '); }
-    if (key === 'centro') return centros.find(c => c.id === a.centro)?.nombre || '-';
-    return a[key] || '-'; 
-  };
+  const getValor = (a, key) => { if (key === 'enAlmacen') return a.enAlmacen ? 'SI' : 'NO'; if (key === 'historial') { if (!a.historial || a.historial.length === 0) return 'Sin registros'; return a.historial.map(h => `[${h.fecha}] ${h.nota}`).join(' \n '); } if (key === 'centro') return centros.find(c => c.id === a.centro)?.nombre || '-'; return a[key] || '-'; };
   const getSubtipo = (a) => (a.tipo === 'Impresora' && a.subtipoImpresora === 'Multifuncional') ? 'Impresora Multifuncional' : (a.tipo === 'Impresora' && a.subtipoImpresora === 'Scanner') ? 'Scanner' : a.tipo;
 
   const handleCheckCol = (tipo, key) => setReporteCols(prev => { const c = prev[tipo] || []; return { ...prev, [tipo]: c.includes(key) ? c.filter(k => k !== key) : [...c, key] }; });
@@ -193,14 +110,9 @@ export default function App() {
   const handleCatReporte = (cat) => setCatsReporte(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);
 
   const handleVolver = () => {
-    if (vista === 'formulario' || vista === 'detalles') {
-      if ((editando && editando.enAlmacen) || !centroActual) setVista('almacen');
-      else setVista('lista');
-    } else if (vista === 'lista' || vista === 'reporte' || vista === 'oficinas' || vista === 'gestion_centros') {
-      setVista('hub'); setEstadoFiltro(null); setOficinaFiltro(null); setPisoFiltro('Todos'); setBusqueda(''); setSubtipoFiltro('Todos'); setCentroActual(null);
-    } else if (vista === 'dashboard' || vista === 'almacen' || vista === 'config') {
-      setVista('hub'); setCentroActual(null); setPisoExpandido(null);
-    }
+    if (vista === 'formulario' || vista === 'detalles') { if ((editando && editando.enAlmacen) || !centroActual) setVista('almacen'); else setVista('lista'); } 
+    else if (vista === 'lista' || vista === 'reporte' || vista === 'oficinas' || vista === 'gestion_centros') { setVista('hub'); setEstadoFiltro(null); setOficinaFiltro(null); setPisoFiltro('Todos'); setBusqueda(''); setSubtipoFiltro('Todos'); setCentroActual(null); } 
+    else if (vista === 'dashboard' || vista === 'almacen' || vista === 'config') { setVista('hub'); setCentroActual(null); setPisoExpandido(null); }
   };
 
   const guardarArchivoNativo = async (blob, nombreArchivo) => {
@@ -234,18 +146,14 @@ export default function App() {
     guardarArchivoNativo(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), 'Reporte_Activos.csv');
   };
 
-  const COLORES_PDF = {
-    'Laptop': [30, 58, 95], 'Computadora de Escritorio': [22, 163, 74], 'Computadora All in One': [217, 119, 6],
-    'Impresora': [220, 38, 38], 'Impresora Multifuncional': [147, 51, 234], 'Scanner': [14, 165, 233], 'Switch': [120, 53, 15]
-  };
+  const COLORES_PDF = { 'Laptop': [30, 58, 95], 'Computadora de Escritorio': [22, 163, 74], 'Computadora All in One': [217, 119, 6], 'Impresora': [220, 38, 38], 'Impresora Multifuncional': [147, 51, 234], 'Scanner': [14, 165, 233], 'Switch': [120, 53, 15] };
 
   const exportarPDF = () => {
     const datosCentro = activos.filter(a => a.centro === centroActual && !a.enAlmacen);
     const doc = new jsPDF('l', 'mm', 'a4'); 
     if (logo) { try { doc.addImage(logo, 'PNG', 14, 10, 30, 15); } catch (e) {} }
     doc.setFontSize(18); doc.setTextColor(30, 58, 95); doc.text('Reporte de Activos Fijos', 50, 18);
-    doc.setFontSize(10); doc.setTextColor(100); 
-    doc.text('Centro: ' + (centros.find(c=>c.id===centroActual)?.nombre || ''), 50, 24);
+    doc.setFontSize(10); doc.setTextColor(100); doc.text('Centro: ' + (centros.find(c=>c.id===centroActual)?.nombre || ''), 50, 24);
     doc.text('Generado: ' + new Date().toLocaleDateString(), 250, 18);
     let currentY = 30;
     catsReporte.forEach(cat => {
@@ -255,8 +163,7 @@ export default function App() {
         const headers = cols.map(k => CAMPOS.find(c=>c.key===k)?.label || k);
         const rows = datosCat.map(a => cols.map(k => String(getValor(a, k))));
         if (currentY > 160) { doc.addPage(); currentY = 20; }
-        doc.setFontSize(12); doc.setTextColor(30, 58, 95); 
-        doc.text(cat + ' (' + datosCat.length + ')', 14, currentY); currentY += 4;
+        doc.setFontSize(12); doc.setTextColor(30, 58, 95); doc.text(cat + ' (' + datosCat.length + ')', 14, currentY); currentY += 4;
         doc.autoTable({ startY: currentY, head: [headers], body: rows, styles: { fontSize: 7, cellPadding: 2 }, headStyles: { fillColor: COLORES_PDF[cat] || [30, 58, 95] }, margin: { left: 14, right: 14 } });
         currentY = doc.lastAutoTable.finalY + 10;
       }
@@ -578,7 +485,22 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
   const opcionesTipo = esAlmacen ? [...TIPOS_COMPUTO, ...TIPOS_RED] : (categoriaVista === 'red' ? TIPOS_RED : TIPOS_COMPUTO);
   const tipoDefault = categoriaVista === 'red' ? 'Impresora' : 'Laptop';
 
-  const [form, setForm] = useState(activo || { id: Date.now().toString(), centro: centroActual, numero: getNextNumber(), tipo: tipoDefault, subtipoImpresora: 'Impresora Normal', nombreEquipo: '', marca: '', modelo: '', codigoActivo: '', numeroSerie: '', procesador: '', generacion: '', ram: '', tipoDisco: 'SSD M.2', capacidadDisco: '', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: '', mac: '', ip: '', estado: 'Activo', enAlmacen: esAlmacen, oficina: '', piso: '', cargo: '', numeroEmpleado: '', personaAsignada: '', nombreResponsable: '', fechaAsignacion: '', marcaCPU: '', modeloCPU: '', codigoActivoCPU: '', numeroSerieCPU: '', marcaMonitor: '', modeloMonitor: '', codigoActivoMonitor: '', numeroSerieMonitor: '', conexionImpresora: 'En Red', notas: '', fotoEquipo: '', fotoSerie: '', historial: [] });
+  const initialForm = activo && !activo._template ? activo : { 
+    id: Date.now().toString(), centro: centroActual, numero: getNextNumber(), 
+    tipo: tipoDefault, subtipoImpresora: 'Impresora Normal', 
+    nombreEquipo: '', marca: '', modelo: '', codigoActivo: '', numeroSerie: '', 
+    procesador: '', generacion: '', ram: '', tipoDisco: 'SSD M.2', capacidadDisco: '', 
+    tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: '', mac: '', ip: '', 
+    estado: 'Activo', enAlmacen: esAlmacen, 
+    oficina: activo?.oficina || '', piso: activo?.piso || '', 
+    cargo: '', numeroEmpleado: '', personaAsignada: '', nombreResponsable: '', 
+    fechaAsignacion: '', marcaCPU: '', modeloCPU: '', codigoActivoCPU: '', 
+    numeroSerieCPU: '', marcaMonitor: '', modeloMonitor: '', codigoActivoMonitor: '', 
+    numeroSerieMonitor: '', conexionImpresora: 'En Red', notas: '', fotoEquipo: '', 
+    fotoSerie: '', historial: [] 
+  };
+
+  const [form, setForm] = useState(initialForm);
   const [verBitacora, setVerBitacora] = useState(false);
   const [errores, setErrores] = useState({});
   const oficinasDestino = oficinas[form.centro] || [];
@@ -589,6 +511,7 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
     if (existe) { setErrores(prev => ({ ...prev, [campo]: true })); setMsg('¡Atención! Este código/serie ya existe.'); setTimeout(()=>setMsg(''), 3000); } 
     else { setErrores(prev => { const n = {...prev}; delete n[campo]; return n; }); }
   };
+
   const h = (e) => {
     const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     let newForm = { ...form, [e.target.name]: val };
@@ -596,6 +519,30 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
     if (e.target.name === 'enAlmacen' && val === true) { newForm = { ...newForm, personaAsignada: '', cargo: '', numeroEmpleado: '', nombreResponsable: '', oficina: '', piso: '', fechaAsignacion: '' }; setMsg('Enviado a Almacén.'); setTimeout(()=>setMsg(''), 3000); }
     setForm(newForm);
   };
+
+  const handleMarca = (e) => {
+    // Solo letras y espacios
+    const val = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+    setForm({ ...form, [e.target.name]: val });
+  };
+
+  const handleNumeric = (e) => {
+    // Solo numeros y puntos
+    const val = e.target.value.replace(/[^0-9.]/g, '');
+    setForm({ ...form, [e.target.name]: val });
+  };
+
+  const handleIP = (e) => {
+    const val = e.target.value.replace(/[^0-9.]/g, ''); // Solo numeros y puntos
+    setForm({ ...form, ip: val });
+    if (val) {
+      const ipRegex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+      setErrores(prev => ({ ...prev, ip: !ipRegex.test(val) }));
+    } else {
+      setErrores(prev => { const n = {...prev}; delete n.ip; return n; });
+    }
+  };
+
   const parseGeneracion = (procesador) => {
     if (!procesador) return '';
     const limpio = procesador.toLowerCase().replace(/\s+/g, '');
@@ -605,19 +552,22 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
     if (matchRyzen) { const numStr = matchRyzen[1]; const firstTwo = parseInt(numStr.substring(0, 2)); let genNum; if (firstTwo >= 10 && firstTwo <= 14) genNum = firstTwo; else genNum = parseInt(numStr[0]); const ordinales = ['', '1ra', '2da', '3ra', '4ta', '5ta', '6ta', '7ma', '8va', '9na', '10ma', '11va', '12va', '13va', '14va']; return ordinales[genNum] || `${genNum}va`; }
     return '';
   };
+
   const handleProcesador = (e) => setForm({ ...form, procesador: e.target.value, generacion: parseGeneracion(e.target.value) });
   const formatMemory = (campo) => { let val = (form[campo] || '').toString().trim(); if (!val) return; const num = parseFloat(val.replace(/[^0-9.]/g, '')); if (!isNaN(num) && num > 0) { if (num >= 1000) setForm({ ...form, [campo]: `${(num / 1000).toFixed(1).replace('.0', '')} TB` }); else setForm({ ...form, [campo]: `${num} GB` }); } };
+  
   const tomarFoto = async (campo) => { try { const image = await Camera.getPhoto({ quality: 30, allowEditing: false, resultType: CameraResultType.Base64, source: CameraSource.Camera }); setForm({ ...form, [campo]: 'data:image/jpeg;base64,' + image.base64String }); setMsg('Foto capturada'); setTimeout(()=>setMsg(''), 2000); } catch (e) { setMsg('Cancelado'); setTimeout(()=>setMsg(''), 2000); } };
   const eliminarFoto = (campo) => { setForm({ ...form, [campo]: '' }); setMsg('Foto eliminada'); setTimeout(()=>setMsg(''), 1500); };
   const generarDatosQR = (f) => { let t = '=== ACTIVO FIJO ===\nNro: ' + f.numero + '\nTipo: ' + f.tipo + '\n'; if (f.nombreEquipo) t += 'Nombre: ' + f.nombreEquipo + '\n'; if (f.marca) t += 'Marca: ' + f.marca + '\n'; if (f.numeroSerie) t += 'Serie: ' + f.numeroSerie + '\n'; if (f.codigoActivo) t += 'Cod AF: ' + f.codigoActivo + '\n'; t += 'Estado: ' + f.estado + '\n'; if (f.enAlmacen) t += 'Ubicacion: ALMACEN\n'; else { if (f.personaAsignada) t += 'Asignado a: ' + f.personaAsignada + '\n'; if (f.oficina) t += 'Oficina: ' + f.oficina + '\n'; } return t + '===================\nID_APP:' + f.id; };
   const compartirQR = async () => { try { const canvas = document.querySelector('#qr-canvas-container canvas'); if (!canvas) return; setMsg('Preparando QR...'); const base64 = canvas.toDataURL('image/png').split(',')[1]; await Filesystem.writeFile({ path: `QR_${form.numero}.png`, data: base64, directory: Directory.Cache }); const uriResult = await Filesystem.getUri({ path: `QR_${form.numero}.png`, directory: Directory.Cache }); await Share.share({ url: uriResult.uri, dialogTitle: 'Compartir Código QR' }); setMsg('Listo.'); setTimeout(() => setMsg(''), 3000); } catch (e) { setMsg('Error.'); setTimeout(() => setMsg(''), 3000); } };
+  
   const handleSubmit = (e) => { 
     e.preventDefault(); 
     const camposAValidar = ['codigoActivo', 'numeroSerie', 'codigoActivoCPU', 'numeroSerieCPU', 'numeroSerieMonitor'];
     for (const c of camposAValidar) { if (form[c] && activos.some(a => a.id !== form.id && a[c] === form[c])) { setErrores(prev => ({ ...prev, [c]: true })); alert('No se puede guardar. Hay códigos o series repetidas.'); return; } }
     const datos = JSON.parse(localStorage.getItem('activos_fijos_v74') || '[]'); 
-    let f = { ...form }; const hoy = new Date().toLocaleDateString();
-    if (activo) { let logs = []; if (activo.personaAsignada !== f.personaAsignada && f.personaAsignada) logs.push('Asignado a ' + f.personaAsignada); if (activo.estado !== f.estado) logs.push('Estado: ' + f.estado); if (activo.oficina !== f.oficina && f.oficina) logs.push('Oficina: ' + f.oficina); if (activo.enAlmacen !== f.enAlmacen) logs.push(f.enAlmacen ? 'Enviado a Almacén' : 'Sacado de Almacén'); if (logs.length > 0) f.historial = [...(activo.historial || []), ...logs.map(n => ({ fecha: hoy, nota: n }))]; guardarDatos(datos.map(a => a.id === activo.id ? f : a)); } 
+    let f = { ...form }; delete f._template; const hoy = new Date().toLocaleDateString();
+    if (activo && !activo._template) { let logs = []; if (activo.personaAsignada !== f.personaAsignada && f.personaAsignada) logs.push('Asignado a ' + f.personaAsignada); if (activo.estado !== f.estado) logs.push('Estado: ' + f.estado); if (activo.oficina !== f.oficina && f.oficina) logs.push('Oficina: ' + f.oficina); if (activo.enAlmacen !== f.enAlmacen) logs.push(f.enAlmacen ? 'Enviado a Almacén' : 'Sacado de Almacén'); if (logs.length > 0) f.historial = [...(activo.historial || []), ...logs.map(n => ({ fecha: hoy, nota: n }))]; guardarDatos(datos.map(a => a.id === activo.id ? f : a)); } 
     else { f.historial = [{ fecha: hoy, nota: 'Equipo registrado' }]; guardarDatos([...datos, f]); }
     handleVolver(); 
   };
@@ -632,7 +582,7 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
     <div>
       <button onClick={handleVolver} className='flex items-center text-blue-600 font-bold mb-4'><ArrowLeft size={20} /> Volver</button>
       <form onSubmit={handleSubmit} className='bg-white p-4 rounded-xl shadow-sm space-y-4'>
-        <h2 className='font-bold text-lg text-gray-800 border-b pb-2'>{activo ? 'Editar Nro. ' + form.numero : 'Nuevo Registro'}</h2>
+        <h2 className='font-bold text-lg text-gray-800 border-b pb-2'>{activo && !activo._template ? 'Editar Nro. ' + form.numero : 'Nuevo Registro'}</h2>
         {esAlmacen && !form.enAlmacen && (<div className='bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400'><label className='block text-xs font-bold text-blue-600 mb-1'>ASIGNAR A MULTICENTRO</label><select name='centro' value={form.centro||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option value='' disabled>Seleccionar...</option>{centros.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}</select></div>)}
         <div className='grid grid-cols-2 gap-4'>
           <div><label className='block text-xs font-bold text-gray-500 mb-1'>Nro. REGISTRO</label><input name='numero' value={form.numero} readOnly className='w-full p-3 border border-gray-200 rounded-lg bg-blue-50 text-blue-800 font-bold' /></div>
@@ -645,13 +595,13 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
             <p className='text-xs font-bold text-blue-600'>DATOS {form.tipo === 'Laptop' ? 'LAPTOP' : 'ALL IN ONE'}</p>
             <div className='grid grid-cols-2 gap-3'>
               <div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Nombre Maquina</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
-              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca</label><input name='marca' value={form.marca||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca</label><input name='marca' value={form.marca||''} onChange={handleMarca} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
               <div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
               <div className='relative'><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF</label><div className='flex gap-1'><input name='codigoActivo' value={form.codigoActivo||''} onChange={h} onBlur={(e)=>validarUnico('codigoActivo', e.target.value)} className={'w-full p-2.5 border rounded-lg bg-white text-sm ' + (errores.codigoActivo ? 'border-red-500 bg-red-50' : 'border-gray-300')} /><button type='button' onClick={() => escanearParaCampo('codigoActivo')} className='bg-gray-200 p-2.5 rounded-lg'><Barcode size={18} className='text-gray-700' /></button></div>{errores.codigoActivo && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}</div>
               <div><label className='block text-xs font-medium text-gray-700 mb-1'>Numero de Serie</label><div className='flex gap-1'><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} onBlur={(e)=>validarUnico('numeroSerie', e.target.value)} required className={'w-full p-2.5 border rounded-lg bg-white text-sm ' + (errores.numeroSerie ? 'border-red-500 bg-red-50' : 'border-gray-300')} /><button type='button' onClick={() => escanearParaCampo('numeroSerie')} className='bg-gray-200 p-2.5 rounded-lg'><Barcode size={18} className='text-gray-700' /></button></div>{errores.numeroSerie && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}</div>
             </div>
           </div>
-          <CamposSpecs form={form} setForm={setForm} handleProcesador={handleProcesador} formatMemory={formatMemory} />
+          <CamposSpecs form={form} setForm={setForm} handleProcesador={handleProcesador} formatMemory={formatMemory} handleNumeric={handleNumeric} handleIP={handleIP} errores={errores} />
           <CamposUbicacion form={form} h={h} OficinaSelect={OficinaSelect} PisoInput={PisoInput} />
           </>
         )}
@@ -662,7 +612,7 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
             <p className='text-xs font-bold text-blue-600'>DATOS CPU</p>
             <div className='grid grid-cols-2 gap-3'>
               <div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Nombre Equipo</label><input name='nombreEquipo' value={form.nombreEquipo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
-              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca CPU</label><input name='marcaCPU' value={form.marcaCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca CPU</label><input name='marcaCPU' value={form.marcaCPU||''} onChange={handleMarca} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
               <div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo CPU</label><input name='modeloCPU' value={form.modeloCPU||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
               <div className='relative'><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF CPU</label><div className='flex gap-1'><input name='codigoActivoCPU' value={form.codigoActivoCPU||''} onChange={h} onBlur={(e)=>validarUnico('codigoActivoCPU', e.target.value)} className={'w-full p-2.5 border rounded-lg bg-white text-sm ' + (errores.codigoActivoCPU ? 'border-red-500 bg-red-50' : 'border-gray-300')} /><button type='button' onClick={() => escanearParaCampo('codigoActivoCPU')} className='bg-gray-200 p-2.5 rounded-lg'><Barcode size={18} className='text-gray-700' /></button></div>{errores.codigoActivoCPU && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}</div>
               <div><label className='block text-xs font-medium text-gray-700 mb-1'>Serie CPU</label><div className='flex gap-1'><input name='numeroSerieCPU' value={form.numeroSerieCPU||''} onChange={h} onBlur={(e)=>validarUnico('numeroSerieCPU', e.target.value)} required className={'w-full p-2.5 border rounded-lg bg-white text-sm ' + (errores.numeroSerieCPU ? 'border-red-500 bg-red-50' : 'border-gray-300')} /><button type='button' onClick={() => escanearParaCampo('numeroSerieCPU')} className='bg-gray-200 p-2.5 rounded-lg'><Barcode size={18} className='text-gray-700' /></button></div>{errores.numeroSerieCPU && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}</div>
@@ -671,13 +621,13 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
           <div className='bg-yellow-50 p-3 rounded-lg border-l-4 border-yellow-400 space-y-3'>
             <p className='text-xs font-bold text-yellow-700'>DATOS MONITOR</p>
             <div className='grid grid-cols-2 gap-3'>
-              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca Monitor</label><input name='marcaMonitor' value={form.marcaMonitor||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca Monitor</label><input name='marcaMonitor' value={form.marcaMonitor||''} onChange={handleMarca} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
               <div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo Monitor</label><input name='modeloMonitor' value={form.modeloMonitor||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
               <div><label className='block text-xs font-medium text-gray-700 mb-1'>Serie Monitor</label><input name='numeroSerieMonitor' value={form.numeroSerieMonitor||''} onChange={h} onBlur={(e)=>validarUnico('numeroSerieMonitor', e.target.value)} className={'w-full p-2.5 border rounded-lg bg-white text-sm ' + (errores.numeroSerieMonitor ? 'border-red-500 bg-red-50' : 'border-gray-300')} />{errores.numeroSerieMonitor && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}</div>
               <div><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF Monitor</label><input name='codigoActivoMonitor' value={form.codigoActivoMonitor||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
             </div>
           </div>
-          <CamposSpecs form={form} setForm={setForm} handleProcesador={handleProcesador} formatMemory={formatMemory} />
+          <CamposSpecs form={form} setForm={setForm} handleProcesador={handleProcesador} formatMemory={formatMemory} handleNumeric={handleNumeric} handleIP={handleIP} errores={errores} />
           <CamposUbicacion form={form} h={h} OficinaSelect={OficinaSelect} PisoInput={PisoInput} />
           </>
         )}
@@ -687,12 +637,17 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
             <p className='text-xs font-bold text-orange-600'>DATOS {form.tipo.toUpperCase()}</p>
             <div className='grid grid-cols-2 gap-3'>
               <div><label className='block text-xs font-medium text-gray-700 mb-1'>Estado</label><select name='estado' value={form.estado} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option>Activo</option><option>En Mantenimiento</option><option>Danado</option></select></div>
-              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca</label><input name='marca' value={form.marca||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+              <div><label className='block text-xs font-medium text-gray-700 mb-1'>Marca</label><input name='marca' value={form.marca||''} onChange={handleMarca} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
               <div><label className='block text-xs font-medium text-gray-700 mb-1'>Modelo</label><input name='modelo' value={form.modelo||''} onChange={h} required className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
               <div><label className='block text-xs font-medium text-gray-700 mb-1'>Serie</label><input name='numeroSerie' value={form.numeroSerie||''} onChange={h} onBlur={(e)=>validarUnico('numeroSerie', e.target.value)} required className={'w-full p-2.5 border rounded-lg bg-white text-sm ' + (errores.numeroSerie ? 'border-red-500 bg-red-50' : 'border-gray-300')} />{errores.numeroSerie && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}</div>
               <div className='relative'><label className='block text-xs font-medium text-gray-700 mb-1'>Codigo AF</label><div className='flex gap-1'><input name='codigoActivo' value={form.codigoActivo||''} onChange={h} onBlur={(e)=>validarUnico('codigoActivo', e.target.value)} className={'w-full p-2.5 border rounded-lg bg-white text-sm ' + (errores.codigoActivo ? 'border-red-500 bg-red-50' : 'border-gray-300')} /><button type='button' onClick={() => escanearParaCampo('codigoActivo')} className='bg-gray-200 p-2.5 rounded-lg'><Barcode size={18} className='text-gray-700' /></button></div>{errores.codigoActivo && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}</div>
               {form.tipo !== 'Switch' && <div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Conexion</label><select name='conexionImpresora' value={form.conexionImpresora||'En Red'} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm'><option>En Red</option><option>Por USB</option></select></div>}
-              {(form.tipo === 'Switch' || form.conexionImpresora === 'En Red') && (<><div><label className='block text-xs font-medium text-gray-700 mb-1'>MAC</label><input name='mac' value={form.mac||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div><div><label className='block text-xs font-medium text-gray-700 mb-1'>IP</label><input name='ip' value={form.ip||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div></>)}
+              {(form.tipo === 'Switch' || form.conexionImpresora === 'En Red') && (
+                <>
+                  <div><label className='block text-xs font-medium text-gray-700 mb-1'>MAC</label><input name='mac' value={form.mac||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+                  <div><label className='block text-xs font-medium text-gray-700 mb-1'>IP</label><input name='ip' value={form.ip||''} onChange={handleIP} className={'w-full p-2.5 border rounded-lg bg-white text-sm ' + (errores.ip ? 'border-red-500 bg-red-50' : 'border-gray-300')} />{errores.ip && <p className='text-xs text-red-500 mt-1'>IP inválida</p>}</div>
+                </>
+              )}
               <OficinaSelect req={true} /><PisoInput req={true} />
               <div className='col-span-2'><label className='block text-xs font-medium text-gray-700 mb-1'>Fecha Asignacion</label><input type='date' name='fechaAsignacion' value={form.fechaAsignacion||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
             </div>
@@ -700,16 +655,16 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
         )}
 
         <div><label className='block text-xs font-medium text-gray-700 mb-1'>Notas</label><textarea name='notas' value={form.notas||''} onChange={h} rows='2' className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' placeholder='Observaciones...'></textarea></div>
-        {activo && (<div className='bg-white p-4 rounded-xl shadow-sm flex flex-col items-center gap-3 border border-gray-200'><h3 className='font-bold text-gray-700 flex items-center gap-2'><QrCode size={20} /> Código QR del Activo</h3><div id='qr-canvas-container' className='p-4 bg-white border-2 border-gray-100 rounded-lg'><QRCodeCanvas value={generarDatosQR(form)} size={180} level='M' /></div><button type='button' onClick={compartirQR} className='w-full bg-blue-600 text-white px-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 text-sm'><Share2 size={18} /> Compartir QR</button></div>)}
+        {activo && !activo._template && (<div className='bg-white p-4 rounded-xl shadow-sm flex flex-col items-center gap-3 border border-gray-200'><h3 className='font-bold text-gray-700 flex items-center gap-2'><QrCode size={20} /> Código QR del Activo</h3><div id='qr-canvas-container' className='p-4 bg-white border-2 border-gray-100 rounded-lg'><QRCodeCanvas value={generarDatosQR(form)} size={180} level='M' /></div><button type='button' onClick={compartirQR} className='w-full bg-blue-600 text-white px-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 text-sm'><Share2 size={18} /> Compartir QR</button></div>)}
         <div className='bg-gray-50 p-3 rounded-lg border border-gray-200 space-y-3'><p className='text-xs font-bold text-gray-600'>EVIDENCIA FOTOGRÁFICA (OPCIONAL)</p><div className='grid grid-cols-2 gap-4'><div className='text-center'>{form.fotoEquipo ? (<div className='relative'><img src={form.fotoEquipo} alt='Foto Equipo' className='w-full h-32 object-cover rounded-lg border' /><button type='button' onClick={() => eliminarFoto('fotoEquipo')} className='absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 shadow-md'><X size={14} /></button></div>) : (<button type='button' onClick={() => tomarFoto('fotoEquipo')} className='w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 active:bg-gray-100'><CameraIcon size={24} /><span className='text-xs mt-1 font-bold'>Foto del Equipo</span></button>)}</div><div className='text-center'>{form.fotoSerie ? (<div className='relative'><img src={form.fotoSerie} alt='Foto Serie' className='w-full h-32 object-cover rounded-lg border' /><button type='button' onClick={() => eliminarFoto('fotoSerie')} className='absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 shadow-md'><X size={14} /></button></div>) : (<button type='button' onClick={() => tomarFoto('fotoSerie')} className='w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 active:bg-gray-100'><CameraIcon size={24} /><span className='text-xs mt-1 font-bold'>Foto N° de Serie</span></button>)}</div></div></div>
-        {activo && (<div className='bg-gray-50 p-3 rounded-lg border border-gray-200'><button type='button' onClick={() => setVerBitacora(!verBitacora)} className='w-full flex justify-between items-center font-bold text-gray-700'><span className='flex items-center gap-2'><History size={18} /> Ver Bitácora ({(form.historial || []).length})</span><ChevronDown size={18} className={verBitacora ? 'rotate-180 transition-transform' : 'transition-transform'} /></button>{verBitacora && (<div className='mt-3 space-y-2 max-h-48 overflow-y-auto'>{(form.historial || []).length === 0 ? <p className='text-xs text-gray-400 text-center py-2'>Sin movimientos.</p> : (form.historial || []).slice().reverse().map((h, i) => (<div key={i} className='text-xs bg-white p-2 rounded border-l-4 border-blue-400 shadow-sm'><p className='font-bold text-gray-500'>[{h.fecha}]</p><p className='text-gray-700 mt-1'>{h.nota}</p></div>))}</div>)}</div>)}
-        <div className='flex gap-3 pt-2'><button type='submit' className='flex-1 bg-blue-600 text-white p-3 rounded-lg font-bold flex items-center justify-center gap-2'><Save size={20} /> Guardar</button>{activo && <button type='button' onClick={handleEliminar} className='bg-red-100 text-red-600 px-4 rounded-lg font-bold'><Trash2 size={20} /></button>}</div>
+        {activo && !activo._template && (<div className='bg-gray-50 p-3 rounded-lg border border-gray-200'><button type='button' onClick={() => setVerBitacora(!verBitacora)} className='w-full flex justify-between items-center font-bold text-gray-700'><span className='flex items-center gap-2'><History size={18} /> Ver Bitácora ({(form.historial || []).length})</span><ChevronDown size={18} className={verBitacora ? 'rotate-180 transition-transform' : 'transition-transform'} /></button>{verBitacora && (<div className='mt-3 space-y-2 max-h-48 overflow-y-auto'>{(form.historial || []).length === 0 ? <p className='text-xs text-gray-400 text-center py-2'>Sin movimientos.</p> : (form.historial || []).slice().reverse().map((h, i) => (<div key={i} className='text-xs bg-white p-2 rounded border-l-4 border-blue-400 shadow-sm'><p className='font-bold text-gray-500'>[{h.fecha}]</p><p className='text-gray-700 mt-1'>{h.nota}</p></div>))}</div>)}</div>)}
+        <div className='flex gap-3 pt-2'><button type='submit' className='flex-1 bg-blue-600 text-white p-3 rounded-lg font-bold flex items-center justify-center gap-2'><Save size={20} /> Guardar</button>{activo && !activo._template && <button type='button' onClick={handleEliminar} className='bg-red-100 text-red-600 px-4 rounded-lg font-bold'><Trash2 size={20} /></button>}</div>
       </form>
     </div>
   );
 }
 
-function CamposSpecs({ form, setForm, handleProcesador, formatMemory }) {
+function CamposSpecs({ form, setForm, handleProcesador, formatMemory, handleNumeric, handleIP, errores }) {
   const h = (e) => setForm({ ...form, [e.target.name]: e.target.value });
   return (
     <div className='bg-purple-50 p-3 rounded-lg border-l-4 border-purple-400 space-y-3'>
@@ -717,14 +672,14 @@ function CamposSpecs({ form, setForm, handleProcesador, formatMemory }) {
       <div className='grid grid-cols-2 gap-3'>
         <div><label className='block text-xs font-medium text-gray-700 mb-1'>Procesador</label><input name='procesador' value={form.procesador||''} onChange={handleProcesador} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
         <div><label className='block text-xs font-medium text-gray-700 mb-1'>Generacion</label><input name='generacion' value={form.generacion||''} readOnly className='w-full p-2.5 border border-gray-300 rounded-lg bg-gray-100 text-sm' /></div>
-        <div><label className='block text-xs font-medium text-gray-700 mb-1'>RAM</label><input name='ram' value={form.ram||''} onChange={h} onBlur={() => formatMemory('ram')} placeholder='Ej: 8' className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+        <div><label className='block text-xs font-medium text-gray-700 mb-1'>RAM</label><input name='ram' value={form.ram||''} onChange={handleNumeric} onBlur={() => formatMemory('ram')} placeholder='Ej: 8' className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
         <div><label className='block text-xs font-medium text-gray-700 mb-1'>S.O.</label><input name='sistemaOperativo' value={form.sistemaOperativo||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
         <div><label className='block text-xs font-medium text-gray-700 mb-1'>MAC</label><input name='mac' value={form.mac||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
-        <div><label className='block text-xs font-medium text-gray-700 mb-1'>IP</label><input name='ip' value={form.ip||''} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+        <div><label className='block text-xs font-medium text-gray-700 mb-1'>IP</label><input name='ip' value={form.ip||''} onChange={handleIP} className={'w-full p-2.5 border rounded-lg bg-white text-sm ' + (errores.ip ? 'border-red-500 bg-red-50' : 'border-gray-300')} />{errores.ip && <p className='text-xs text-red-500 mt-1'>IP inválida</p>}</div>
       </div>
       <div className='border-t border-purple-200 pt-3 mt-2 grid grid-cols-2 gap-3'>
-        <div><p className='text-xs font-bold text-purple-800 mb-1'>DISCO 1</p><select name='tipoDisco' value={form.tipoDisco||'SSD M.2'} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm mb-1'><option>SSD M.2</option><option>SSD SATA</option><option>HDD</option><option>M.2 NVMe</option></select><input name='capacidadDisco' value={form.capacidadDisco||''} onChange={h} onBlur={() => formatMemory('capacidadDisco')} placeholder='Ej: 256' className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
-        <div><p className='text-xs font-bold text-purple-800 mb-1'>DISCO 2</p><select name='tipoDisco2' value={form.tipoDisco2||'Ninguno'} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm mb-1'><option>Ninguno</option><option>SSD M.2</option><option>SSD SATA</option><option>HDD</option><option>M.2 NVMe</option></select><input name='capacidadDisco2' value={form.capacidadDisco2||''} onChange={h} onBlur={() => formatMemory('capacidadDisco2')} disabled={form.tipoDisco2==='Ninguno'} placeholder='Ej: 512' className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+        <div><p className='text-xs font-bold text-purple-800 mb-1'>DISCO 1</p><select name='tipoDisco' value={form.tipoDisco||'SSD M.2'} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm mb-1'><option>SSD M.2</option><option>SSD SATA</option><option>HDD</option><option>M.2 NVMe</option></select><input name='capacidadDisco' value={form.capacidadDisco||''} onChange={handleNumeric} onBlur={() => formatMemory('capacidadDisco')} placeholder='Ej: 256' className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
+        <div><p className='text-xs font-bold text-purple-800 mb-1'>DISCO 2</p><select name='tipoDisco2' value={form.tipoDisco2||'Ninguno'} onChange={h} className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm mb-1'><option>Ninguno</option><option>SSD M.2</option><option>SSD SATA</option><option>HDD</option><option>M.2 NVMe</option></select><input name='capacidadDisco2' value={form.capacidadDisco2||''} onChange={handleNumeric} onBlur={() => formatMemory('capacidadDisco2')} disabled={form.tipoDisco2==='Ninguno'} placeholder='Ej: 512' className='w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm' /></div>
       </div>
     </div>
   );
