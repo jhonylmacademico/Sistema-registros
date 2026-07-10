@@ -26,23 +26,23 @@ const TIPOS_RED = ['Impresora', 'Impresora Multifuncional', 'Scanner', 'Switch']
 const SUBTIPOS_REPORTE = [...TIPOS_COMPUTO, ...TIPOS_RED];
 
 const CAMPOS = [
-  { key: 'numero', label: 'Nro. Registro' }, { key: 'tipo', label: 'Tipo Equipo' }, { key: 'nombreEquipo', label: 'Nombre Equipo' }, { key: 'marca', label: 'Marca' }, { key: 'modelo', label: 'Modelo' }, { key: 'codigoActivo', label: 'Código AF' }, { key: 'numeroSerie', label: 'Nro. Serie' }, { key: 'procesador', label: 'Procesador' }, { key: 'generacion', label: 'Generación' }, { key: 'ram', label: 'RAM' }, { key: 'tipoDisco', label: 'Disco 1 (Tipo)' }, { key: 'capacidadDisco', label: 'Disco 1 (Cap.)' }, { key: 'tipoDisco2', label: 'Disco 2 (Tipo)' }, { key: 'capacidadDisco2', label: 'Disco 2 (Cap.)' }, { key: 'sistemaOperativo', label: 'Sistema Operativo' }, { key: 'mac', label: 'MAC' }, { key: 'ip', label: 'IP' }, { key: 'estado', label: 'Estado' }, { key: 'enAlmacen', label: 'En Almacén' }, { key: 'centro', label: 'Centro' }, { key: 'oficina', label: 'Oficina' }, { key: 'piso', label: 'Piso' }, { key: 'personaAsignada', label: 'Persona Asignada' }, { key: 'numeroEmpleado', label: 'Nro. Empleado' }, { key: 'cargo', label: 'Cargo' }, { key: 'namaeResponsable', label: 'Responsable' }, { key: 'fechaAsignacion', label: 'Fecha Asignación' }, { key: 'notas', label: 'Notas' }, { key: 'historial', label: 'Historial' }, { key: 'marcaCPU', label: 'Marca CPU' }, { key: 'modeloCPU', label: 'Modelo CPU' }, { key: 'codigoActivoCPU', label: 'Cód. AF CPU' }, { key: 'numeroSerieCPU', label: 'Serie CPU' }, { key: 'marcaMonitor', label: 'Marca Monitor' }, { key: 'modeloMonitor', label: 'Modelo Monitor' }, { key: 'codigoActivoMonitor', label: 'Cód. AF Monitor' }, { key: 'numeroSerieMonitor', label: 'Serie Monitor' }, { key: 'conexionImpresora', label: 'Conexión' }
+  { key: 'numero', label: 'Nro. Registro' }, { key: 'tipo', label: 'Tipo Equipo' }, { key: 'nombreEquipo', label: 'Nombre Equipo' }, { key: 'marca', label: 'Marca' }, { key: 'modelo', label: 'Modelo' }, { key: 'codigoActivo', label: 'Código AF' }, { key: 'numeroSerie', label: 'Nro. Serie' }, { key: 'procesador', label: 'Procesador' }, { key: 'generacion', label: 'Generación' }, { key: 'ram', label: 'RAM' }, { key: 'tipoDisco', label: 'Disco 1 (Tipo)' }, { key: 'capacidadDisco', label: 'Disco 1 (Cap.)' }, { key: 'tipoDisco2', label: 'Disco 2 (Tipo)' }, { key: 'capacidadDisco2', label: 'Disco 2 (Cap.)' }, { key: 'sistemaOperativo', label: 'Sistema Operativo' }, { key: 'mac', label: 'MAC' }, { key: 'ip', label: 'IP' }, { key: 'estado', label: 'Estado' }, { key: 'enAlmacen', label: 'En Almacén' }, { key: 'centro', label: 'Centro' }, { key: 'oficina', label: 'Oficina' }, { key: 'piso', label: 'Piso' }, { key: 'personaAsignada', label: 'Persona Asignada' }, { key: 'numeroEmpleado', label: 'Nro. Empleado' }, { key: 'cargo', label: 'Cargo' }, { key: 'nombreResponsable', label: 'Responsable' }, { key: 'fechaAsignacion', label: 'Fecha Asignación' }, { key: 'notas', label: 'Notas' }, { key: 'historial', label: 'Historial' }, { key: 'marcaCPU', label: 'Marca CPU' }, { key: 'modeloCPU', label: 'Modelo CPU' }, { key: 'codigoActivoCPU', label: 'Cód. AF CPU' }, { key: 'numeroSerieCPU', label: 'Serie CPU' }, { key: 'marcaMonitor', label: 'Marca Monitor' }, { key: 'modeloMonitor', label: 'Modelo Monitor' }, { key: 'codigoActivoMonitor', label: 'Cód. AF Monitor' }, { key: 'numeroSerieMonitor', label: 'Serie Monitor' }, { key: 'conexionImpresora', label: 'Conexión' }
 ];
 
 const CAMPOS_POR_TIPO = {
-  'Laptop': ['numero', 'namaeEquipo', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'procesador', 'generacion', 'ram', 'sistemaOperativo', 'mac', 'ip', 'tipoDisco', 'capacidadDisco', 'tipoDisco2', 'capacidadDisco2', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
+  'Laptop': ['numero', 'nombreEquipo', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'procesador', 'generacion', 'ram', 'sistemaOperativo', 'mac', 'ip', 'tipoDisco', 'capacidadDisco', 'tipoDisco2', 'capacidadDisco2', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
   'Computadora All in One': ['numero', 'nombreEquipo', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'procesador', 'generacion', 'ram', 'sistemaOperativo', 'mac', 'ip', 'tipoDisco', 'capacidadDisco', 'tipoDisco2', 'capacidadDisco2', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
   'Computadora de Escritorio': ['numero', 'nombreEquipo', 'marcaCPU', 'modeloCPU', 'codigoActivoCPU', 'numeroSerieCPU', 'procesador', 'generacion', 'ram', 'sistemaOperativo', 'mac', 'ip', 'tipoDisco', 'capacidadDisco', 'tipoDisco2', 'capacidadDisco2', 'marcaMonitor', 'modeloMonitor', 'codigoActivoMonitor', 'numeroSerieMonitor', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
   'Impresora': ['numero', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'conexionImpresora', 'mac', 'ip', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
   'Impresora Multifuncional': ['numero', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'conexionImpresora', 'mac', 'ip', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
-  'Scanner': ['numero', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'conexionImpresora', 'mac', 'ip', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'namaeResponsable', 'fechaAsignacion', 'notas', 'historial'],
+  'Scanner': ['numero', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'conexionImpresora', 'mac', 'ip', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
   'Switch': ['numero', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'mac', 'ip', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial']
 };
 
 const datosIniciales = [
   { id: '1', centro: 'sucre', numero: '0001', tipo: 'Laptop', nombreEquipo: 'LAP-JPEREZ', marca: 'Lenovo', modelo: 'T14', codigoActivo: 'AF-001', numeroSerie: 'LP-001', procesador: 'Intel i5', generacion: '10ma', ram: '8 GB', tipoDisco: 'SSD M.2', capacidadDisco: '256 GB', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: 'Win 11', mac: 'AA:BB:CC:DD:EE:01', ip: '192.168.1.10', estado: 'Activo', enAlmacen: false, oficina: 'Contabilidad', piso: '2', cargo: 'Contador', numeroEmpleado: 'EMP-001', personaAsignada: 'Juan Perez', nombreResponsable: 'Juan Perez', fechaAsignacion: '2024-01-15', notas: '', fotoEquipo: '', fotoSerie: '', historial: [{ fecha: '15/01/2024', nota: 'Equipo registrado' }] }
 ];
-const OFICINAS_DEFAULT = { sucre: [{ id: 'conta', nombre: 'Contabilidad', piso: '2' }, { id: 'rrhh', namae: 'Recursos Humanos', piso: '1' }] };
+const OFICINAS_DEFAULT = { sucre: [{ id: 'conta', nombre: 'Contabilidad', piso: '2' }, { id: 'rrhh', nombre: 'Recursos Humanos', piso: '1' }] };
 const PISOS_DEFAULT = { sucre: ['1', '2'] };
 
 export default function App() {
@@ -106,7 +106,7 @@ export default function App() {
   const getSubtipo = (a) => (a.tipo === 'Impresora' && a.subtipoImpresora === 'Multifuncional') ? 'Impresora Multifuncional' : (a.tipo === 'Impresora' && a.subtipoImpresora === 'Scanner') ? 'Scanner' : a.tipo;
 
   const handleCheckCol = (tipo, key) => setReporteCols(prev => { const c = prev[tipo] || []; return { ...prev, [tipo]: c.includes(key) ? c.filter(k => k !== key) : [...c, key] }; });
-  const selectAllCols = (tipo) => setReporteCols(prev => ({ ...prev, [tipo]: [...CAMPOS_POR_TIPO[tipo]] }));
+  const selectAllCols = (tipo, availableFields) => setReporteCols(prev => ({ ...prev, [tipo]: availableFields }));
   const clearCols = (tipo) => setReporteCols(prev => { const n = {...prev}; delete n[tipo]; return n; });
   const handleCatReporte = (cat) => setCatsReporte(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);
 
@@ -137,7 +137,9 @@ export default function App() {
     let csv = '\uFEFF' + 'REPORTE DE ACTIVOS FIJOS\nCentro: ' + (centros.find(c=>c.id===centroActual)?.nombre || '') + '\n---------------------------------------------------\n';
     catsReporte.forEach(cat => {
       const datosCat = datosCentro.filter(a => getSubtipo(a) === cat);
-      const cols = reporteCols[cat] || [];
+      const allFields = CAMPOS_POR_TIPO[cat] || [];
+      const camposDisponibles = allFields.filter(key => datosCat.some(a => String(getValor(a, key)) !== '-'));
+      const cols = (reporteCols[cat] || []).filter(c => camposDisponibles.includes(c));
       if (datosCat.length > 0 && cols.length > 0) {
         csv += '\n=== ' + cat.toUpperCase() + ' ===\n';
         csv += cols.map(k => CAMPOS.find(c=>c.key===k)?.label || k).join(';') + '\n';
@@ -159,7 +161,9 @@ export default function App() {
     let currentY = 30;
     catsReporte.forEach(cat => {
       const datosCat = datosCentro.filter(a => getSubtipo(a) === cat);
-      const cols = reporteCols[cat] || [];
+      const allFields = CAMPOS_POR_TIPO[cat] || [];
+      const camposDisponibles = allFields.filter(key => datosCat.some(a => String(getValor(a, key)) !== '-'));
+      const cols = (reporteCols[cat] || []).filter(c => camposDisponibles.includes(c));
       if (datosCat.length > 0 && cols.length > 0) {
         const headers = cols.map(k => CAMPOS.find(c=>c.key===k)?.label || k);
         const rows = datosCat.map(a => cols.map(k => String(getValor(a, k))));
@@ -396,7 +400,6 @@ export default function App() {
               <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro('En Mantenimiento'); setSubtipoFiltro('Todos'); setVista('lista'); }} className={`p-4 rounded-xl shadow-sm border-l-4 border-yellow-500 text-left ${cardBg}`}><p className={`text-xs ${txtMuted}`}>Mantenimiento</p><p className='text-2xl font-bold text-yellow-500'>{datosCentro.filter(a=>a.estado==='En Mantenimiento').length}</p></button>
             </div>
             
-            {/* BOTÓN GENERAR REPORTES RESTAURADO */}
             <button onClick={() => setVista('reporte')} className={`w-full p-4 rounded-xl font-bold flex items-center justify-center gap-2 ${btnPrimary}`}><FileText size={20} /> Generar Reportes</button>
 
             <div className='flex justify-between items-center mt-4 mb-2'>
@@ -550,7 +553,7 @@ export default function App() {
             </div>
             <div className='grid grid-cols-2 gap-3 text-sm'>
               <div><p className={`text-xs ${txtMuted}`}>Tipo</p><p className={`font-bold ${txtMain}`}>{editando.tipo || '-'}</p></div>
-              <div><p className={`text-xs ${txtMuted}`}>Nombre Equipo</p><p className={`font-bold ${txtMain}`}>{editando.nombreEquipo || '-'}</p></div>
+              <div><p className={`text-xs ${txtMuted}`}>Namae Equipo</p><p className={`font-bold ${txtMain}`}>{editando.nombreEquipo || '-'}</p></div>
               <div><p className={`text-xs ${txtMuted}`}>Marca</p><p className={`font-bold ${txtMain}`}>{editando.marca || editando.marcaCPU || '-'}</p></div>
               <div><p className={`text-xs ${txtMuted}`}>Modelo</p><p className={`font-bold ${txtMain}`}>{editando.modelo || editando.modeloCPU || '-'}</p></div>
               <div><p className={`text-xs ${txtMuted}`}>Código AF</p><p className={`font-bold ${txtMain}`}>{editando.codigoActivo || editando.codigoActivoCPU || '-'}</p></div>
@@ -630,8 +633,12 @@ export default function App() {
             <div className={`p-4 rounded-xl space-y-3 ${cardBg}`}>
               <h2 className={`font-bold ${txtMain}`}>2. Columnas (Toca para desplegar):</h2>
               {catsReporte.length === 0 ? <p className={`text-sm text-center py-4 ${txtMuted}`}>Primero selecciona un equipo arriba.</p> : catsReporte.map(cat => {
-                const cols = reporteCols[cat] || [];
-                const camposDisponibles = CAMPOS_POR_TIPO[cat] || [];
+                const datosCat = activos.filter(a => a.centro === centroActual && !a.enAlmacen && getSubtipo(a) === cat); 
+                const allFields = CAMPOS_POR_TIPO[cat] || [];
+                // FILTRO DINÁMICO: Solo muestra columnas que tengan datos rellenados en al menos 1 equipo
+                const camposDisponibles = allFields.filter(key => datosCat.some(a => String(getValor(a, key)) !== '-'));
+                
+                const cols = (reporteCols[cat] || []).filter(c => camposDisponibles.includes(c));
                 const expClass = darkMode ? 'bg-black border-fuchsia-500/30' : 'bg-gray-50 border-gray-100';
                 return (
                   <div key={cat} className={`rounded-xl overflow-hidden border ${expClass}`}>
@@ -642,7 +649,7 @@ export default function App() {
                     {reporteExpandido === cat && (
                       <div className='p-3 pt-0'>
                         <div className='flex justify-end gap-1 mb-2'>
-                          <button type='button' onClick={() => selectAllCols(cat)} className={`text-xs px-2 py-1 rounded font-bold ${btnSecondary}`}>Todos</button>
+                          <button type='button' onClick={() => selectAllCols(cat, camposDisponibles)} className={`text-xs px-2 py-1 rounded font-bold ${btnSecondary}`}>Todos</button>
                           <button type='button' onClick={() => clearCols(cat)} className={`text-xs px-2 py-1 rounded font-bold ${btnDanger}`}>Limpiar</button>
                         </div>
                         <div className='grid grid-cols-2 gap-2'>
@@ -669,12 +676,14 @@ export default function App() {
               })}
             </div>
 
-            {catsReporte.length > 0 && catsReporte.some(cat => (reporteCols[cat] || []).length > 0) && (
+            {catsReporte.length > 0 && catsReporte.some(cat => ((reporteCols[cat] || []).filter(c => (CAMPOS_POR_TIPO[cat] || []).filter(key => activos.filter(a => a.centro === centroActual && !a.enAlmacen && getSubtipo(a) === cat).some(x => String(getValor(x, key)) !== '-').includes(c)).length > 0)) && (
               <div className={`p-4 rounded-xl overflow-x-auto ${cardBg}`}>
                 <h3 className={`font-bold mb-3 text-sm ${txtMain}`}>Vista Previa:</h3>
                 {catsReporte.map(cat => { 
                   const datosCat = activos.filter(a => a.centro === centroActual && !a.enAlmacen && getSubtipo(a) === cat); 
-                  const cols = reporteCols[cat] || []; 
+                  const allFields = CAMPOS_POR_TIPO[cat] || [];
+                  const camposDisponibles = allFields.filter(key => datosCat.some(a => String(getValor(a, key)) !== '-'));
+                  const cols = (reporteCols[cat] || []).filter(c => camposDisponibles.includes(c)); 
                   if (datosCat.length === 0 || cols.length === 0) return null; 
                   return (
                     <div key={cat} className='mb-6'>
@@ -839,7 +848,7 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
             <label className={`block text-xs font-bold mb-1 ${txtDark}`}>ASIGNAR A MULTICENTRO</label>
             <select name='centro' value={form.centro||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`}>
               <option value='' disabled>Seleccionar...</option>
-              {centros.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+              {centros.map(c => <option key={c.id} value={c.id}>{c.namae}</option>)}
             </select>
           </div>
         )}
