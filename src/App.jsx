@@ -26,23 +26,23 @@ const TIPOS_RED = ['Impresora', 'Impresora Multifuncional', 'Scanner', 'Switch']
 const SUBTIPOS_REPORTE = [...TIPOS_COMPUTO, ...TIPOS_RED];
 
 const CAMPOS = [
-  { key: 'numero', label: 'Nro. Registro' }, { key: 'tipo', label: 'Tipo Equipo' }, { key: 'nombreEquipo', label: 'Nombre Equipo' }, { key: 'marca', label: 'Marca' }, { key: 'modelo', label: 'Modelo' }, { key: 'codigoActivo', label: 'Código AF' }, { key: 'numeroSerie', label: 'Nro. Serie' }, { key: 'procesador', label: 'Procesador' }, { key: 'generacion', label: 'Generación' }, { key: 'ram', label: 'RAM' }, { key: 'tipoDisco', label: 'Disco 1 (Tipo)' }, { key: 'capacidadDisco', label: 'Disco 1 (Cap.)' }, { key: 'tipoDisco2', label: 'Disco 2 (Tipo)' }, { key: 'capacidadDisco2', label: 'Disco 2 (Cap.)' }, { key: 'sistemaOperativo', label: 'Sistema Operativo' }, { key: 'mac', label: 'MAC' }, { key: 'ip', label: 'IP' }, { key: 'estado', label: 'Estado' }, { key: 'enAlmacen', label: 'En Almacén' }, { key: 'centro', label: 'Centro' }, { key: 'oficina', label: 'Oficina' }, { key: 'piso', label: 'Piso' }, { key: 'personaAsignada', label: 'Persona Asignada' }, { key: 'numeroEmpleado', label: 'Nro. Empleado' }, { key: 'cargo', label: 'Cargo' }, { key: 'nombreResponsable', label: 'Responsable' }, { key: 'fechaAsignacion', label: 'Fecha Asignación' }, { key: 'notas', label: 'Notas' }, { key: 'historial', label: 'Historial' }, { key: 'marcaCPU', label: 'Marca CPU' }, { key: 'modeloCPU', label: 'Modelo CPU' }, { key: 'codigoActivoCPU', label: 'Cód. AF CPU' }, { key: 'numeroSerieCPU', label: 'Serie CPU' }, { key: 'marcaMonitor', label: 'Marca Monitor' }, { key: 'modeloMonitor', label: 'Modelo Monitor' }, { key: 'codigoActivoMonitor', label: 'Cód. AF Monitor' }, { key: 'numeroSerieMonitor', label: 'Serie Monitor' }, { key: 'conexionImpresora', label: 'Conexión' }
+  { key: 'numero', label: 'Nro. Registro' }, { key: 'tipo', label: 'Tipo Equipo' }, { key: 'nombreEquipo', label: 'Nombre Equipo' }, { key: 'marca', label: 'Marca' }, { key: 'modelo', label: 'Modelo' }, { key: 'codigoActivo', label: 'Código AF' }, { key: 'numeroSerie', label: 'Nro. Serie' }, { key: 'procesador', label: 'Procesador' }, { key: 'generacion', label: 'Generación' }, { key: 'ram', label: 'RAM' }, { key: 'tipoDisco', label: 'Disco 1 (Tipo)' }, { key: 'capacidadDisco', label: 'Disco 1 (Cap.)' }, { key: 'tipoDisco2', label: 'Disco 2 (Tipo)' }, { key: 'capacidadDisco2', label: 'Disco 2 (Cap.)' }, { key: 'sistemaOperativo', label: 'Sistema Operativo' }, { key: 'mac', label: 'MAC' }, { key: 'ip', label: 'IP' }, { key: 'estado', label: 'Estado' }, { key: 'enAlmacen', label: 'En Almacén' }, { key: 'centro', label: 'Centro' }, { key: 'oficina', label: 'Oficina' }, { key: 'piso', label: 'Piso' }, { key: 'personaAsignada', label: 'Persona Asignada' }, { key: 'numeroEmpleado', label: 'Nro. Empleado' }, { key: 'cargo', label: 'Cargo' }, { key: 'namaeResponsable', label: 'Responsable' }, { key: 'fechaAsignacion', label: 'Fecha Asignación' }, { key: 'notas', label: 'Notas' }, { key: 'historial', label: 'Historial' }, { key: 'marcaCPU', label: 'Marca CPU' }, { key: 'modeloCPU', label: 'Modelo CPU' }, { key: 'codigoActivoCPU', label: 'Cód. AF CPU' }, { key: 'numeroSerieCPU', label: 'Serie CPU' }, { key: 'marcaMonitor', label: 'Marca Monitor' }, { key: 'modeloMonitor', label: 'Modelo Monitor' }, { key: 'codigoActivoMonitor', label: 'Cód. AF Monitor' }, { key: 'numeroSerieMonitor', label: 'Serie Monitor' }, { key: 'conexionImpresora', label: 'Conexión' }
 ];
 
 const CAMPOS_POR_TIPO = {
-  'Laptop': ['numero', 'nombreEquipo', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'procesador', 'generacion', 'ram', 'sistemaOperativo', 'mac', 'ip', 'tipoDisco', 'capacidadDisco', 'tipoDisco2', 'capacidadDisco2', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
+  'Laptop': ['numero', 'namaeEquipo', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'procesador', 'generacion', 'ram', 'sistemaOperativo', 'mac', 'ip', 'tipoDisco', 'capacidadDisco', 'tipoDisco2', 'capacidadDisco2', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
   'Computadora All in One': ['numero', 'nombreEquipo', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'procesador', 'generacion', 'ram', 'sistemaOperativo', 'mac', 'ip', 'tipoDisco', 'capacidadDisco', 'tipoDisco2', 'capacidadDisco2', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
   'Computadora de Escritorio': ['numero', 'nombreEquipo', 'marcaCPU', 'modeloCPU', 'codigoActivoCPU', 'numeroSerieCPU', 'procesador', 'generacion', 'ram', 'sistemaOperativo', 'mac', 'ip', 'tipoDisco', 'capacidadDisco', 'tipoDisco2', 'capacidadDisco2', 'marcaMonitor', 'modeloMonitor', 'codigoActivoMonitor', 'numeroSerieMonitor', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
   'Impresora': ['numero', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'conexionImpresora', 'mac', 'ip', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
   'Impresora Multifuncional': ['numero', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'conexionImpresora', 'mac', 'ip', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
-  'Scanner': ['numero', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'conexionImpresora', 'mac', 'ip', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
+  'Scanner': ['numero', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'conexionImpresora', 'mac', 'ip', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'namaeResponsable', 'fechaAsignacion', 'notas', 'historial'],
   'Switch': ['numero', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'mac', 'ip', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial']
 };
 
 const datosIniciales = [
   { id: '1', centro: 'sucre', numero: '0001', tipo: 'Laptop', nombreEquipo: 'LAP-JPEREZ', marca: 'Lenovo', modelo: 'T14', codigoActivo: 'AF-001', numeroSerie: 'LP-001', procesador: 'Intel i5', generacion: '10ma', ram: '8 GB', tipoDisco: 'SSD M.2', capacidadDisco: '256 GB', tipoDisco2: 'Ninguno', capacidadDisco2: '', sistemaOperativo: 'Win 11', mac: 'AA:BB:CC:DD:EE:01', ip: '192.168.1.10', estado: 'Activo', enAlmacen: false, oficina: 'Contabilidad', piso: '2', cargo: 'Contador', numeroEmpleado: 'EMP-001', personaAsignada: 'Juan Perez', nombreResponsable: 'Juan Perez', fechaAsignacion: '2024-01-15', notas: '', fotoEquipo: '', fotoSerie: '', historial: [{ fecha: '15/01/2024', nota: 'Equipo registrado' }] }
 ];
-const OFICINAS_DEFAULT = { sucre: [{ id: 'conta', nombre: 'Contabilidad', piso: '2' }, { id: 'rrhh', nombre: 'Recursos Humanos', piso: '1' }] };
+const OFICINAS_DEFAULT = { sucre: [{ id: 'conta', nombre: 'Contabilidad', piso: '2' }, { id: 'rrhh', namae: 'Recursos Humanos', piso: '1' }] };
 const PISOS_DEFAULT = { sucre: ['1', '2'] };
 
 export default function App() {
@@ -395,6 +395,10 @@ export default function App() {
               <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro('Danado'); setSubtipoFiltro('Todos'); setVista('lista'); }} className={`p-4 rounded-xl shadow-sm border-l-4 border-red-500 text-left ${cardBg}`}><p className={`text-xs ${txtMuted}`}>Dañados</p><p className='text-2xl font-bold text-red-500'>{datosCentro.filter(a=>a.estado==='Danado').length}</p></button>
               <button onClick={() => { setOficinaFiltro(null); setEstadoFiltro('En Mantenimiento'); setSubtipoFiltro('Todos'); setVista('lista'); }} className={`p-4 rounded-xl shadow-sm border-l-4 border-yellow-500 text-left ${cardBg}`}><p className={`text-xs ${txtMuted}`}>Mantenimiento</p><p className='text-2xl font-bold text-yellow-500'>{datosCentro.filter(a=>a.estado==='En Mantenimiento').length}</p></button>
             </div>
+            
+            {/* BOTÓN GENERAR REPORTES RESTAURADO */}
+            <button onClick={() => setVista('reporte')} className={`w-full p-4 rounded-xl font-bold flex items-center justify-center gap-2 ${btnPrimary}`}><FileText size={20} /> Generar Reportes</button>
+
             <div className='flex justify-between items-center mt-4 mb-2'>
               <h3 className={`font-bold flex items-center gap-2 ${txtMain}`}><MapPin size={18} /> Oficinas por Piso</h3>
               <button onClick={() => setVista('oficinas')} className={`px-3 py-1.5 rounded-lg flex items-center gap-1 text-sm font-bold ${darkMode ? 'bg-fuchsia-900/50 text-fuchsia-300' : 'bg-indigo-100 text-indigo-700'}`}><Edit3 size={16} /> Gestionar</button>
@@ -477,7 +481,7 @@ export default function App() {
                       <div key={o.id} className={`flex justify-between items-center p-4 rounded-lg border ${cClass}`}>
                         <div>
                           <p className={`font-bold ${txtMain}`}>{index + 1}. {o.nombre}</p>
-                          <p className={`text-xs ${txtMuted}`}>{datosCentro.filter(a => a.oficina === o.namae).length} equipos | Piso: {o.piso || 'N/A'}</p>
+                          <p className={`text-xs ${txtMuted}`}>{datosCentro.filter(a => a.oficina === o.nombre).length} equipos | Piso: {o.piso || 'N/A'}</p>
                         </div>
                         <div className='flex gap-2'>
                           <button onClick={() => editarOficina(o.id, o.nombre)} className={`px-3 py-2 rounded-lg text-sm font-bold ${btnSecondary}`}>Editar</button>
@@ -706,6 +710,15 @@ export default function App() {
         {vista === 'formulario' && <FormularioActivo activo={editando} guardarDatos={guardarDatos} setVista={setVista} handleVolver={handleVolver} getNextNumber={getNextNumber} centroActual={centroActual} categoriaVista={categoriaVista} oficinas={oficinas} centros={centros} setMsg={setMsg} guardarArchivoNativo={guardarArchivoNativo} escanearParaCampo={escanearParaCampo} activos={activos} darkMode={darkMode} txtMain={txtMain} txtMuted={txtMuted} txtDark={txtDark} btnPrimary={btnPrimary} btnSecondary={btnSecondary} btnDanger={btnDanger} cardBg={cardBg} inputClass={inputClass} />}
         {vista === 'config' && <ConfigVista setVista={setVista} setMsg={setMsg} setActivos={setActivos} setCentros={setCentros} setOficinas={setOficinas} setPisos={setPisos} setCustomPass={setCustomPass} setLogo={setLogo} guardarArchivoNativo={guardarArchivoNativo} darkMode={darkMode} txtMain={txtMain} txtMuted={txtMuted} txtDark={txtDark} btnPrimary={btnPrimary} btnSecondary={btnSecondary} btnDanger={btnDanger} cardBg={cardBg} inputClass={inputClass} />}
       </div>
+
+      {/* BARRA DE NAVEGACIÓN INFERIOR RESTAURADA */}
+      {centroActual && vista !== 'formulario' && vista !== 'detalles' && (
+        <div className={`fixed bottom-0 left-0 right-0 flex justify-around py-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] ${darkMode ? 'bg-black border-t border-fuchsia-500' : 'bg-white border-t border-gray-200'}`}>
+          <button onClick={() => setVista('dashboard')} className={`flex flex-col items-center text-xs ${vista === 'dashboard' ? (darkMode ? 'text-fuchsia-400' : 'text-blue-600') : (darkMode ? 'text-gray-500' : 'text-gray-400')}`}><FileText size={24} /><span>Inicio</span></button>
+          <button onClick={() => {setVista('lista'); setEstadoFiltro(null); setOficinaFiltro(null); setPisoFiltro('Todos'); setSubtipoFiltro('Todos');}} className={`flex flex-col items-center text-xs ${vista === 'lista' ? (darkMode ? 'text-fuchsia-400' : 'text-blue-600') : (darkMode ? 'text-gray-500' : 'text-gray-400')}`}><Search size={24} /><span>Inventario</span></button>
+          <button onClick={() => setVista('reporte')} className={`flex flex-col items-center text-xs ${vista === 'reporte' ? (darkMode ? 'text-fuchsia-400' : 'text-blue-600') : (darkMode ? 'text-gray-500' : 'text-gray-400')}`}><FileText size={24} /><span>Reportes</span></button>
+        </div>
+      )}
     </div>
   );
 }
