@@ -33,10 +33,10 @@ const CAMPOS_POR_TIPO = {
   'Laptop': ['numero', 'nombreEquipo', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'procesador', 'generacion', 'ram', 'sistemaOperativo', 'mac', 'ip', 'tipoDisco', 'capacidadDisco', 'tipoDisco2', 'capacidadDisco2', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
   'Computadora All in One': ['numero', 'nombreEquipo', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'procesador', 'generacion', 'ram', 'sistemaOperativo', 'mac', 'ip', 'tipoDisco', 'capacidadDisco', 'tipoDisco2', 'capacidadDisco2', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
   'Computadora de Escritorio': ['numero', 'nombreEquipo', 'marcaCPU', 'modeloCPU', 'codigoActivoCPU', 'numeroSerieCPU', 'procesador', 'generacion', 'ram', 'sistemaOperativo', 'mac', 'ip', 'tipoDisco', 'capacidadDisco', 'tipoDisco2', 'capacidadDisco2', 'marcaMonitor', 'modeloMonitor', 'codigoActivoMonitor', 'numeroSerieMonitor', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
-  'Impresora': ['numero', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'conexionImpresora', 'mac', 'ip', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
+  'Impresora': ['numero', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'conexionImpresora', 'mac', 'ip', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignation', 'notas', 'historial'],
   'Impresora Multifuncional': ['numero', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'conexionImpresora', 'mac', 'ip', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
   'Scanner': ['numero', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'conexionImpresora', 'mac', 'ip', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial'],
-  'Switch': ['numero', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'mac', 'ip', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignacion', 'notas', 'historial']
+  'Switch': ['numero', 'marca', 'modelo', 'codigoActivo', 'numeroSerie', 'mac', 'ip', 'estado', 'oficina', 'piso', 'personaAsignada', 'numeroEmpleado', 'cargo', 'nombreResponsable', 'fechaAsignation', 'notas', 'historial']
 };
 
 const datosIniciales = [
@@ -93,7 +93,7 @@ export default function App() {
   const eliminarCentro = (id) => { if (confirm('Eliminar este Multicentro y sus equipos?')) { guardarCentros(centros.filter(c => c.id !== id)); guardarDatos(activos.filter(a => a.centro !== id)); const no = { ...oficinas }; delete no[id]; guardarOficinas(no); const np = { ...pisos }; delete np[id]; guardarPisos(np); } };
 
   const agregarPiso = () => { const n = prompt('Nombre del nuevo piso:'); if (n && n.trim()) { const pc = pisos[centroActual] || []; if (!pc.includes(n.trim())) { guardarPisos({ ...pisos, [centroActual]: [...pc, n.trim()] }); setMsg('Piso agregado'); setTimeout(()=>setMsg(''), 2000); } else { alert('Ese piso ya existe'); } } };
-  const editarPiso = (viejoPiso) => { const n = prompt('Editar nombre del piso:', viejoPiso); if (n && n.trim() && n !== viejoPiso) { if (pisos[centroActual].includes(n.trim())) { alert('Ese piso ya existe'); return; } guardarPisos({ ...pisos, [centroActual]: pisos[centroActual].map(p => p === viejoPiso ? n.trim() : p) }); const no = (oficinas[centroActual] || []).map(o => o.piso === viejoPiso ? { ...o, piso: n.trim() } : o); guardarOficinas({ ...oficinas, [centroActual]: no }); const na = activos.map(a => a.centro === centroActual && a.piso === viejoPiso ? { ...a, piso: n.trim() } : a); guardarDatos(na); setMsg('Piso actualizado'); setTimeout(()=>setMsg(''), 2000); } };
+  const editarPiso = (viejoPiso) => { const n = prompt('Editar nombre del piso:', viejoPiso); if (n && n.trim() && n !== viejoPiso) { if (pisos[centroActual].includes(n.trim())) { alert('Ese piso ya existe'); return; } guardarPisos({ ...pisos, [centroActual]: pisos[centroActual].map(p => p === viejoPiso ? n.trim() : p) }); const no = (oficinas[centroActual] || []).map(o => o.piso === viejoPiso ? { ...o, piso: n.trim() } : o); guardarOficinas({ ...oficinas, [centroActual]: no }); const na = activos.map(a => a.centro === centroActual && a.piso === viejoPiso ? { ...a, piso: n.trim() } : a); guardarDatos(na); setMsg('Piso aktualigita'); setTimeout(()=>setMsg(''), 2000); } };
   const eliminarPiso = (piso) => { if (confirm(`Eliminar el piso ${piso}?`)) { guardarPisos({ ...pisos, [centroActual]: pisos[centroActual].filter(p => p !== piso) }); const no = (oficinas[centroActual] || []).map(o => o.piso === piso ? { ...o, piso: '' } : o); guardarOficinas({ ...oficinas, [centroActual]: no }); setMsg('Piso eliminado'); setTimeout(()=>setMsg(''), 2000); } };
 
   const agregarOficina = () => { const n = prompt('Nombre de la nueva oficina:'); if (n && n.trim()) { const pc = pisos[centroActual] || []; let p = ''; if (pc.length > 0) { p = prompt(`En qué piso está? (${pc.join(', ')}):`, pc[0]); if (p && !pc.includes(p)) { alert('Ese piso no existe.'); return; } } else { alert('Primero crea un piso.'); return; } const no = [...(oficinas[centroActual] || []), { id: n.trim().toLowerCase().replace(/\s+/g, '_') + '_' + Date.now().toString().slice(-4), nombre: n.trim(), piso: p }]; guardarOficinas({...oficinas, [centroActual]: no}); setMsg('Oficina agregada'); setTimeout(()=>setMsg(''), 2000); } };
@@ -553,7 +553,7 @@ export default function App() {
             </div>
             <div className='grid grid-cols-2 gap-3 text-sm'>
               <div><p className={`text-xs ${txtMuted}`}>Tipo</p><p className={`font-bold ${txtMain}`}>{editando.tipo || '-'}</p></div>
-              <div><p className={`text-xs ${txtMuted}`}>Namae Equipo</p><p className={`font-bold ${txtMain}`}>{editando.nombreEquipo || '-'}</p></div>
+              <div><p className={`text-xs ${txtMuted}`}>Nombre Equipo</p><p className={`font-bold ${txtMain}`}>{editando.nombreEquipo || '-'}</p></div>
               <div><p className={`text-xs ${txtMuted}`}>Marca</p><p className={`font-bold ${txtMain}`}>{editando.marca || editando.marcaCPU || '-'}</p></div>
               <div><p className={`text-xs ${txtMuted}`}>Modelo</p><p className={`font-bold ${txtMain}`}>{editando.modelo || editando.modeloCPU || '-'}</p></div>
               <div><p className={`text-xs ${txtMuted}`}>Código AF</p><p className={`font-bold ${txtMain}`}>{editando.codigoActivo || editando.codigoActivoCPU || '-'}</p></div>
@@ -611,76 +611,22 @@ export default function App() {
           </div>
         )}
 
-        {centroActual && vista === 'reporte' && (
-          <div className='space-y-4'>
-            <div className={`p-4 rounded-xl ${cardBg}`}>
-              <h2 className={`font-bold mb-3 ${txtMain}`}>1. Selecciona Equipos:</h2>
-              <div className='grid grid-cols-2 gap-2'>
-                {SUBTIPOS_REPORTE.map(cat => {
-                  const isChecked = catsReporte.includes(cat);
-                  const activeClass = darkMode ? 'bg-fuchsia-900/50 border-fuchsia-500 text-fuchsia-300' : 'bg-indigo-50 border-indigo-500 text-indigo-800';
-                  const inactiveClass = darkMode ? 'bg-black border-gray-700 text-gray-400' : 'bg-gray-50 border-gray-200';
-                  return (
-                    <label key={cat} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-sm ${isChecked ? activeClass : inactiveClass}`}>
-                      <input type='checkbox' checked={isChecked} onChange={() => handleCatReporte(cat)} className='accent-fuchsia-500' />
-                      {cat}
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-            
-            <div className={`p-4 rounded-xl space-y-3 ${cardBg}`}>
-              <h2 className={`font-bold ${txtMain}`}>2. Columnas (Toca para desplegar):</h2>
-              {catsReporte.length === 0 ? <p className={`text-sm text-center py-4 ${txtMuted}`}>Primero selecciona un equipo arriba.</p> : catsReporte.map(cat => {
-                const datosCat = activos.filter(a => a.centro === centroActual && !a.enAlmacen && getSubtipo(a) === cat); 
-                const allFields = CAMPOS_POR_TIPO[cat] || [];
-                // FILTRO DINÁMICO: Solo muestra columnas que tengan datos rellenados en al menos 1 equipo
-                const camposDisponibles = allFields.filter(key => datosCat.some(a => String(getValor(a, key)) !== '-'));
-                
-                const cols = (reporteCols[cat] || []).filter(c => camposDisponibles.includes(c));
-                const expClass = darkMode ? 'bg-black border-fuchsia-500/30' : 'bg-gray-50 border-gray-100';
-                return (
-                  <div key={cat} className={`rounded-xl overflow-hidden border ${expClass}`}>
-                    <button type='button' onClick={() => setReporteExpandido(reporteExpandido === cat ? null : cat)} className={`w-full p-3 flex justify-between items-center font-bold active:opacity-80 ${txtMain}`}>
-                      <span>{cat} <span className={`text-xs font-normal ${txtMuted}`}>({cols.length} cols)</span></span>
-                      <ChevronDown size={18} className={txtMuted + (reporteExpandido === cat ? ' rotate-180 transition-transform' : ' transition-transform')} />
-                    </button>
-                    {reporteExpandido === cat && (
-                      <div className='p-3 pt-0'>
-                        <div className='flex justify-end gap-1 mb-2'>
-                          <button type='button' onClick={() => selectAllCols(cat, camposDisponibles)} className={`text-xs px-2 py-1 rounded font-bold ${btnSecondary}`}>Todos</button>
-                          <button type='button' onClick={() => clearCols(cat)} className={`text-xs px-2 py-1 rounded font-bold ${btnDanger}`}>Limpiar</button>
-                        </div>
-                        <div className='grid grid-cols-2 gap-2'>
-                          {camposDisponibles.map((key, idx) => { 
-                            const isSelected = cols.includes(key); 
-                            const label = CAMPOS.find(c => c.key === key)?.label || key; 
-                            const colorClass = COLORES_CHECKS[idx % COLORES_CHECKS.length]; 
-                            const order = cols.indexOf(key) + 1;
-                            const selClass = darkMode ? `bg-gray-900 border-fuchsia-500 font-bold ${colorClass}` : `bg-white border-gray-300 font-bold ${colorClass}`;
-                            const unselClass = darkMode ? 'bg-black border-gray-700 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-500';
-                            return (
-                              <label key={key} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-sm transition-all ${isSelected ? selClass : unselClass}`}>
-                                <input type='checkbox' checked={isSelected} onChange={() => handleCheckCol(cat, key)} className='w-4 h-4 accent-fuchsia-500' />
-                                <span className='flex-1 truncate'>{label}</span>
-                                {isSelected && <span className='ml-auto text-xs font-bold bg-gray-800 text-white px-1.5 py-0.5 rounded-full'>{order}</span>}
-                              </label>
-                            ); 
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+        {/* VISTA REPORTE CORREGIDA Y ENCAPSULADA EN IIFE PARA EVITAR ERRORES DE SINTAXIS */}
+        {centroActual && vista === 'reporte' && (() => {
+          const datosReporte = activos.filter(a => a.centro === centroActual && !a.enAlmacen);
+          
+          const renderPreview = () => {
+            if (!catsReporte.some(cat => {
+              const datosCat = datosReporte.filter(a => getSubtipo(a) === cat);
+              const camposDisponibles = (CAMPOS_POR_TIPO[cat] || []).filter(key => datosCat.some(a => String(getValor(a, key)) !== '-'));
+              return (reporteCols[cat] || []).some(c => camposDisponibles.includes(c));
+            })) return null;
 
-            {catsReporte.length > 0 && catsReporte.some(cat => ((reporteCols[cat] || []).filter(c => (CAMPOS_POR_TIPO[cat] || []).filter(key => activos.filter(a => a.centro === centroActual && !a.enAlmacen && getSubtipo(a) === cat).some(x => String(getValor(x, key)) !== '-').includes(c)).length > 0)) && (
+            return (
               <div className={`p-4 rounded-xl overflow-x-auto ${cardBg}`}>
                 <h3 className={`font-bold mb-3 text-sm ${txtMain}`}>Vista Previa:</h3>
                 {catsReporte.map(cat => { 
-                  const datosCat = activos.filter(a => a.centro === centroActual && !a.enAlmacen && getSubtipo(a) === cat); 
+                  const datosCat = datosReporte.filter(a => getSubtipo(a) === cat); 
                   const allFields = CAMPOS_POR_TIPO[cat] || [];
                   const camposDisponibles = allFields.filter(key => datosCat.some(a => String(getValor(a, key)) !== '-'));
                   const cols = (reporteCols[cat] || []).filter(c => camposDisponibles.includes(c)); 
@@ -707,14 +653,82 @@ export default function App() {
                   );
                 })}
               </div>
-            )}
-            
-            <div className='grid grid-cols-2 gap-4'>
-              <button onClick={exportarCSV} disabled={cargando || catsReporte.length === 0} className={`p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 ${btnSecondary}`}><Download size={20} /> Excel</button>
-              <button onClick={exportarPDF} disabled={cargando || catsReporte.length === 0} className={`p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 ${btnDanger}`}><FileText size={20} /> PDF</button>
+            );
+          };
+
+          return (
+            <div className='space-y-4'>
+              <div className={`p-4 rounded-xl ${cardBg}`}>
+                <h2 className={`font-bold mb-3 ${txtMain}`}>1. Selecciona Equipos:</h2>
+                <div className='grid grid-cols-2 gap-2'>
+                  {SUBTIPOS_REPORTE.map(cat => {
+                    const isChecked = catsReporte.includes(cat);
+                    const activeClass = darkMode ? 'bg-fuchsia-900/50 border-fuchsia-500 text-fuchsia-300' : 'bg-indigo-50 border-indigo-500 text-indigo-800';
+                    const inactiveClass = darkMode ? 'bg-black border-gray-700 text-gray-400' : 'bg-gray-50 border-gray-200';
+                    return (
+                      <label key={cat} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-sm ${isChecked ? activeClass : inactiveClass}`}>
+                        <input type='checkbox' checked={isChecked} onChange={() => handleCatReporte(cat)} className='accent-fuchsia-500' />
+                        {cat}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              <div className={`p-4 rounded-xl space-y-3 ${cardBg}`}>
+                <h2 className={`font-bold ${txtMain}`}>2. Columnas (Toca para desplegar):</h2>
+                {catsReporte.length === 0 ? <p className={`text-sm text-center py-4 ${txtMuted}`}>Primero selecciona un equipo arriba.</p> : catsReporte.map(cat => {
+                  const datosCat = datosReporte.filter(a => getSubtipo(a) === cat); 
+                  const allFields = CAMPOS_POR_TIPO[cat] || [];
+                  const camposDisponibles = allFields.filter(key => datosCat.some(a => String(getValor(a, key)) !== '-'));
+                  
+                  const cols = (reporteCols[cat] || []).filter(c => camposDisponibles.includes(c));
+                  const expClass = darkMode ? 'bg-black border-fuchsia-500/30' : 'bg-gray-50 border-gray-100';
+                  return (
+                    <div key={cat} className={`rounded-xl overflow-hidden border ${expClass}`}>
+                      <button type='button' onClick={() => setReporteExpandido(reporteExpandido === cat ? null : cat)} className={`w-full p-3 flex justify-between items-center font-bold active:opacity-80 ${txtMain}`}>
+                        <span>{cat} <span className={`text-xs font-normal ${txtMuted}`}>({cols.length} cols)</span></span>
+                        <ChevronDown size={18} className={txtMuted + (reporteExpandido === cat ? ' rotate-180 transition-transform' : ' transition-transform')} />
+                      </button>
+                      {reporteExpandido === cat && (
+                        <div className='p-3 pt-0'>
+                          <div className='flex justify-end gap-1 mb-2'>
+                            <button type='button' onClick={() => selectAllCols(cat, camposDisponibles)} className={`text-xs px-2 py-1 rounded font-bold ${btnSecondary}`}>Todos</button>
+                            <button type='button' onClick={() => clearCols(cat)} className={`text-xs px-2 py-1 rounded font-bold ${btnDanger}`}>Limpiar</button>
+                          </div>
+                          <div className='grid grid-cols-2 gap-2'>
+                            {camposDisponibles.map((key, idx) => { 
+                              const isSelected = cols.includes(key); 
+                              const label = CAMPOS.find(c => c.key === key)?.label || key; 
+                              const colorClass = COLORES_CHECKS[idx % COLORES_CHECKS.length]; 
+                              const order = cols.indexOf(key) + 1;
+                              const selClass = darkMode ? `bg-gray-900 border-fuchsia-500 font-bold ${colorClass}` : `bg-white border-gray-300 font-bold ${colorClass}`;
+                              const unselClass = darkMode ? 'bg-black border-gray-700 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-500';
+                              return (
+                                <label key={key} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-sm transition-all ${isSelected ? selClass : unselClass}`}>
+                                  <input type='checkbox' checked={isSelected} onChange={() => handleCheckCol(cat, key)} className='w-4 h-4 accent-fuchsia-500' />
+                                  <span className='flex-1 truncate'>{label}</span>
+                                  {isSelected && <span className='ml-auto text-xs font-bold bg-gray-800 text-white px-1.5 py-0.5 rounded-full'>{order}</span>}
+                                </label>
+                              ); 
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {renderPreview()}
+              
+              <div className='grid grid-cols-2 gap-4'>
+                <button onClick={exportarCSV} disabled={cargando || catsReporte.length === 0} className={`p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 ${btnSecondary}`}><Download size={20} /> Excel</button>
+                <button onClick={exportarPDF} disabled={cargando || catsReporte.length === 0} className={`p-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 ${btnDanger}`}><FileText size={20} /> PDF</button>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {vista === 'formulario' && <FormularioActivo activo={editando} guardarDatos={guardarDatos} setVista={setVista} handleVolver={handleVolver} getNextNumber={getNextNumber} centroActual={centroActual} categoriaVista={categoriaVista} oficinas={oficinas} centros={centros} setMsg={setMsg} guardarArchivoNativo={guardarArchivoNativo} escanearParaCampo={escanearParaCampo} activos={activos} darkMode={darkMode} txtMain={txtMain} txtMuted={txtMuted} txtDark={txtDark} btnPrimary={btnPrimary} btnSecondary={btnSecondary} btnDanger={btnDanger} cardBg={cardBg} inputClass={inputClass} />}
         {vista === 'config' && <ConfigVista setVista={setVista} setMsg={setMsg} setActivos={setActivos} setCentros={setCentros} setOficinas={setOficinas} setPisos={setPisos} setCustomPass={setCustomPass} setLogo={setLogo} guardarArchivoNativo={guardarArchivoNativo} darkMode={darkMode} txtMain={txtMain} txtMuted={txtMuted} txtDark={txtDark} btnPrimary={btnPrimary} btnSecondary={btnSecondary} btnDanger={btnDanger} cardBg={cardBg} inputClass={inputClass} />}
@@ -848,7 +862,7 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
             <label className={`block text-xs font-bold mb-1 ${txtDark}`}>ASIGNAR A MULTICENTRO</label>
             <select name='centro' value={form.centro||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`}>
               <option value='' disabled>Seleccionar...</option>
-              {centros.map(c => <option key={c.id} value={c.id}>{c.namae}</option>)}
+              {centros.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
             </select>
           </div>
         )}
@@ -915,7 +929,7 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
               <div className='relative'>
                 <label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Serie CPU</label>
                 <div className='flex gap-1'>
-                  <input name='numeroSerieCPU' value={form.numeroSerieCPU||''} onChange={h} onBlur={(e)=>validarUnico('numeroSerieCPU', e.target.value)} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass} ${errores.numeroSerieCPU ? 'border-red-500 bg-red-100' : ''}`} />
+                  <input name='numeroSerieCPU' value={form.numeroSerieCPU||''} onChange={h} onBlur={(e)=>validarUnico('numeroSerieCPU', e.target.value)} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass} ${errores.numeroSerieCPU ? 'border-red-500 bg-red-100' : ''`} />
                   <button type='button' onClick={() => escanearParaCampo('numeroSerieCPU')} className={`px-2 rounded-lg ${btnSecondary}`}><Barcode size={18} /></button>
                 </div>
                 {errores.numeroSerieCPU && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}
@@ -928,7 +942,7 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
               <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Marca Monitor</label><input name='marcaMonitor' value={form.marcaMonitor||''} onChange={handleMarca} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
               <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Modelo Monitor</label><input name='modeloMonitor' value={form.modeloMonitor||''} onChange={h} required className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
               <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Serie Monitor</label><input name='numeroSerieMonitor' value={form.numeroSerieMonitor||''} onChange={h} onBlur={(e)=>validarUnico('numeroSerieMonitor', e.target.value)} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass} ${errores.numeroSerieMonitor ? 'border-red-500 bg-red-100' : ''}`} />{errores.numeroSerieMonitor && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}</div>
-              <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Codigo AF Monitor</label><input name='codigoActivoMonitor' value={form.kodeigoActivoMonitor||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
+              <div><label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Codigo AF Monitor</label><input name='codigoActivoMonitor' value={form.codigoActivoMonitor||''} onChange={h} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass}`} /></div>
             </div>
           </div>
           <CamposSpecs form={form} setForm={setForm} handleProcesador={handleProcesador} formatMemory={formatMemory} handleNumeric={handleNumeric} handleIP={handleIP} errores={errores} darkMode={darkMode} txtMain={txtMain} txtMuted={txtMuted} inputClass={inputClass} />
@@ -947,7 +961,7 @@ function FormularioActivo({ activo, guardarDatos, setVista, handleVolver, getNex
               <div className='relative'>
                 <label className={`block text-xs font-medium mb-1 ${txtMuted}`}>Codigo AF</label>
                 <div className='flex gap-1'>
-                  <input name='codigoActivo' value={form.codigoActivo||''} onChange={h} onBlur={(e)=>validarUnico('codigoActivo', e.target.value)} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass} ${errores.codigoActivo ? 'border-red-500 bg-red-100' : ''}`} />
+                  <input name='codigoActivo' value={form.codigoActivo||''} onChange={h} onBlur={(e)=>validarUnico('codigoActivo', e.target.value)} className={`w-full p-2.5 border rounded-lg text-sm ${inputClass} ${errores.codigoActivo ? 'border-red-500 bg-red-100' : ''`} />
                   <button type='button' onClick={() => escanearParaCampo('codigoActivo')} className={`px-2 rounded-lg ${btnSecondary}`}><Barcode size={18} /></button>
                 </div>
                 {errores.codigoActivo && <p className='text-xs text-red-500 mt-1'>¡Repetido!</p>}
